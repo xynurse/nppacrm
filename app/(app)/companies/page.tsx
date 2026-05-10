@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { listActiveEvents } from "@/lib/db/queries/events";
-import { listEventCompanies } from "@/lib/db/queries/companies";
+import {
+  listEventCompanies,
+  listTiersForEvent,
+} from "@/lib/db/queries/companies";
+import { listUsers } from "@/lib/db/queries/users";
 import { requireSession } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { CompaniesTable } from "@/components/companies/companies-table";
 import { CompanyDrawer } from "@/components/companies/company-drawer";
+import { QuickAddRow } from "@/components/companies/quick-add-row";
 
 type SearchParams = Promise<{ record?: string }>;
 
@@ -32,10 +37,21 @@ export default async function CompaniesPage({
     );
   }
 
-  const [rows, params] = await Promise.all([
+  const [rows, tiers, users, params] = await Promise.all([
     listEventCompanies(activeEvent.id),
+    listTiersForEvent(activeEvent.id),
+    listUsers(),
     searchParams,
   ]);
+
+  const owners = users
+    .filter((u) => u.isActive)
+    .map((u) => ({ id: u.id, name: u.name, email: u.email }));
+  const tierOptions = tiers.map((t) => ({
+    id: t.id,
+    name: t.name,
+    color: t.color,
+  }));
 
   const recordId = typeof params.record === "string" ? params.record : null;
   const drawerRow = recordId
@@ -53,9 +69,19 @@ export default async function CompaniesPage({
         </div>
       </div>
 
-      <CompaniesTable rows={rows} activeRecordId={recordId} />
+      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
+        <QuickAddRow eventId={activeEvent.id} />
+      </div>
 
-      <CompanyDrawer row={drawerRow} />
+      <CompaniesTable
+        rows={rows}
+        owners={owners}
+        tiers={tierOptions}
+        activeRecordId={recordId}
+        isAdmin={session.user.role === "admin"}
+      />
+
+      <CompanyDrawer row={drawerRow} owners={owners} tiers={tierOptions} />
     </div>
   );
 }

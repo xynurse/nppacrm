@@ -2,14 +2,44 @@
 
 import { X } from "lucide-react";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { CellShell } from "@/components/cells/cell-shell";
+import { CurrencyEditor } from "@/components/cells/currency-cell";
+import { DateEditor } from "@/components/cells/date-cell";
+import { PersonEditor } from "@/components/cells/person-cell";
+import { TierEditor } from "@/components/cells/relation-cell";
+import { SingleSelectEditor } from "@/components/cells/single-select-cell";
+import { LongTextEditor, TextEditor } from "@/components/cells/text-cell";
+import { UrlDisplay, UrlEditor } from "@/components/cells/url-cell";
+import type { PersonOption, TierOption } from "@/components/cells/types";
 import { PriorityDot } from "./priority-dot";
-import { StatusBadge } from "./status-badge";
+import {
+  PROSPECT_STATUS_LABELS,
+  StatusBadge,
+} from "./status-badge";
+import {
+  PROSPECT_PRIORITY_VALUES,
+  PROSPECT_STATUS_VALUES,
+} from "@/lib/db/schema";
 import type { EventCompanyRow } from "@/lib/db/queries/companies";
 import { formatCurrency, formatRelativeDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
-export function CompanyDrawer({ row }: { row: EventCompanyRow | null }) {
+const PRIORITY_LABELS = {
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+} as const;
+
+export function CompanyDrawer({
+  row,
+  owners,
+  tiers,
+}: {
+  row: EventCompanyRow | null;
+  owners: PersonOption[];
+  tiers: TierOption[];
+}) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape" && row) {
@@ -23,19 +53,13 @@ export function CompanyDrawer({ row }: { row: EventCompanyRow | null }) {
 
   return (
     <>
-      <div
-        className={cn(
-          "fixed inset-0 z-30 bg-slate-900/30 transition-opacity backdrop-blur-sm",
-          row ? "opacity-100" : "pointer-events-none opacity-0",
-        )}
-      />
       <Link
         id="close-drawer"
         href="/companies"
         scroll={false}
         className={cn(
-          "fixed inset-0 z-30",
-          row ? "block" : "hidden",
+          "fixed inset-0 z-30 bg-slate-900/30 backdrop-blur-sm transition-opacity",
+          row ? "opacity-100" : "pointer-events-none opacity-0",
         )}
         aria-hidden
       />
@@ -46,33 +70,55 @@ export function CompanyDrawer({ row }: { row: EventCompanyRow | null }) {
         )}
         aria-hidden={!row}
       >
-        {row ? <DrawerContent row={row} /> : null}
+        {row ? <DrawerContent row={row} owners={owners} tiers={tiers} /> : null}
       </aside>
     </>
   );
 }
 
-function DrawerContent({ row }: { row: EventCompanyRow }) {
+function DrawerContent({
+  row: initial,
+  owners,
+  tiers,
+}: {
+  row: EventCompanyRow;
+  owners: PersonOption[];
+  tiers: TierOption[];
+}) {
+  const [row, setRow] = useState(initial);
+  useEffect(() => setRow(initial), [initial]);
+
+  const update = <K extends keyof EventCompanyRow>(
+    key: K,
+    value: EventCompanyRow[K],
+  ) => setRow((prev) => ({ ...prev, [key]: value }));
+
   return (
     <div className="p-6">
       <div className="flex items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0 flex-1">
           <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
             {row.companyIndustry ?? "Prospect"}
           </div>
           <h2 className="mt-1 text-xl font-semibold tracking-tight">
-            {row.companyName}
+            <CellShell
+              fieldKey="company.name"
+              entityId={row.companyId}
+              value={row.companyName}
+              display={row.companyName}
+              onLocalChange={(v) => update("companyName", v ?? "")}
+              Editor={TextEditor}
+            />
           </h2>
-          {row.companyWebsite ? (
-            <a
-              href={row.companyWebsite}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs text-slate-500 hover:underline dark:text-slate-400"
-            >
-              {row.companyWebsite}
-            </a>
-          ) : null}
+          <CellShell
+            fieldKey="company.website"
+            entityId={row.companyId}
+            value={row.companyWebsite}
+            display={<UrlDisplay value={row.companyWebsite} />}
+            onLocalChange={(v) => update("companyWebsite", v)}
+            Editor={UrlEditor}
+            className="text-xs"
+          />
         </div>
         <Link
           href="/companies"
@@ -103,94 +149,295 @@ function DrawerContent({ row }: { row: EventCompanyRow }) {
         ) : null}
       </div>
 
-      <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-        Inline editing lands in chunk 4. Quick-log buttons in chunk 5.
-      </div>
-
-      <Section title="About" disabled>
-        <KV label="Owner" value={row.ownerName ?? "—"} />
-        <KV label="HQ" value={row.companyHqLocation ?? "—"} />
-        <KV label="Industry" value={row.companyIndustry ?? "—"} />
+      <Section title="About">
+        <KV
+          label="Status"
+          value={
+            <CellShell<string | null>
+              fieldKey="eventCompany.status"
+              entityId={row.id}
+              value={row.status}
+              display={PROSPECT_STATUS_LABELS[row.status]}
+              onLocalChange={(v) =>
+                update("status", v as EventCompanyRow["status"])
+              }
+              Editor={(p) => (
+                <SingleSelectEditor
+                  {...p}
+                  options={PROSPECT_STATUS_VALUES.map((s) => ({
+                    value: s,
+                    label: PROSPECT_STATUS_LABELS[s],
+                  }))}
+                />
+              )}
+            />
+          }
+        />
+        <KV
+          label="Priority"
+          value={
+            <CellShell<string | null>
+              fieldKey="eventCompany.priority"
+              entityId={row.id}
+              value={row.priority}
+              display={PRIORITY_LABELS[row.priority]}
+              onLocalChange={(v) =>
+                update("priority", v as EventCompanyRow["priority"])
+              }
+              Editor={(p) => (
+                <SingleSelectEditor
+                  {...p}
+                  options={PROSPECT_PRIORITY_VALUES.map((s) => ({
+                    value: s,
+                    label: PRIORITY_LABELS[s],
+                  }))}
+                />
+              )}
+            />
+          }
+        />
+        <KV
+          label="Owner"
+          value={
+            <CellShell
+              fieldKey="eventCompany.ownerId"
+              entityId={row.id}
+              value={row.ownerId}
+              display={row.ownerName ?? "—"}
+              onLocalChange={(v) => {
+                update("ownerId", v);
+                update("ownerName", owners.find((o) => o.id === v)?.name ?? null);
+              }}
+              Editor={(p) => <PersonEditor {...p} options={owners} />}
+            />
+          }
+        />
+        <KV
+          label="Target tier"
+          value={
+            <CellShell
+              fieldKey="eventCompany.targetTierId"
+              entityId={row.id}
+              value={row.targetTierId}
+              display={row.targetTierName ?? "—"}
+              onLocalChange={(v) => {
+                const t = v ? tiers.find((tier) => tier.id === v) : null;
+                update("targetTierId", v);
+                update("targetTierName", t?.name ?? null);
+                update("targetTierColor", t?.color ?? null);
+              }}
+              Editor={(p) => <TierEditor {...p} options={tiers} />}
+            />
+          }
+        />
+        <KV
+          label="Confirmed tier"
+          value={
+            <CellShell
+              fieldKey="eventCompany.confirmedTierId"
+              entityId={row.id}
+              value={row.confirmedTierId}
+              display={row.confirmedTierName ?? "—"}
+              onLocalChange={(v) => {
+                const t = v ? tiers.find((tier) => tier.id === v) : null;
+                update("confirmedTierId", v);
+                update("confirmedTierName", t?.name ?? null);
+              }}
+              Editor={(p) => <TierEditor {...p} options={tiers} />}
+            />
+          }
+        />
         <KV
           label="Proposed"
-          value={formatCurrency(row.proposedAmount, row.currency)}
+          value={
+            <CellShell
+              fieldKey="eventCompany.proposedAmount"
+              entityId={row.id}
+              value={row.proposedAmount}
+              display={formatCurrency(row.proposedAmount, row.currency)}
+              onLocalChange={(v) => update("proposedAmount", v)}
+              Editor={CurrencyEditor}
+            />
+          }
         />
         <KV
           label="Confirmed"
-          value={formatCurrency(row.confirmedAmount, row.currency)}
+          value={
+            <CellShell
+              fieldKey="eventCompany.confirmedAmount"
+              entityId={row.id}
+              value={row.confirmedAmount}
+              display={formatCurrency(row.confirmedAmount, row.currency)}
+              onLocalChange={(v) => update("confirmedAmount", v)}
+              Editor={CurrencyEditor}
+            />
+          }
         />
         <KV
           label="Last contact"
-          value={formatRelativeDate(row.lastContactedAt)}
+          value={
+            <CellShell
+              fieldKey="eventCompany.lastContactedAt"
+              entityId={row.id}
+              value={row.lastContactedAt}
+              display={formatRelativeDate(row.lastContactedAt)}
+              onLocalChange={(v) => update("lastContactedAt", v)}
+              Editor={DateEditor}
+            />
+          }
         />
         <KV
           label="Next action"
-          value={formatRelativeDate(row.nextActionAt)}
+          value={
+            <CellShell
+              fieldKey="eventCompany.nextActionAt"
+              entityId={row.id}
+              value={row.nextActionAt}
+              display={formatRelativeDate(row.nextActionAt)}
+              onLocalChange={(v) => update("nextActionAt", v)}
+              Editor={DateEditor}
+            />
+          }
+        />
+        <KV
+          label="HQ"
+          value={
+            <CellShell
+              fieldKey="company.hqLocation"
+              entityId={row.companyId}
+              value={row.companyHqLocation}
+              display={row.companyHqLocation ?? "—"}
+              onLocalChange={(v) => update("companyHqLocation", v)}
+              Editor={TextEditor}
+            />
+          }
+        />
+        <KV
+          label="Industry"
+          value={
+            <CellShell
+              fieldKey="company.industry"
+              entityId={row.companyId}
+              value={row.companyIndustry}
+              display={row.companyIndustry ?? "—"}
+              onLocalChange={(v) => update("companyIndustry", v)}
+              Editor={TextEditor}
+            />
+          }
         />
       </Section>
 
-      <Section title="Outreach" disabled>
-        <Para label="Why they should attend" value={row.whyTheyShouldAttend} />
-        <Para label="Key talking points" value={row.keyTalkingPoints} />
-        <Para label="Email angle" value={row.emailAngle} />
-        <Para label="Sponsorship hook" value={row.sponsorshipHook} />
+      <Section title="Outreach">
+        <Para
+          label="Why they should attend"
+          fieldKey="eventCompany.whyTheyShouldAttend"
+          entityId={row.id}
+          value={row.whyTheyShouldAttend}
+          onLocalChange={(v) => update("whyTheyShouldAttend", v)}
+        />
+        <Para
+          label="Key talking points"
+          fieldKey="eventCompany.keyTalkingPoints"
+          entityId={row.id}
+          value={row.keyTalkingPoints}
+          onLocalChange={(v) => update("keyTalkingPoints", v)}
+        />
+        <Para
+          label="Email angle"
+          fieldKey="eventCompany.emailAngle"
+          entityId={row.id}
+          value={row.emailAngle}
+          onLocalChange={(v) => update("emailAngle", v)}
+        />
+        <Para
+          label="Sponsorship hook"
+          fieldKey="eventCompany.sponsorshipHook"
+          entityId={row.id}
+          value={row.sponsorshipHook}
+          onLocalChange={(v) => update("sponsorshipHook", v)}
+        />
       </Section>
 
-      <Section title="Notes" disabled>
-        <Para label="Company context" value={row.companyContext} />
-        <Para label="Relationship notes" value={row.relationshipNotes} />
+      <Section title="Notes">
+        <Para
+          label="Company context"
+          fieldKey="eventCompany.companyContext"
+          entityId={row.id}
+          value={row.companyContext}
+          onLocalChange={(v) => update("companyContext", v)}
+        />
+        <Para
+          label="Relationship notes"
+          fieldKey="eventCompany.relationshipNotes"
+          entityId={row.id}
+          value={row.relationshipNotes}
+          onLocalChange={(v) => update("relationshipNotes", v)}
+        />
       </Section>
-
     </div>
   );
 }
 
 function Section({
   title,
-  disabled,
   children,
 }: {
   title: string;
-  disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <section className="mt-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
       <header className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold">{title}</h3>
-        {disabled ? (
-          <span className="text-[10px] uppercase tracking-wide text-slate-400">
-            Read-only
-          </span>
-        ) : null}
       </header>
       <div className="space-y-2">{children}</div>
     </section>
   );
 }
 
-function KV({ label, value }: { label: string; value: string }) {
+function KV({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-3 gap-2 text-sm">
-      <dt className="text-slate-500 dark:text-slate-400">{label}</dt>
-      <dd className="col-span-2 text-slate-900 dark:text-slate-100">
-        {value}
-      </dd>
+    <div className="grid grid-cols-3 items-start gap-2 text-sm">
+      <dt className="pt-1 text-slate-500 dark:text-slate-400">{label}</dt>
+      <dd className="col-span-2">{value}</dd>
     </div>
   );
 }
 
-function Para({ label, value }: { label: string; value: string | null }) {
+function Para({
+  label,
+  fieldKey,
+  entityId,
+  value,
+  onLocalChange,
+}: {
+  label: string;
+  fieldKey: Parameters<typeof CellShell>[0]["fieldKey"];
+  entityId: string;
+  value: string | null;
+  onLocalChange?: (next: string | null) => void;
+}) {
   return (
     <div className="text-sm">
       <div className="text-slate-500 dark:text-slate-400">{label}</div>
-      <div className="mt-1 whitespace-pre-wrap text-slate-900 dark:text-slate-100">
-        {value || (
-          <span className="italic text-slate-400 dark:text-slate-500">
-            Not yet drafted
-          </span>
-        )}
-      </div>
+      <CellShell
+        fieldKey={fieldKey}
+        entityId={entityId}
+        value={value}
+        display={
+          value ? (
+            <span className="whitespace-pre-wrap text-slate-900 dark:text-slate-100">
+              {value}
+            </span>
+          ) : (
+            <span className="italic text-slate-400 dark:text-slate-500">
+              Click to draft
+            </span>
+          )
+        }
+        onLocalChange={onLocalChange}
+        Editor={LongTextEditor}
+      />
     </div>
   );
 }
