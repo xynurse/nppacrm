@@ -324,6 +324,89 @@ async function main() {
     .where(eq(schema.sponsorshipTiers.eventId, eventId));
   const tierByName = new Map(tiers.map((t) => [t.name, t.id]));
 
+  // Default saved views
+  const existingViews = await db
+    .select({ name: schema.savedViews.name })
+    .from(schema.savedViews)
+    .where(eq(schema.savedViews.eventId, eventId));
+  const existingViewNames = new Set(existingViews.map((v) => v.name));
+
+  const DEFAULT_VIEWS: Array<{
+    name: string;
+    isDefault?: boolean;
+    filter: schema.SavedView["filter"];
+    sort: schema.SavedView["sort"];
+    displayOrder: number;
+  }> = [
+    {
+      name: "All prospects",
+      isDefault: true,
+      filter: { op: "and", conditions: [] },
+      sort: [{ field: "companyName", dir: "asc" }],
+      displayOrder: 0,
+    },
+    {
+      name: "Hot pipeline",
+      filter: {
+        op: "and",
+        conditions: [
+          {
+            field: "status",
+            op: "is_one_of",
+            value: ["engaged", "proposal_sent", "negotiating", "committed"],
+          },
+        ],
+      },
+      sort: [{ field: "lastContactedAt", dir: "desc" }],
+      displayOrder: 10,
+    },
+    {
+      name: "Confirmed sponsors",
+      filter: {
+        op: "and",
+        conditions: [{ field: "status", op: "is", value: "confirmed" }],
+      },
+      sort: [{ field: "confirmedAmount", dir: "desc" }],
+      displayOrder: 20,
+    },
+    {
+      name: "Stale (no contact 14+ days)",
+      filter: {
+        op: "and",
+        conditions: [
+          {
+            field: "status",
+            op: "is_one_of",
+            value: ["contacted", "engaged", "proposal_sent", "negotiating"],
+          },
+          { field: "lastContactedAt", op: "last_n_days", value: 14 },
+        ],
+      },
+      sort: [{ field: "lastContactedAt", dir: "asc" }],
+      displayOrder: 30,
+    },
+  ];
+
+  const viewsToInsert = DEFAULT_VIEWS.filter((v) => !existingViewNames.has(v.name));
+  if (viewsToInsert.length > 0) {
+    await db.insert(schema.savedViews).values(
+      viewsToInsert.map((v) => ({
+        eventId,
+        ownerId: null,
+        scope: "companies" as const,
+        name: v.name,
+        isShared: true,
+        isDefault: v.isDefault ?? false,
+        displayOrder: v.displayOrder,
+        filter: v.filter,
+        sort: v.sort,
+      })),
+    );
+    console.log(`Inserted ${viewsToInsert.length} default saved views.`);
+  } else {
+    console.log("Default saved views already seeded; skipping.");
+  }
+
   // Fixture prospects
   if (process.env.SEED_DEMO_DATA !== "true") {
     console.log("Skipping demo prospects (set SEED_DEMO_DATA=true to seed).");

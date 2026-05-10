@@ -1,4 +1,4 @@
-import { aliasedTable, and, asc, desc, eq, isNull } from "drizzle-orm";
+import { aliasedTable, and, asc, desc, eq, isNull, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   companies,
@@ -6,6 +6,8 @@ import {
   sponsorshipTiers,
   users,
 } from "@/lib/db/schema";
+import { compileFilter, compileSort } from "@/lib/views/compile";
+import type { FilterAst, SortSpec } from "@/lib/views/types";
 
 const owners = aliasedTable(users, "owners");
 const targetTiers = aliasedTable(sponsorshipTiers, "target_tiers");
@@ -44,8 +46,24 @@ export type EventCompanyRow = {
 
 export async function listEventCompanies(
   eventId: string,
+  opts: { filter?: FilterAst | null; sort?: SortSpec | null } = {},
 ): Promise<EventCompanyRow[]> {
-  const rows = await db
+  const filterSql = compileFilter(opts.filter ?? null);
+  const sortSql = compileSort(opts.sort ?? null);
+  const whereClause: SQL = filterSql
+    ? and(
+        eq(eventCompanies.eventId, eventId),
+        isNull(eventCompanies.deletedAt),
+        isNull(companies.deletedAt),
+        filterSql,
+      )!
+    : and(
+        eq(eventCompanies.eventId, eventId),
+        isNull(eventCompanies.deletedAt),
+        isNull(companies.deletedAt),
+      )!;
+
+  const baseQuery = db
     .select({
       id: eventCompanies.id,
       eventId: eventCompanies.eventId,
@@ -84,14 +102,11 @@ export async function listEventCompanies(
       confirmedTiers,
       eq(confirmedTiers.id, eventCompanies.confirmedTierId),
     )
-    .where(
-      and(
-        eq(eventCompanies.eventId, eventId),
-        isNull(eventCompanies.deletedAt),
-        isNull(companies.deletedAt),
-      ),
-    )
-    .orderBy(asc(companies.name));
+    .where(whereClause);
+
+  const rows = sortSql
+    ? await baseQuery.orderBy(sortSql)
+    : await baseQuery.orderBy(asc(companies.name));
 
   return rows;
 }

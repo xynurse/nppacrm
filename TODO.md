@@ -44,7 +44,7 @@ load-bearing — chunk N depends on chunks 1..N-1.
 - [x] Chunk 3 — Companies + eventCompanies + table + drawer skeleton (migration 0001)
 - [x] Chunk 4 — Inline-editable cells (9 types)
 - [x] Chunk 5 — Contacts + interactions + tasks + reviews (migration 0002)
-- [ ] Chunk 6 — Saved views + filter chips + sort (migration 0003)
+- [x] Chunk 6 — Saved views + filter chips + sort (migration 0003)
 - [ ] Chunk 7 — Kanban + `/pipeline`
 - [ ] Chunk 8 — Custom fields + Vercel Blob file uploads (migration 0004)
 - [ ] Chunk 9 — ⌘K palette + global keyboard shortcuts (migration 0005)

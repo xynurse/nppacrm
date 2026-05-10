@@ -10,6 +10,7 @@ import {
   listReviewerIdsForEvent,
   listReviewsForEvent,
 } from "@/lib/db/queries/reviews";
+import { listSavedViewsForUser } from "@/lib/db/queries/saved-views";
 import { listTasksForEventCompany } from "@/lib/db/queries/tasks";
 import { listUsers } from "@/lib/db/queries/users";
 import { requireSession } from "@/lib/auth";
@@ -20,8 +21,21 @@ import {
   type DrawerData,
 } from "@/components/companies/company-drawer";
 import { QuickAddRow } from "@/components/companies/quick-add-row";
+import { ViewsToolbar } from "@/components/views/views-toolbar";
+import {
+  decodeFromParam,
+  sanitizeFilter,
+  sanitizeSort,
+} from "@/lib/views/schema";
+import type { FilterAst, SortSpec } from "@/lib/views/types";
+import { EMPTY_FILTER } from "@/lib/views/types";
 
-type SearchParams = Promise<{ record?: string }>;
+type SearchParams = Promise<{
+  record?: string;
+  view?: string;
+  f?: string;
+  s?: string;
+}>;
 
 export default async function CompaniesPage({
   searchParams,
@@ -47,11 +61,34 @@ export default async function CompaniesPage({
     );
   }
 
-  const [rows, tiers, users, params, reviewerIds, reviews] = await Promise.all([
-    listEventCompanies(activeEvent.id),
+  const params = await searchParams;
+  const savedViews = await listSavedViewsForUser(activeEvent.id, session.user.id);
+  const requestedView =
+    typeof params.view === "string"
+      ? (savedViews.find((v) => v.id === params.view) ?? null)
+      : null;
+  const fallbackDefault =
+    !params.view && !params.f && !params.s
+      ? (savedViews.find((v) => v.isDefault) ?? null)
+      : null;
+  const activeView = requestedView ?? fallbackDefault;
+
+  const adHocFilter = sanitizeFilter(decodeFromParam(params.f));
+  const adHocSort = sanitizeSort(decodeFromParam(params.s));
+
+  const filter: FilterAst =
+    params.f != null
+      ? adHocFilter
+      : (activeView?.filter ?? EMPTY_FILTER);
+  const sort: SortSpec =
+    params.s != null
+      ? adHocSort
+      : (activeView?.sort ?? []);
+
+  const [rows, tiers, users, reviewerIds, reviews] = await Promise.all([
+    listEventCompanies(activeEvent.id, { filter, sort }),
     listTiersForEvent(activeEvent.id),
     listUsers(),
-    searchParams,
     listReviewerIdsForEvent(activeEvent.id),
     listReviewsForEvent(activeEvent.id),
   ]);
@@ -64,6 +101,9 @@ export default async function CompaniesPage({
     name: t.name,
     color: t.color,
   }));
+
+  const ownerFieldOptions = owners.map((o) => ({ value: o.id, label: o.name }));
+  const tierFieldOptions = tiers.map((t) => ({ value: t.id, label: t.name }));
 
   const recordId = typeof params.record === "string" ? params.record : null;
   const drawerRow = recordId
@@ -108,6 +148,18 @@ export default async function CompaniesPage({
           </p>
         </div>
       </div>
+
+      <ViewsToolbar
+        eventId={activeEvent.id}
+        views={savedViews}
+        initialFilter={filter}
+        initialSort={sort}
+        initialViewId={activeView?.id ?? null}
+        ownerOptions={ownerFieldOptions}
+        tierOptions={tierFieldOptions}
+        resultCount={rows.length}
+        isAdmin={session.user.role === "admin"}
+      />
 
       <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
         <QuickAddRow eventId={activeEvent.id} />

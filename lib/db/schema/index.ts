@@ -11,3 +11,4 @@ export * from "./contacts";
 export * from "./interactions";
 export * from "./tasks";
 export * from "./event-company-reviews";
+export * from "./saved-views";
