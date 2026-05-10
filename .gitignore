@@ -1,10 +1,36 @@
+# dependencies
 node_modules
+.pnpm-store
+
+# next.js
 .next
+out
+next-env.d.ts
+
+# production
+build
+dist
+
+# misc
+.DS_Store
+*.log
+
+# env
 .env
 .env.local
 .env*.local
 .env.production
 .env.vercel.*
-.DS_Store
-*.log
+
+# vercel
 .vercel
+
+# typescript
+*.tsbuildinfo
+
+# editor
+.vscode
+.idea
+
+# drizzle
+drizzle/.snapshots
