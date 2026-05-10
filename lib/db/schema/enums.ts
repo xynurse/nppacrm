@@ -26,3 +26,21 @@ export const prospectPriority = pgEnum(
   "prospect_priority",
   PROSPECT_PRIORITY_VALUES,
 );
+
+export const INTERACTION_TYPE_VALUES = [
+  "email",
+  "call",
+  "meeting",
+  "note",
+  "linkedin",
+  "other",
+] as const;
+export type InteractionType = (typeof INTERACTION_TYPE_VALUES)[number];
+export const interactionType = pgEnum(
+  "interaction_type",
+  INTERACTION_TYPE_VALUES,
+);
+
+export const REVIEW_VOTE_VALUES = ["yes", "no"] as const;
+export type ReviewVote = (typeof REVIEW_VOTE_VALUES)[number];
+export const reviewVote = pgEnum("review_vote", REVIEW_VOTE_VALUES);

@@ -4,11 +4,21 @@ import {
   listEventCompanies,
   listTiersForEvent,
 } from "@/lib/db/queries/companies";
+import { listContactsForCompany } from "@/lib/db/queries/contacts";
+import { listInteractionsForEventCompany } from "@/lib/db/queries/interactions";
+import {
+  listReviewerIdsForEvent,
+  listReviewsForEvent,
+} from "@/lib/db/queries/reviews";
+import { listTasksForEventCompany } from "@/lib/db/queries/tasks";
 import { listUsers } from "@/lib/db/queries/users";
 import { requireSession } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { CompaniesTable } from "@/components/companies/companies-table";
-import { CompanyDrawer } from "@/components/companies/company-drawer";
+import {
+  CompanyDrawer,
+  type DrawerData,
+} from "@/components/companies/company-drawer";
 import { QuickAddRow } from "@/components/companies/quick-add-row";
 
 type SearchParams = Promise<{ record?: string }>;
@@ -37,11 +47,13 @@ export default async function CompaniesPage({
     );
   }
 
-  const [rows, tiers, users, params] = await Promise.all([
+  const [rows, tiers, users, params, reviewerIds, reviews] = await Promise.all([
     listEventCompanies(activeEvent.id),
     listTiersForEvent(activeEvent.id),
     listUsers(),
     searchParams,
+    listReviewerIdsForEvent(activeEvent.id),
+    listReviewsForEvent(activeEvent.id),
   ]);
 
   const owners = users
@@ -57,6 +69,34 @@ export default async function CompaniesPage({
   const drawerRow = recordId
     ? (rows.find((r) => r.id === recordId) ?? null)
     : null;
+
+  let drawerData: DrawerData | null = null;
+  if (drawerRow) {
+    const [contacts, interactions, tasks] = await Promise.all([
+      listContactsForCompany(drawerRow.companyId),
+      listInteractionsForEventCompany(drawerRow.id),
+      listTasksForEventCompany(drawerRow.id),
+    ]);
+    drawerData = { contacts, interactions, tasks };
+  }
+
+  const reviewIndex = new Map<
+    string,
+    { yes: number; no: number; mine: "yes" | "no" | null }
+  >();
+  for (const row of rows) {
+    reviewIndex.set(row.id, { yes: 0, no: 0, mine: null });
+  }
+  for (const r of reviews) {
+    const entry = reviewIndex.get(r.eventCompanyId);
+    if (!entry) continue;
+    if (r.vote === "yes") entry.yes += 1;
+    else entry.no += 1;
+    if (r.reviewerId === session.user.id) entry.mine = r.vote;
+  }
+  const reviewSummaries = Object.fromEntries(reviewIndex.entries());
+
+  const isReviewer = reviewerIds.includes(session.user.id);
 
   return (
     <div className="space-y-4">
@@ -79,9 +119,19 @@ export default async function CompaniesPage({
         tiers={tierOptions}
         activeRecordId={recordId}
         isAdmin={session.user.role === "admin"}
+        reviewSummaries={reviewSummaries}
+        reviewerCount={reviewerIds.length}
+        isReviewer={isReviewer}
       />
 
-      <CompanyDrawer row={drawerRow} owners={owners} tiers={tierOptions} />
+      <CompanyDrawer
+        row={drawerRow}
+        owners={owners}
+        tiers={tierOptions}
+        data={drawerData}
+        currentUserId={session.user.id}
+        isAdmin={session.user.role === "admin"}
+      />
     </div>
   );
 }

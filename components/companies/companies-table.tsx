@@ -20,6 +20,7 @@ import {
   useDensity,
 } from "@/components/providers/density-provider";
 import { BulkActionBar } from "./bulk-action-bar";
+import { ReviewerCell } from "./reviewer-cell";
 import {
   PROSPECT_STATUS_LABELS,
   StatusBadge,
@@ -39,18 +40,26 @@ const PRIORITY_LABELS = {
   low: "Low",
 } as const;
 
+type ReviewSummary = { yes: number; no: number; mine: "yes" | "no" | null };
+
 export function CompaniesTable({
   rows: initialRows,
   activeRecordId,
   owners,
   tiers,
   isAdmin,
+  reviewSummaries,
+  reviewerCount,
+  isReviewer,
 }: {
   rows: EventCompanyRow[];
   activeRecordId: string | null;
   owners: PersonOption[];
   tiers: TierOption[];
   isAdmin: boolean;
+  reviewSummaries: Record<string, ReviewSummary>;
+  reviewerCount: number;
+  isReviewer: boolean;
 }) {
   const { density } = useDensity();
   const rowHeight = ROW_HEIGHT_BY_DENSITY[density];
@@ -308,6 +317,27 @@ export function CompaniesTable({
         ),
       },
       {
+        id: "review",
+        header: "Review",
+        cell: ({ row }) => {
+          const summary = reviewSummaries[row.original.id] ?? {
+            yes: 0,
+            no: 0,
+            mine: null,
+          };
+          return (
+            <ReviewerCell
+              eventCompanyId={row.original.id}
+              myVote={summary.mine}
+              yesCount={summary.yes}
+              noCount={summary.no}
+              reviewerCount={reviewerCount}
+              canVote={isReviewer}
+            />
+          );
+        },
+      },
+      {
         accessorKey: "lastContactedAt",
         header: "Last contact",
         cell: ({ row }) => (
@@ -348,7 +378,16 @@ export function CompaniesTable({
         ),
       },
     ],
-    [owners, tiers, setRowField, setOwner, setTargetTier],
+    [
+      owners,
+      tiers,
+      setRowField,
+      setOwner,
+      setTargetTier,
+      reviewSummaries,
+      reviewerCount,
+      isReviewer,
+    ],
   );
 
   const table = useReactTable({

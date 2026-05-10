@@ -7,3 +7,7 @@ export * from "./companies";
 export * from "./sponsorship-tiers";
 export * from "./event-companies";
 export * from "./tags";
+export * from "./contacts";
+export * from "./interactions";
+export * from "./tasks";
+export * from "./event-company-reviews";

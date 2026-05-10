@@ -12,6 +12,9 @@ import { SingleSelectEditor } from "@/components/cells/single-select-cell";
 import { LongTextEditor, TextEditor } from "@/components/cells/text-cell";
 import { UrlDisplay, UrlEditor } from "@/components/cells/url-cell";
 import type { PersonOption, TierOption } from "@/components/cells/types";
+import { ContactsTab } from "@/components/contacts/contacts-tab";
+import { ActivityTab } from "@/components/interactions/activity-tab";
+import { TasksTab } from "@/components/tasks/tasks-tab";
 import { PriorityDot } from "./priority-dot";
 import {
   PROSPECT_STATUS_LABELS,
@@ -21,7 +24,10 @@ import {
   PROSPECT_PRIORITY_VALUES,
   PROSPECT_STATUS_VALUES,
 } from "@/lib/db/schema";
+import type { ContactRow } from "@/lib/db/queries/contacts";
 import type { EventCompanyRow } from "@/lib/db/queries/companies";
+import type { InteractionRow } from "@/lib/db/queries/interactions";
+import type { TaskRow } from "@/lib/db/queries/tasks";
 import { formatCurrency, formatRelativeDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -31,14 +37,35 @@ const PRIORITY_LABELS = {
   low: "Low",
 } as const;
 
+type DrawerTab = "overview" | "contacts" | "activity" | "tasks";
+
+const TABS: { id: DrawerTab; label: string }[] = [
+  { id: "overview", label: "Overview" },
+  { id: "contacts", label: "Contacts" },
+  { id: "activity", label: "Activity" },
+  { id: "tasks", label: "Tasks" },
+];
+
+export type DrawerData = {
+  contacts: ContactRow[];
+  interactions: InteractionRow[];
+  tasks: TaskRow[];
+};
+
 export function CompanyDrawer({
   row,
   owners,
   tiers,
+  data,
+  currentUserId,
+  isAdmin,
 }: {
   row: EventCompanyRow | null;
   owners: PersonOption[];
   tiers: TierOption[];
+  data: DrawerData | null;
+  currentUserId: string;
+  isAdmin: boolean;
 }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -70,7 +97,16 @@ export function CompanyDrawer({
         )}
         aria-hidden={!row}
       >
-        {row ? <DrawerContent row={row} owners={owners} tiers={tiers} /> : null}
+        {row && data ? (
+          <DrawerContent
+            row={row}
+            owners={owners}
+            tiers={tiers}
+            data={data}
+            currentUserId={currentUserId}
+            isAdmin={isAdmin}
+          />
+        ) : null}
       </aside>
     </>
   );
@@ -80,12 +116,19 @@ function DrawerContent({
   row: initial,
   owners,
   tiers,
+  data,
+  currentUserId,
+  isAdmin,
 }: {
   row: EventCompanyRow;
   owners: PersonOption[];
   tiers: TierOption[];
+  data: DrawerData;
+  currentUserId: string;
+  isAdmin: boolean;
 }) {
   const [row, setRow] = useState(initial);
+  const [tab, setTab] = useState<DrawerTab>("overview");
   useEffect(() => setRow(initial), [initial]);
 
   const update = <K extends keyof EventCompanyRow>(
@@ -149,6 +192,79 @@ function DrawerContent({
         ) : null}
       </div>
 
+      <nav className="mt-5 flex gap-1 border-b border-slate-200 dark:border-slate-800">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={cn(
+              "px-3 py-2 text-sm font-medium transition-colors",
+              tab === t.id
+                ? "border-b-2 border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100"
+                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
+            )}
+          >
+            {t.label}
+            {t.id === "contacts" && data.contacts.length > 0 ? (
+              <span className="ml-1 text-xs text-slate-400">
+                {data.contacts.length}
+              </span>
+            ) : null}
+            {t.id === "activity" && data.interactions.length > 0 ? (
+              <span className="ml-1 text-xs text-slate-400">
+                {data.interactions.length}
+              </span>
+            ) : null}
+            {t.id === "tasks" && data.tasks.length > 0 ? (
+              <span className="ml-1 text-xs text-slate-400">
+                {data.tasks.filter((x) => !x.completedAt).length}
+              </span>
+            ) : null}
+          </button>
+        ))}
+      </nav>
+
+      <div className="mt-5">
+        {tab === "overview" ? (
+          <OverviewTab row={row} owners={owners} tiers={tiers} update={update} />
+        ) : tab === "contacts" ? (
+          <ContactsTab companyId={row.companyId} contacts={data.contacts} />
+        ) : tab === "activity" ? (
+          <ActivityTab
+            eventCompanyId={row.id}
+            interactions={data.interactions}
+            currentUserId={currentUserId}
+            isAdmin={isAdmin}
+          />
+        ) : (
+          <TasksTab
+            eventCompanyId={row.id}
+            tasks={data.tasks}
+            owners={owners}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function OverviewTab({
+  row,
+  owners,
+  tiers,
+  update,
+}: {
+  row: EventCompanyRow;
+  owners: PersonOption[];
+  tiers: TierOption[];
+  update: <K extends keyof EventCompanyRow>(
+    key: K,
+    value: EventCompanyRow[K],
+  ) => void;
+}) {
+  return (
+    <>
       <Section title="About">
         <KV
           label="Status"
@@ -374,7 +490,7 @@ function DrawerContent({
           onLocalChange={(v) => update("relationshipNotes", v)}
         />
       </Section>
-    </div>
+    </>
   );
 }
 
@@ -386,7 +502,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+    <section className="mt-2 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
       <header className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold">{title}</h3>
       </header>

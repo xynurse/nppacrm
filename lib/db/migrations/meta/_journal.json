@@ -15,6 +15,13 @@
       "when": 1778426007916,
       "tag": "0001_companies",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778431306800,
+      "tag": "0002_contacts_tasks",
+      "breakpoints": true
     }
   ]
 }
