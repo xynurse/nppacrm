@@ -40,7 +40,7 @@ These were all built and verified before the worktree was deleted. Order is
 load-bearing — chunk N depends on chunks 1..N-1.
 
 - [x] Chunk 1 — Foundation (Next 15, TS strict, Tailwind v4, Drizzle/Neon, env validation, ESLint, CI)
-- [ ] Chunk 2 — Auth + admin shell + events + audit log (migration 0000)
+- [x] Chunk 2 — Auth + admin shell + events + audit log (migration 0000)
 - [ ] Chunk 3 — Companies + eventCompanies + table + drawer skeleton (migration 0001)
 - [ ] Chunk 4 — Inline-editable cells (9 types)
 - [ ] Chunk 5 — Contacts + interactions + tasks + reviews (migration 0002)
