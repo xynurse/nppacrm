@@ -29,6 +29,13 @@
       "when": 1778435100703,
       "tag": "0003_saved_views",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778442574086,
+      "tag": "0004_custom_fields",
+      "breakpoints": true
     }
   ]
 }

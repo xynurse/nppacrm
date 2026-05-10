@@ -12,3 +12,4 @@ export * from "./interactions";
 export * from "./tasks";
 export * from "./event-company-reviews";
 export * from "./saved-views";
+export * from "./custom-fields";

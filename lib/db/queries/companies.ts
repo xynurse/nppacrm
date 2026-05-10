@@ -42,6 +42,7 @@ export type EventCompanyRow = {
   companyContext: string | null;
   relationshipNotes: string | null;
   tagsCache: string[];
+  customFields: Record<string, unknown>;
 };
 
 export async function listEventCompanies(
@@ -93,6 +94,7 @@ export async function listEventCompanies(
       companyContext: eventCompanies.companyContext,
       relationshipNotes: eventCompanies.relationshipNotes,
       tagsCache: eventCompanies.tagsCache,
+      customFields: eventCompanies.customFields,
     })
     .from(eventCompanies)
     .innerJoin(companies, eq(companies.id, eventCompanies.companyId))
@@ -144,6 +146,7 @@ export async function getEventCompany(
       companyContext: eventCompanies.companyContext,
       relationshipNotes: eventCompanies.relationshipNotes,
       tagsCache: eventCompanies.tagsCache,
+      customFields: eventCompanies.customFields,
     })
     .from(eventCompanies)
     .innerJoin(companies, eq(companies.id, eventCompanies.companyId))

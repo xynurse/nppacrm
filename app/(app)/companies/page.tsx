@@ -5,6 +5,7 @@ import {
   listTiersForEvent,
 } from "@/lib/db/queries/companies";
 import { listContactsForCompany } from "@/lib/db/queries/contacts";
+import { listFieldDefinitionsForEvent } from "@/lib/db/queries/custom-fields";
 import { listInteractionsForEventCompany } from "@/lib/db/queries/interactions";
 import {
   listReviewerIdsForEvent,
@@ -85,13 +86,15 @@ export default async function CompaniesPage({
       ? adHocSort
       : (activeView?.sort ?? []);
 
-  const [rows, tiers, users, reviewerIds, reviews] = await Promise.all([
-    listEventCompanies(activeEvent.id, { filter, sort }),
-    listTiersForEvent(activeEvent.id),
-    listUsers(),
-    listReviewerIdsForEvent(activeEvent.id),
-    listReviewsForEvent(activeEvent.id),
-  ]);
+  const [rows, tiers, users, reviewerIds, reviews, fieldDefinitions] =
+    await Promise.all([
+      listEventCompanies(activeEvent.id, { filter, sort }),
+      listTiersForEvent(activeEvent.id),
+      listUsers(),
+      listReviewerIdsForEvent(activeEvent.id),
+      listReviewsForEvent(activeEvent.id),
+      listFieldDefinitionsForEvent(activeEvent.id),
+    ]);
 
   const owners = users
     .filter((u) => u.isActive)
@@ -183,6 +186,7 @@ export default async function CompaniesPage({
         data={drawerData}
         currentUserId={session.user.id}
         isAdmin={session.user.role === "admin"}
+        fieldDefinitions={fieldDefinitions}
       />
     </div>
   );

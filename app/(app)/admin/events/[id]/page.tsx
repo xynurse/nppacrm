@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEventById, listReviewersForEvent } from "@/lib/db/queries/events";
 import { listUsers } from "@/lib/db/queries/users";
@@ -32,6 +33,20 @@ export default async function EventDetailPage({
         reviewers={reviewers}
         candidates={allUsers.filter((u) => u.isActive)}
       />
+
+      <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="text-sm font-semibold">Configuration</h2>
+        <ul className="mt-2 space-y-1 text-sm">
+          <li>
+            <Link
+              href={`/admin/events/${event.id}/fields`}
+              className="text-slate-700 hover:underline dark:text-slate-200"
+            >
+              Custom fields →
+            </Link>
+          </li>
+        </ul>
+      </section>
     </div>
   );
 }

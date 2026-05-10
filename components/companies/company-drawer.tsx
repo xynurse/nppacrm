@@ -13,8 +13,10 @@ import { LongTextEditor, TextEditor } from "@/components/cells/text-cell";
 import { UrlDisplay, UrlEditor } from "@/components/cells/url-cell";
 import type { PersonOption, TierOption } from "@/components/cells/types";
 import { ContactsTab } from "@/components/contacts/contacts-tab";
+import { CustomFieldsSection } from "@/components/custom-fields/custom-fields-section";
 import { ActivityTab } from "@/components/interactions/activity-tab";
 import { TasksTab } from "@/components/tasks/tasks-tab";
+import type { CustomFieldDefinition } from "@/lib/db/schema";
 import { PriorityDot } from "./priority-dot";
 import {
   PROSPECT_STATUS_LABELS,
@@ -59,6 +61,7 @@ export function CompanyDrawer({
   data,
   currentUserId,
   isAdmin,
+  fieldDefinitions,
 }: {
   row: EventCompanyRow | null;
   owners: PersonOption[];
@@ -66,6 +69,7 @@ export function CompanyDrawer({
   data: DrawerData | null;
   currentUserId: string;
   isAdmin: boolean;
+  fieldDefinitions: CustomFieldDefinition[];
 }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -105,6 +109,7 @@ export function CompanyDrawer({
             data={data}
             currentUserId={currentUserId}
             isAdmin={isAdmin}
+            fieldDefinitions={fieldDefinitions}
           />
         ) : null}
       </aside>
@@ -119,6 +124,7 @@ function DrawerContent({
   data,
   currentUserId,
   isAdmin,
+  fieldDefinitions,
 }: {
   row: EventCompanyRow;
   owners: PersonOption[];
@@ -126,6 +132,7 @@ function DrawerContent({
   data: DrawerData;
   currentUserId: string;
   isAdmin: boolean;
+  fieldDefinitions: CustomFieldDefinition[];
 }) {
   const [row, setRow] = useState(initial);
   const [tab, setTab] = useState<DrawerTab>("overview");
@@ -227,7 +234,13 @@ function DrawerContent({
 
       <div className="mt-5">
         {tab === "overview" ? (
-          <OverviewTab row={row} owners={owners} tiers={tiers} update={update} />
+          <OverviewTab
+            row={row}
+            owners={owners}
+            tiers={tiers}
+            update={update}
+            fieldDefinitions={fieldDefinitions}
+          />
         ) : tab === "contacts" ? (
           <ContactsTab companyId={row.companyId} contacts={data.contacts} />
         ) : tab === "activity" ? (
@@ -254,6 +267,7 @@ function OverviewTab({
   owners,
   tiers,
   update,
+  fieldDefinitions,
 }: {
   row: EventCompanyRow;
   owners: PersonOption[];
@@ -262,6 +276,7 @@ function OverviewTab({
     key: K,
     value: EventCompanyRow[K],
   ) => void;
+  fieldDefinitions: CustomFieldDefinition[];
 }) {
   return (
     <>
@@ -490,6 +505,12 @@ function OverviewTab({
           onLocalChange={(v) => update("relationshipNotes", v)}
         />
       </Section>
+
+      <CustomFieldsSection
+        entityId={row.id}
+        definitions={fieldDefinitions}
+        values={row.customFields ?? {}}
+      />
     </>
   );
 }
