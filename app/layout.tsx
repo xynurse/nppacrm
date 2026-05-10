@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { DensityProvider } from "@/components/providers/density-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,8 +15,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen antialiased">{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen antialiased">
+        <ThemeProvider>
+          <DensityProvider>{children}</DensityProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

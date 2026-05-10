@@ -3,3 +3,7 @@ export * from "./enums";
 export * from "./users";
 export * from "./events";
 export * from "./audit-log";
+export * from "./companies";
+export * from "./sponsorship-tiers";
+export * from "./event-companies";
+export * from "./tags";

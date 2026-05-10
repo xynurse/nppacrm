@@ -1,5 +1,7 @@
 import type { Event } from "@/lib/db/schema";
+import { DensityToggle } from "./density-toggle";
 import { EventSwitcher } from "./event-switcher";
+import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 
 export function TopBar({
@@ -19,7 +21,11 @@ export function TopBar({
         </span>
         <EventSwitcher events={events} activeEventId={activeEventId} />
       </div>
-      <UserMenu user={user} />
+      <div className="flex items-center gap-3">
+        <DensityToggle />
+        <ThemeToggle />
+        <UserMenu user={user} />
+      </div>
     </header>
   );
 }
