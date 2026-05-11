@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   Building2,
   CheckSquare,
+  History,
   KanbanSquare,
   LayoutDashboard,
   Settings,
@@ -26,6 +27,7 @@ const mainNav: NavItem[] = [
 const adminNav: NavItem[] = [
   { href: "/admin/events", label: "Events", Icon: Settings },
   { href: "/admin/users", label: "Users", Icon: Users },
+  { href: "/admin/audit", label: "Audit", Icon: History },
 ];
 
 export function Sidebar({ role }: { role: "admin" | "viewer" }) {

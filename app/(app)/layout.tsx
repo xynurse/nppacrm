@@ -1,5 +1,6 @@
 import { requireSession } from "@/lib/auth";
 import { listActiveEvents } from "@/lib/db/queries/events";
+import { BottomNav } from "@/components/app/bottom-nav";
 import { Sidebar } from "@/components/app/sidebar";
 import { TopBar } from "@/components/app/top-bar";
 import { CommandProvider } from "@/components/command/command-provider";
@@ -27,8 +28,11 @@ export default async function AppLayout({
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar role={session.user.role} />
-        <main className="flex-1 overflow-y-auto px-6 py-6">{children}</main>
+        <main className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
+          {children}
+        </main>
       </div>
+      <BottomNav />
       <CommandProvider
         eventId={activeEvent?.id ?? null}
         isAdmin={session.user.role === "admin"}
