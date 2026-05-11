@@ -7,6 +7,7 @@ import { encodeToParam } from "@/lib/views/schema";
 import type { FilterAst, SortSpec } from "@/lib/views/types";
 import { EMPTY_FILTER } from "@/lib/views/types";
 import type { SavedView } from "@/lib/db/schema";
+import { ExportButton } from "./export-button";
 import { FilterBar } from "./filter-bar";
 import { ViewSwitcher } from "./view-switcher";
 
@@ -130,6 +131,9 @@ export function ViewsToolbar({
           onSelectView={handleSelectView}
           onSavedNew={handleSavedNew}
         />
+        <div className="ml-auto">
+          <ExportButton eventId={eventId} filter={filter} sort={sort} />
+        </div>
       </div>
       <FilterBar
         filter={filter}

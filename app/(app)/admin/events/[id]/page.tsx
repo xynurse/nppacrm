@@ -45,6 +45,22 @@ export default async function EventDetailPage({
               Custom fields →
             </Link>
           </li>
+          <li>
+            <Link
+              href={`/admin/events/${event.id}/tiers`}
+              className="text-slate-700 hover:underline dark:text-slate-200"
+            >
+              Sponsorship tiers →
+            </Link>
+          </li>
+          <li>
+            <Link
+              href={`/admin/events/${event.id}/import`}
+              className="text-slate-700 hover:underline dark:text-slate-200"
+            >
+              Import prospects (CSV) →
+            </Link>
+          </li>
         </ul>
       </section>
     </div>
