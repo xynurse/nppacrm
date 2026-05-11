@@ -50,7 +50,10 @@ load-bearing — chunk N depends on chunks 1..N-1.
 - [x] Chunk 9 — ⌘K palette + global keyboard shortcuts (migration 0005)
 - [x] Chunk 10 — Dashboard + CSV import/export + admin tiers
 - [x] Chunk 11 — Audit page + soft-delete recovery + mobile polish
-- [ ] Chunk 12 — Playwright e2e + bundle polish (drop framer-motion)
+- [x] Chunk 12 — Playwright e2e + bundle polish (drop framer-motion)
+      framer-motion was never reintroduced in the rebuild; nothing to drop.
+      typedRoutes still off — every dynamic href would need a `Route` cast
+      (14+ sites). Tracked under "Bundle / perf debt" below.
 
 ## v1.5 chunks to rebuild (after v1 + first deploy)
 
