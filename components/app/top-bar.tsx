@@ -1,4 +1,5 @@
 import type { Event } from "@/lib/db/schema";
+import { CommandHint } from "@/components/command/command-hint";
 import { DensityToggle } from "./density-toggle";
 import { EventSwitcher } from "./event-switcher";
 import { ThemeToggle } from "./theme-toggle";
@@ -22,6 +23,7 @@ export function TopBar({
         <EventSwitcher events={events} activeEventId={activeEventId} />
       </div>
       <div className="flex items-center gap-3">
+        <CommandHint />
         <DensityToggle />
         <ThemeToggle />
         <UserMenu user={user} />

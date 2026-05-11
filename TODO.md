@@ -47,7 +47,7 @@ load-bearing — chunk N depends on chunks 1..N-1.
 - [x] Chunk 6 — Saved views + filter chips + sort (migration 0003)
 - [x] Chunk 7 — Kanban + `/pipeline`
 - [x] Chunk 8 — Custom fields + Vercel Blob file uploads (migration 0004)
-- [ ] Chunk 9 — ⌘K palette + global keyboard shortcuts (migration 0005)
+- [x] Chunk 9 — ⌘K palette + global keyboard shortcuts (migration 0005)
 - [ ] Chunk 10 — Dashboard + CSV import/export + admin tiers
 - [ ] Chunk 11 — Audit page + soft-delete recovery + mobile polish
 - [ ] Chunk 12 — Playwright e2e + bundle polish (drop framer-motion)

@@ -2,6 +2,7 @@ import { requireSession } from "@/lib/auth";
 import { listActiveEvents } from "@/lib/db/queries/events";
 import { Sidebar } from "@/components/app/sidebar";
 import { TopBar } from "@/components/app/top-bar";
+import { CommandProvider } from "@/components/command/command-provider";
 
 export default async function AppLayout({
   children,
@@ -28,6 +29,10 @@ export default async function AppLayout({
         <Sidebar role={session.user.role} />
         <main className="flex-1 overflow-y-auto px-6 py-6">{children}</main>
       </div>
+      <CommandProvider
+        eventId={activeEvent?.id ?? null}
+        isAdmin={session.user.role === "admin"}
+      />
     </div>
   );
 }
