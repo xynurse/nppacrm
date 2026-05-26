@@ -31,6 +31,11 @@ for what was built and lost.
 - [ ] One-time `pnpm db:seed` against prod (creates admin + LPD 2026 + tiers
       + default views).
 - [ ] `/admin/events/[id]/import` to bulk-load real Master List CSV.
+- [ ] **Custom domain** _(deferred 2026-05-25 — pending final name decision)_
+      Attach a real domain (e.g. `crm.nppa.org`, `sponsors.…`, etc.) via
+      Vercel → Project → Settings → Domains so we stop sharing
+      `nppacrm.vercel.app` with the team. Includes DNS records + automatic
+      SSL. No code change needed.
 
 Skill suggestions for ship: `vercel:bootstrap` then `vercel:deploy`.
 
