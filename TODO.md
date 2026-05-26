@@ -66,6 +66,13 @@ load-bearing — chunk N depends on chunks 1..N-1.
 
 Listed in approximate decreasing-leverage order.
 
+- [ ] **Per-event branding** _(new — captured 2026-05-25)_
+  - Each event row gets `brandColor` + `logoUrl`; active event drives top-bar
+    logo and accent CSS variables. Lets us white-label LPD vs. future events.
+  - Depth not decided yet — start with logo + one accent color; can expand
+    to full color system later.
+  - ~half day for logo + accent; ~1–2 days for full color system w/ admin UI.
+
 - [ ] **Chunk 19 — Reports page**
   - Conversion rates per stage
   - Average days in stage
