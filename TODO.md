@@ -62,7 +62,11 @@ load-bearing — chunk N depends on chunks 1..N-1.
 
 ## v1.5 chunks to rebuild (after v1 + first deploy)
 
-- [ ] Chunk 13 — Prospectus ingest + on-demand AI enrichment (migration 0006)
+- [x] Chunk 13 — Prospectus ingest + on-demand AI enrichment (migration 0006)
+      Built with AI SDK v6 + Vercel AI Gateway (model id strings) and Valyu
+      web search. Needs manual `pnpm db:migrate` against prod after merge
+      AND env keys (`AI_GATEWAY_API_KEY`, `VALYU_API_KEY`,
+      optional `AI_DAILY_SPEND_CAP_USD=2`) before the AI features actually run.
 - [ ] Chunk 14 — Background agents (Discovery + Watch — manual run only at first)
 - [ ] Chunk 17 — Benefits tracking (migration 0008)
 - [ ] Chunk 18 — Proposal flow + cadence warnings (migration 0007)

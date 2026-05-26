@@ -1,4 +1,9 @@
 import Link from "next/link";
+import {
+  getActiveProspectus,
+  listRecentJobsForEventCompany,
+  listSuggestionsForEventCompany,
+} from "@/lib/db/queries/ai";
 import { listActiveEvents } from "@/lib/db/queries/events";
 import {
   listEventCompanies,
@@ -115,12 +120,26 @@ export default async function CompaniesPage({
 
   let drawerData: DrawerData | null = null;
   if (drawerRow) {
-    const [contacts, interactions, tasks] = await Promise.all([
-      listContactsForCompany(drawerRow.companyId),
-      listInteractionsForEventCompany(drawerRow.id),
-      listTasksForEventCompany(drawerRow.id),
-    ]);
-    drawerData = { contacts, interactions, tasks };
+    const [contacts, interactions, tasks, suggestions, jobs, prospectus] =
+      await Promise.all([
+        listContactsForCompany(drawerRow.companyId),
+        listInteractionsForEventCompany(drawerRow.id),
+        listTasksForEventCompany(drawerRow.id),
+        listSuggestionsForEventCompany(drawerRow.id),
+        listRecentJobsForEventCompany(drawerRow.id, 5),
+        getActiveProspectus(activeEvent.id),
+      ]);
+    drawerData = {
+      contacts,
+      interactions,
+      tasks,
+      ai: {
+        suggestions,
+        jobs,
+        hasProspectus: !!prospectus,
+        prospectusFileName: prospectus?.fileName ?? null,
+      },
+    };
   }
 
   const reviewIndex = new Map<

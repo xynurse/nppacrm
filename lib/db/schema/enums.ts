@@ -44,3 +44,41 @@ export const interactionType = pgEnum(
 export const REVIEW_VOTE_VALUES = ["yes", "no"] as const;
 export type ReviewVote = (typeof REVIEW_VOTE_VALUES)[number];
 export const reviewVote = pgEnum("review_vote", REVIEW_VOTE_VALUES);
+
+export const ENRICHMENT_STATUS_VALUES = [
+  "pending",
+  "running",
+  "succeeded",
+  "failed",
+] as const;
+export type EnrichmentStatus = (typeof ENRICHMENT_STATUS_VALUES)[number];
+export const enrichmentStatus = pgEnum(
+  "enrichment_status",
+  ENRICHMENT_STATUS_VALUES,
+);
+
+export const SUGGESTION_STATUS_VALUES = [
+  "pending",
+  "accepted",
+  "rejected",
+] as const;
+export type SuggestionStatus = (typeof SUGGESTION_STATUS_VALUES)[number];
+export const suggestionStatus = pgEnum(
+  "suggestion_status",
+  SUGGESTION_STATUS_VALUES,
+);
+
+export const ENRICHMENT_FIELD_VALUES = [
+  "whyTheyShouldAttend",
+  "keyTalkingPoints",
+  "emailAngle",
+  "sponsorshipHook",
+] as const;
+export type EnrichmentField = (typeof ENRICHMENT_FIELD_VALUES)[number];
+
+export const ENRICHMENT_FIELD_LABELS: Record<EnrichmentField, string> = {
+  whyTheyShouldAttend: "Why they should attend",
+  keyTalkingPoints: "Key talking points",
+  emailAngle: "Email angle",
+  sponsorshipHook: "Sponsorship hook",
+};

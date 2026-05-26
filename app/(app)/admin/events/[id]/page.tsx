@@ -61,6 +61,14 @@ export default async function EventDetailPage({
               Import prospects (CSV) →
             </Link>
           </li>
+          <li>
+            <Link
+              href={`/admin/events/${event.id}/prospectus`}
+              className="text-slate-700 hover:underline dark:text-slate-200"
+            >
+              Sponsorship prospectus (PDF for AI grounding) →
+            </Link>
+          </li>
         </ul>
       </section>
     </div>

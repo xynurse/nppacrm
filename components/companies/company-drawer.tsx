@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CellShell } from "@/components/cells/cell-shell";
@@ -12,11 +12,13 @@ import { SingleSelectEditor } from "@/components/cells/single-select-cell";
 import { LongTextEditor, TextEditor } from "@/components/cells/text-cell";
 import { UrlDisplay, UrlEditor } from "@/components/cells/url-cell";
 import type { PersonOption, TierOption } from "@/components/cells/types";
+import { AiTab } from "@/components/companies/ai-tab";
 import { ContactsTab } from "@/components/contacts/contacts-tab";
 import { CustomFieldsSection } from "@/components/custom-fields/custom-fields-section";
 import { ActivityTab } from "@/components/interactions/activity-tab";
 import { TasksTab } from "@/components/tasks/tasks-tab";
 import type { CustomFieldDefinition } from "@/lib/db/schema";
+import type { JobRow, SuggestionRow } from "@/lib/db/queries/ai";
 import { PriorityDot } from "./priority-dot";
 import {
   PROSPECT_STATUS_LABELS,
@@ -39,19 +41,26 @@ const PRIORITY_LABELS = {
   low: "Low",
 } as const;
 
-type DrawerTab = "overview" | "contacts" | "activity" | "tasks";
+type DrawerTab = "overview" | "contacts" | "activity" | "tasks" | "ai";
 
 const TABS: { id: DrawerTab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "contacts", label: "Contacts" },
   { id: "activity", label: "Activity" },
   { id: "tasks", label: "Tasks" },
+  { id: "ai", label: "AI" },
 ];
 
 export type DrawerData = {
   contacts: ContactRow[];
   interactions: InteractionRow[];
   tasks: TaskRow[];
+  ai: {
+    suggestions: SuggestionRow[];
+    jobs: JobRow[];
+    hasProspectus: boolean;
+    prospectusFileName: string | null;
+  };
 };
 
 export function CompanyDrawer({
@@ -212,7 +221,12 @@ function DrawerContent({
                 : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
             )}
           >
-            {t.label}
+            <span className="inline-flex items-center gap-1">
+              {t.id === "ai" ? (
+                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              ) : null}
+              {t.label}
+            </span>
             {t.id === "contacts" && data.contacts.length > 0 ? (
               <span className="ml-1 text-xs text-slate-400">
                 {data.contacts.length}
@@ -226,6 +240,16 @@ function DrawerContent({
             {t.id === "tasks" && data.tasks.length > 0 ? (
               <span className="ml-1 text-xs text-slate-400">
                 {data.tasks.filter((x) => !x.completedAt).length}
+              </span>
+            ) : null}
+            {t.id === "ai" &&
+            data.ai.suggestions.filter((s) => s.status === "pending").length >
+              0 ? (
+              <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900 dark:bg-amber-900 dark:text-amber-100">
+                {
+                  data.ai.suggestions.filter((s) => s.status === "pending")
+                    .length
+                }
               </span>
             ) : null}
           </button>
@@ -250,11 +274,20 @@ function DrawerContent({
             currentUserId={currentUserId}
             isAdmin={isAdmin}
           />
-        ) : (
+        ) : tab === "tasks" ? (
           <TasksTab
             eventCompanyId={row.id}
             tasks={data.tasks}
             owners={owners}
+          />
+        ) : (
+          <AiTab
+            eventCompanyId={row.id}
+            suggestions={data.ai.suggestions}
+            jobs={data.ai.jobs}
+            hasProspectus={data.ai.hasProspectus}
+            prospectusFileName={data.ai.prospectusFileName}
+            isAdmin={isAdmin}
           />
         )}
       </div>
