@@ -35,6 +35,9 @@ export type EventCompanyRow = {
   confirmedTierName: string | null;
   nextActionAt: Date | null;
   lastContactedAt: Date | null;
+  proposalUrl: string | null;
+  proposalSentAt: Date | null;
+  proposalValidUntil: string | null;
   whyTheyShouldAttend: string | null;
   keyTalkingPoints: string | null;
   emailAngle: string | null;
@@ -87,6 +90,9 @@ export async function listEventCompanies(
       confirmedTierName: confirmedTiers.name,
       nextActionAt: eventCompanies.nextActionAt,
       lastContactedAt: eventCompanies.lastContactedAt,
+      proposalUrl: eventCompanies.proposalUrl,
+      proposalSentAt: eventCompanies.proposalSentAt,
+      proposalValidUntil: eventCompanies.proposalValidUntil,
       whyTheyShouldAttend: eventCompanies.whyTheyShouldAttend,
       keyTalkingPoints: eventCompanies.keyTalkingPoints,
       emailAngle: eventCompanies.emailAngle,
@@ -139,6 +145,9 @@ export async function getEventCompany(
       confirmedTierName: confirmedTiers.name,
       nextActionAt: eventCompanies.nextActionAt,
       lastContactedAt: eventCompanies.lastContactedAt,
+      proposalUrl: eventCompanies.proposalUrl,
+      proposalSentAt: eventCompanies.proposalSentAt,
+      proposalValidUntil: eventCompanies.proposalValidUntil,
       whyTheyShouldAttend: eventCompanies.whyTheyShouldAttend,
       keyTalkingPoints: eventCompanies.keyTalkingPoints,
       emailAngle: eventCompanies.emailAngle,

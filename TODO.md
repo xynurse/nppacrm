@@ -74,7 +74,13 @@ load-bearing — chunk N depends on chunks 1..N-1.
       Auto-instantiates `tier.benefits` onto event_companies when a prospect
       hits `confirmed` via any of the four confirm paths (pipeline modal,
       kanban drag, inline status cell). Needs `pnpm db:migrate` after merge.
-- [ ] Chunk 18 — Proposal flow + cadence warnings (migration 0007)
+- [x] Chunk 18 — Proposal flow + cadence warnings (migration 0008 in
+      this rebuild — ordering shifted from the original chunk plan)
+      `markProposalSent` action sets proposal_url/sent_at/valid_until,
+      flips status, bumps lastContactedAt, auto-creates 7-day follow-up
+      task. Drawer header "Mark proposal sent" dialog. /companies Last
+      contact cell tints amber at 14+ days, red at 30+ for active
+      statuses. Needs `pnpm db:migrate` after merge.
 
 ## v1.5 — never built (still on the wishlist)
 

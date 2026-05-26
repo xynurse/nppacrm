@@ -14,6 +14,7 @@ import { UrlDisplay, UrlEditor } from "@/components/cells/url-cell";
 import type { PersonOption, TierOption } from "@/components/cells/types";
 import { AiTab } from "@/components/companies/ai-tab";
 import { BenefitsTab } from "@/components/companies/benefits-tab";
+import { ProposalDialog } from "@/components/companies/proposal-dialog";
 import { ContactsTab } from "@/components/contacts/contacts-tab";
 import { CustomFieldsSection } from "@/components/custom-fields/custom-fields-section";
 import { ActivityTab } from "@/components/interactions/activity-tab";
@@ -194,14 +195,24 @@ function DrawerContent({
             className="text-xs"
           />
         </div>
-        <Link
-          href="/companies"
-          scroll={false}
-          className="rounded-md p-1 hover:bg-slate-100 dark:hover:bg-slate-800"
-          title="Close"
-        >
-          <X className="h-4 w-4" />
-        </Link>
+        <div className="flex shrink-0 items-start gap-2">
+          <ProposalDialog
+            eventCompanyId={row.id}
+            companyName={row.companyName}
+            status={row.status}
+            existingProposalUrl={row.proposalUrl}
+            existingProposalSentAt={row.proposalSentAt}
+            existingProposalValidUntil={row.proposalValidUntil}
+          />
+          <Link
+            href="/companies"
+            scroll={false}
+            className="rounded-md p-1 hover:bg-slate-100 dark:hover:bg-slate-800"
+            title="Close"
+          >
+            <X className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">

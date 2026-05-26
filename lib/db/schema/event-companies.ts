@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  date,
   index,
   jsonb,
   numeric,
@@ -43,6 +44,9 @@ export const eventCompanies = pgTable(
     nextActionAt: timestamp("next_action_at", { withTimezone: true }),
     firstContactedAt: timestamp("first_contacted_at", { withTimezone: true }),
     lastContactedAt: timestamp("last_contacted_at", { withTimezone: true }),
+    proposalUrl: text("proposal_url"),
+    proposalSentAt: timestamp("proposal_sent_at", { withTimezone: true }),
+    proposalValidUntil: date("proposal_valid_until"),
     whyTheyShouldAttend: text("why_they_should_attend"),
     keyTalkingPoints: text("key_talking_points"),
     emailAngle: text("email_angle"),

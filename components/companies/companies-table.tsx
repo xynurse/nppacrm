@@ -32,6 +32,7 @@ import {
   PROSPECT_STATUS_VALUES,
 } from "@/lib/db/schema";
 import type { EventCompanyRow } from "@/lib/db/queries/companies";
+import { cadenceLevel, cadenceTextClass } from "@/lib/cadence";
 import { formatCurrency, formatRelativeDate } from "@/lib/format";
 
 const PRIORITY_LABELS = {
@@ -340,22 +341,37 @@ export function CompaniesTable({
       {
         accessorKey: "lastContactedAt",
         header: "Last contact",
-        cell: ({ row }) => (
-          <CellShell
-            fieldKey="eventCompany.lastContactedAt"
-            entityId={row.original.id}
-            value={row.original.lastContactedAt}
-            display={
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                {formatRelativeDate(row.original.lastContactedAt)}
-              </span>
-            }
-            onLocalChange={(v) =>
-              setRowField(row.original.id, "lastContactedAt", v)
-            }
-            Editor={DateEditor}
-          />
-        ),
+        cell: ({ row }) => {
+          const level = cadenceLevel({
+            status: row.original.status,
+            lastContactedAt: row.original.lastContactedAt,
+          });
+          return (
+            <CellShell
+              fieldKey="eventCompany.lastContactedAt"
+              entityId={row.original.id}
+              value={row.original.lastContactedAt}
+              display={
+                <span
+                  className={`text-xs ${cadenceTextClass(level)}`}
+                  title={
+                    level === "red"
+                      ? "30+ days since last contact"
+                      : level === "amber"
+                        ? "14+ days since last contact"
+                        : undefined
+                  }
+                >
+                  {formatRelativeDate(row.original.lastContactedAt)}
+                </span>
+              }
+              onLocalChange={(v) =>
+                setRowField(row.original.id, "lastContactedAt", v)
+              }
+              Editor={DateEditor}
+            />
+          );
+        },
       },
       {
         accessorKey: "nextActionAt",

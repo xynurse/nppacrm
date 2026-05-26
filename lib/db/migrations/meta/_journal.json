@@ -57,6 +57,13 @@
       "when": 1779791404914,
       "tag": "0007_benefits",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1779792002330,
+      "tag": "0008_proposal_flow",
+      "breakpoints": true
     }
   ]
 }
