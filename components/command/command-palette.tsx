@@ -2,6 +2,7 @@
 
 import { Command } from "cmdk";
 import {
+  BarChart3,
   Building2,
   CheckSquare,
   KanbanSquare,
@@ -204,6 +205,11 @@ export function CommandPalette({
                   icon={<Users className="h-3.5 w-3.5" />}
                   label="Contacts"
                   onSelect={() => navigate("/contacts")}
+                />
+                <Item
+                  icon={<BarChart3 className="h-3.5 w-3.5" />}
+                  label="Reports"
+                  onSelect={() => navigate("/reports")}
                 />
                 {isAdmin ? (
                   <Item

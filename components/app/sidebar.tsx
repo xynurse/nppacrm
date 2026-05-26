@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  BarChart3,
   Building2,
   CheckSquare,
   History,
@@ -22,6 +23,7 @@ const mainNav: NavItem[] = [
   { href: "/contacts", label: "Contacts", Icon: Users },
   { href: "/tasks", label: "Tasks", Icon: CheckSquare },
   { href: "/pipeline", label: "Pipeline", Icon: KanbanSquare },
+  { href: "/reports", label: "Reports", Icon: BarChart3 },
 ];
 
 const adminNav: NavItem[] = [

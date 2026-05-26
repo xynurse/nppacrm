@@ -93,13 +93,17 @@ Listed in approximate decreasing-leverage order.
     to full color system later.
   - ~half day for logo + accent; ~1–2 days for full color system w/ admin UI.
 
-- [ ] **Chunk 19 — Reports page**
-  - Conversion rates per stage
-  - Average days in stage
-  - Owner leaderboard (companies, $ confirmed, interactions logged)
-  - Tier mix vs goal
-  - PDF / CSV export
-  - Roughly the size of chunk 10's dashboard work
+- [x] **Chunk 19 — Reports page**
+  - Conversion funnel (cumulative ever-reached counts + stage-to-stage %)
+  - Owner leaderboard (companies, confirmed $, proposed $, interactions)
+  - Tier mix (confirmed count + $ per tier; target counts)
+  - Revenue rollup (confirmed / proposed / expected vs goal, gap, %)
+  - Cadence breakdown (ok / amber 14+d / red 30+d)
+  - Average days in stage (computed from audit_log move_status entries)
+  - CSV export per section + full-summary export
+  - **Deferred**: PDF export. Not shipped because it would pull a heavy
+    headless-Chromium / pdf-lib dep for a feature your team can get with
+    "Save as PDF" in the browser. Easy to add later if needed.
 
 - [ ] **Renewal radar** _(deferred from chunk 18)_
   - Admin button "Generate renewal tasks" — for every prospect with
