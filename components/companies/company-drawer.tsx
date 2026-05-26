@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, X } from "lucide-react";
+import { Gift, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CellShell } from "@/components/cells/cell-shell";
@@ -13,12 +13,14 @@ import { LongTextEditor, TextEditor } from "@/components/cells/text-cell";
 import { UrlDisplay, UrlEditor } from "@/components/cells/url-cell";
 import type { PersonOption, TierOption } from "@/components/cells/types";
 import { AiTab } from "@/components/companies/ai-tab";
+import { BenefitsTab } from "@/components/companies/benefits-tab";
 import { ContactsTab } from "@/components/contacts/contacts-tab";
 import { CustomFieldsSection } from "@/components/custom-fields/custom-fields-section";
 import { ActivityTab } from "@/components/interactions/activity-tab";
 import { TasksTab } from "@/components/tasks/tasks-tab";
 import type { CustomFieldDefinition } from "@/lib/db/schema";
 import type { JobRow, SuggestionRow } from "@/lib/db/queries/ai";
+import type { BenefitRow } from "@/lib/db/queries/benefits";
 import { PriorityDot } from "./priority-dot";
 import {
   PROSPECT_STATUS_LABELS,
@@ -41,15 +43,13 @@ const PRIORITY_LABELS = {
   low: "Low",
 } as const;
 
-type DrawerTab = "overview" | "contacts" | "activity" | "tasks" | "ai";
-
-const TABS: { id: DrawerTab; label: string }[] = [
-  { id: "overview", label: "Overview" },
-  { id: "contacts", label: "Contacts" },
-  { id: "activity", label: "Activity" },
-  { id: "tasks", label: "Tasks" },
-  { id: "ai", label: "AI" },
-];
+type DrawerTab =
+  | "overview"
+  | "contacts"
+  | "activity"
+  | "tasks"
+  | "benefits"
+  | "ai";
 
 export type DrawerData = {
   contacts: ContactRow[];
@@ -61,6 +61,7 @@ export type DrawerData = {
     hasProspectus: boolean;
     prospectusFileName: string | null;
   };
+  benefits: BenefitRow[];
 };
 
 export function CompanyDrawer({
@@ -152,6 +153,20 @@ function DrawerContent({
     value: EventCompanyRow[K],
   ) => setRow((prev) => ({ ...prev, [key]: value }));
 
+  const showBenefitsTab =
+    row.status === "confirmed" ||
+    row.status === "committed" ||
+    data.benefits.length > 0;
+
+  const tabs: { id: DrawerTab; label: string }[] = [
+    { id: "overview", label: "Overview" },
+    { id: "contacts", label: "Contacts" },
+    { id: "activity", label: "Activity" },
+    { id: "tasks", label: "Tasks" },
+    ...(showBenefitsTab ? [{ id: "benefits" as const, label: "Benefits" }] : []),
+    { id: "ai", label: "AI" },
+  ];
+
   return (
     <div className="p-6">
       <div className="flex items-start justify-between gap-4">
@@ -209,7 +224,7 @@ function DrawerContent({
       </div>
 
       <nav className="mt-5 flex gap-1 border-b border-slate-200 dark:border-slate-800">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.id}
             type="button"
@@ -224,6 +239,9 @@ function DrawerContent({
             <span className="inline-flex items-center gap-1">
               {t.id === "ai" ? (
                 <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              ) : null}
+              {t.id === "benefits" ? (
+                <Gift className="h-3.5 w-3.5 text-emerald-500" />
               ) : null}
               {t.label}
             </span>
@@ -250,6 +268,14 @@ function DrawerContent({
                   data.ai.suggestions.filter((s) => s.status === "pending")
                     .length
                 }
+              </span>
+            ) : null}
+            {t.id === "benefits" && data.benefits.length > 0 ? (
+              <span className="ml-1 text-xs text-slate-400">
+                {
+                  data.benefits.filter((b) => b.status !== "delivered" && b.status !== "skipped").length
+                }
+                /{data.benefits.length}
               </span>
             ) : null}
           </button>
@@ -279,6 +305,13 @@ function DrawerContent({
             eventCompanyId={row.id}
             tasks={data.tasks}
             owners={owners}
+          />
+        ) : tab === "benefits" ? (
+          <BenefitsTab
+            eventCompanyId={row.id}
+            benefits={data.benefits}
+            hasConfirmedTier={!!row.confirmedTierId}
+            confirmedTierName={row.confirmedTierName}
           />
         ) : (
           <AiTab

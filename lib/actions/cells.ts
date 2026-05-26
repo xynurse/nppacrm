@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin, requireSession } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
+import { instantiateBenefitsForEventCompany } from "@/lib/actions/benefits";
 import {
   FIELD_REGISTRY,
   isFieldKey,
@@ -52,7 +53,16 @@ export async function updateField(raw: unknown): Promise<ActionResult> {
       ? new Date(validation.data as string)
       : validation.data;
 
+  let priorStatus: string | null = null;
   if (field.entity === "eventCompany") {
+    if (fieldKey === "eventCompany.status") {
+      const [prior] = await db
+        .select({ status: eventCompanies.status })
+        .from(eventCompanies)
+        .where(eq(eventCompanies.id, entityId))
+        .limit(1);
+      priorStatus = prior?.status ?? null;
+    }
     const setObj: Record<string, unknown> = {
       [camelOf(field.column)]: value,
       updatedAt: new Date(),
@@ -77,6 +87,28 @@ export async function updateField(raw: unknown): Promise<ActionResult> {
     entityId,
     changes: { [field.column]: value },
   });
+
+  // Auto-instantiate benefits if a status edit just flipped this prospect to
+  // confirmed. Safe + idempotent — no-ops when no tier is set yet.
+  if (
+    fieldKey === "eventCompany.status" &&
+    value === "confirmed" &&
+    priorStatus !== "confirmed"
+  ) {
+    const r = await instantiateBenefitsForEventCompany({
+      eventCompanyId: entityId,
+      userId: session.user.id,
+    });
+    if (r.created > 0) {
+      await recordAudit({
+        userId: session.user.id,
+        action: "benefits.auto_instantiate",
+        entityType: "eventCompany",
+        entityId,
+        changes: { created: r.created, tierId: r.tierId },
+      });
+    }
+  }
 
   revalidatePath("/companies");
   return { ok: true };

@@ -68,7 +68,12 @@ load-bearing — chunk N depends on chunks 1..N-1.
       AND env keys (`AI_GATEWAY_API_KEY`, `VALYU_API_KEY`,
       optional `AI_DAILY_SPEND_CAP_USD=2`) before the AI features actually run.
 - [ ] Chunk 14 — Background agents (Discovery + Watch — manual run only at first)
-- [ ] Chunk 17 — Benefits tracking (migration 0008)
+- [x] Chunk 17 — Benefits tracking (migration 0007 in this rebuild — was 0008
+      in the original lost chunk plan, but ordering shifted since chunk 14
+      hasn't been built yet)
+      Auto-instantiates `tier.benefits` onto event_companies when a prospect
+      hits `confirmed` via any of the four confirm paths (pipeline modal,
+      kanban drag, inline status cell). Needs `pnpm db:migrate` after merge.
 - [ ] Chunk 18 — Proposal flow + cadence warnings (migration 0007)
 
 ## v1.5 — never built (still on the wishlist)

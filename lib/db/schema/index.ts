@@ -14,3 +14,4 @@ export * from "./event-company-reviews";
 export * from "./saved-views";
 export * from "./custom-fields";
 export * from "./ai";
+export * from "./benefits";

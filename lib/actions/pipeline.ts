@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireSession } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
+import { instantiateBenefitsForEventCompany } from "@/lib/actions/benefits";
 import { db } from "@/lib/db";
 import {
   PROSPECT_STATUS_VALUES,
@@ -64,6 +65,24 @@ export async function moveEventCompanyStatus(
     changes: { from: existing.status, to: parsed.data.status },
   });
 
+  // Auto-instantiate benefits when we just moved into confirmed.
+  if (parsed.data.status === "confirmed" && existing.status !== "confirmed") {
+    const r = await instantiateBenefitsForEventCompany({
+      eventCompanyId: parsed.data.id,
+      userId: session.user.id,
+    });
+    if (r.created > 0) {
+      await recordAudit({
+        userId: session.user.id,
+        eventId: existing.eventId,
+        action: "benefits.auto_instantiate",
+        entityType: "eventCompany",
+        entityId: parsed.data.id,
+        changes: { created: r.created, tierId: r.tierId },
+      });
+    }
+  }
+
   revalidatePath("/companies");
   revalidatePath("/pipeline");
   return { ok: true };
@@ -119,6 +138,22 @@ export async function confirmEventCompany(
       confirmedTierId: parsed.data.confirmedTierId,
     },
   });
+
+  const r = await instantiateBenefitsForEventCompany({
+    eventCompanyId: parsed.data.id,
+    userId: session.user.id,
+    tierIdOverride: parsed.data.confirmedTierId,
+  });
+  if (r.created > 0) {
+    await recordAudit({
+      userId: session.user.id,
+      eventId: existing.eventId,
+      action: "benefits.auto_instantiate",
+      entityType: "eventCompany",
+      entityId: parsed.data.id,
+      changes: { created: r.created, tierId: r.tierId },
+    });
+  }
 
   revalidatePath("/companies");
   revalidatePath("/pipeline");

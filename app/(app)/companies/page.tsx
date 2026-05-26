@@ -4,6 +4,7 @@ import {
   listRecentJobsForEventCompany,
   listSuggestionsForEventCompany,
 } from "@/lib/db/queries/ai";
+import { listBenefitsForEventCompany } from "@/lib/db/queries/benefits";
 import { listActiveEvents } from "@/lib/db/queries/events";
 import {
   listEventCompanies,
@@ -120,15 +121,23 @@ export default async function CompaniesPage({
 
   let drawerData: DrawerData | null = null;
   if (drawerRow) {
-    const [contacts, interactions, tasks, suggestions, jobs, prospectus] =
-      await Promise.all([
-        listContactsForCompany(drawerRow.companyId),
-        listInteractionsForEventCompany(drawerRow.id),
-        listTasksForEventCompany(drawerRow.id),
-        listSuggestionsForEventCompany(drawerRow.id),
-        listRecentJobsForEventCompany(drawerRow.id, 5),
-        getActiveProspectus(activeEvent.id),
-      ]);
+    const [
+      contacts,
+      interactions,
+      tasks,
+      suggestions,
+      jobs,
+      prospectus,
+      benefits,
+    ] = await Promise.all([
+      listContactsForCompany(drawerRow.companyId),
+      listInteractionsForEventCompany(drawerRow.id),
+      listTasksForEventCompany(drawerRow.id),
+      listSuggestionsForEventCompany(drawerRow.id),
+      listRecentJobsForEventCompany(drawerRow.id, 5),
+      getActiveProspectus(activeEvent.id),
+      listBenefitsForEventCompany(drawerRow.id),
+    ]);
     drawerData = {
       contacts,
       interactions,
@@ -139,6 +148,7 @@ export default async function CompaniesPage({
         hasProspectus: !!prospectus,
         prospectusFileName: prospectus?.fileName ?? null,
       },
+      benefits,
     };
   }
 

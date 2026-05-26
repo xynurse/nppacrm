@@ -50,6 +50,13 @@
       "when": 1779773164558,
       "tag": "0006_ai_enrichment",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1779791404914,
+      "tag": "0007_benefits",
+      "breakpoints": true
     }
   ]
 }

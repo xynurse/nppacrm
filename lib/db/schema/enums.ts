@@ -82,3 +82,22 @@ export const ENRICHMENT_FIELD_LABELS: Record<EnrichmentField, string> = {
   emailAngle: "Email angle",
   sponsorshipHook: "Sponsorship hook",
 };
+
+export const BENEFIT_STATUS_VALUES = [
+  "pending",
+  "in_progress",
+  "delivered",
+  "skipped",
+] as const;
+export type BenefitStatus = (typeof BENEFIT_STATUS_VALUES)[number];
+export const benefitStatus = pgEnum(
+  "benefit_status",
+  BENEFIT_STATUS_VALUES,
+);
+
+export const BENEFIT_STATUS_LABELS: Record<BenefitStatus, string> = {
+  pending: "Pending",
+  in_progress: "In progress",
+  delivered: "Delivered",
+  skipped: "Skipped",
+};
