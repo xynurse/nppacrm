@@ -1,43 +1,21 @@
 # TODO
 
-Living roadmap. As of 2026-05-09 the repo is at the original `3ce6b96` commit
-— spec only, no code. The 18-chunk build that happened earlier was lost when
-the worktree got deleted before any commits landed. See [CHANGELOG.md](CHANGELOG.md)
-for what was built and lost.
+Living roadmap. Rebuild complete through chunk 19 as of 2026-05-28.
+All chunks committed to `main` and deployed at `nppacrm.vercel.app`.
 
-## Critical path: rebuild + first deploy
+## Critical path: remaining setup
 
-- [ ] **Decide commit policy.** Recommend: "commit after every green build"
-      as the default, with a single confirm at the start of each session.
-      The previous policy ("commit only when explicitly asked") cost us
-      18 chunks of work. The CLAUDE.md rule should be relaxed for this
-      project.
-- [ ] **Rebuild from spec.** Use [docs/sponsorship-crm-build-prompt.md](docs/sponsorship-crm-build-prompt.md)
-      as the source of truth. Follow the chunk ordering in
-      [CHANGELOG.md](CHANGELOG.md) — that ordering is proven to compile
-      cleanly through chunk 18.
-- [ ] **Per-chunk verification:** `tsc --noEmit` + `next lint` + `next build`
-      green, then commit, then move on.
-- [ ] Push to GitHub (`xynurse/sponsorship-crm` already exists).
-- [ ] Provision Neon (or install the Neon-Vercel integration —
-      auto-provisions per-preview DB branches).
-- [ ] `pnpm db:migrate` against prod Neon URL.
-- [ ] Vercel project setup (`vercel link`, env vars, framework auto-detect).
-- [ ] Set Vercel env: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AUTH_SECRET`,
-      `AUTH_URL`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, optionally
-      `BLOB_READ_WRITE_TOKEN`, `ANTHROPIC_API_KEY`, `VALYU_API_KEY`.
-- [ ] Install Vercel Blob integration (auto-injects token).
-- [ ] First deploy → preview URL.
-- [ ] One-time `pnpm db:seed` against prod (creates admin + LPD 2026 + tiers
-      + default views).
-- [ ] `/admin/events/[id]/import` to bulk-load real Master List CSV.
-- [ ] **Custom domain** _(deferred 2026-05-25 — pending final name decision)_
-      Attach a real domain (e.g. `crm.nppa.org`, `sponsors.…`, etc.) via
-      Vercel → Project → Settings → Domains so we stop sharing
-      `nppacrm.vercel.app` with the team. Includes DNS records + automatic
-      SSL. No code change needed.
-
-Skill suggestions for ship: `vercel:bootstrap` then `vercel:deploy`.
+- [x] Rebuild from spec (chunks 1–19 complete)
+- [x] Push to GitHub
+- [x] Provision Neon + run migrations (0000–0008 applied)
+- [x] Vercel project + env vars wired
+- [x] Vercel Blob integration installed
+- [x] First deploy live
+- [x] Admin account created (mike@thorn.ooo)
+- [x] `pnpm db:seed` run (LPD 2026 event + tiers + default views)
+- [ ] **Connect Anthropic provider in Vercel AI Gateway** (unlocks AI enrichment)
+- [ ] `/admin/events/[id]/import` to bulk-load real Master List CSV
+- [ ] **Custom domain** _(deferred — pending final name decision)_
 
 ## v1 chunks to rebuild (in order)
 
