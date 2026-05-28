@@ -4,12 +4,16 @@ import { env } from "@/lib/env";
 
 /**
  * Returns true if at least one of the LLM credentials is configured.
- * On Vercel, AI Gateway can also auto-inject an OIDC token at runtime, so
- * we treat unset keys as fine in production unless we know we're local.
+ * Supports three auth paths:
+ *  1. Explicit AI_GATEWAY_API_KEY
+ *  2. Direct ANTHROPIC_API_KEY (local fallback)
+ *  3. VERCEL_OIDC_TOKEN — injected by `vercel env pull` locally or auto-present
+ *     on deployed Vercel functions (no separate key needed).
  */
 export function isAiConfigured(): boolean {
   if (env.AI_GATEWAY_API_KEY || env.ANTHROPIC_API_KEY) return true;
-  // On Vercel, the OIDC token covers AI Gateway automatically.
+  if (process.env.VERCEL_OIDC_TOKEN) return true;
+  // On Vercel deployments, OIDC is always available even before env pull.
   if (process.env.VERCEL === "1" || process.env.VERCEL === "true") return true;
   return false;
 }
@@ -76,8 +80,13 @@ export async function resolveModel(
   modelId: string = DEFAULT_MODEL_ID,
 ): Promise<LanguageModel> {
   // Gateway path: AI SDK v6 accepts plain provider/model strings when the
-  // gateway is wired (AI_GATEWAY_API_KEY or OIDC on Vercel).
-  if (env.AI_GATEWAY_API_KEY || process.env.VERCEL) {
+  // gateway is wired via AI_GATEWAY_API_KEY, VERCEL_OIDC_TOKEN (from
+  // `vercel env pull`), or the auto-injected OIDC on deployed Vercel functions.
+  if (
+    env.AI_GATEWAY_API_KEY ||
+    process.env.VERCEL_OIDC_TOKEN ||
+    process.env.VERCEL
+  ) {
     return modelId as unknown as LanguageModel;
   }
   // Direct Anthropic fallback for local dev w/o gateway access.
