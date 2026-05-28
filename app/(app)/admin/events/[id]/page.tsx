@@ -69,6 +69,14 @@ export default async function EventDetailPage({
               Sponsorship prospectus (PDF for AI grounding) →
             </Link>
           </li>
+          <li>
+            <Link
+              href={`/admin/events/${event.id}/agents`}
+              className="text-slate-700 hover:underline dark:text-slate-200"
+            >
+              AI agents (Discovery) →
+            </Link>
+          </li>
         </ul>
       </section>
     </div>

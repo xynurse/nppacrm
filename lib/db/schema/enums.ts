@@ -101,3 +101,23 @@ export const BENEFIT_STATUS_LABELS: Record<BenefitStatus, string> = {
   delivered: "Delivered",
   skipped: "Skipped",
 };
+
+export const AGENT_RUN_STATUS_VALUES = [
+  "running",
+  "completed",
+  "failed",
+] as const;
+export type AgentRunStatus = (typeof AGENT_RUN_STATUS_VALUES)[number];
+export const agentRunStatus = pgEnum("agent_run_status", AGENT_RUN_STATUS_VALUES);
+
+export const COMPANY_SUGGESTION_STATUS_VALUES = [
+  "pending",
+  "accepted",
+  "dismissed",
+] as const;
+export type CompanySuggestionStatus =
+  (typeof COMPANY_SUGGESTION_STATUS_VALUES)[number];
+export const companySuggestionStatus = pgEnum(
+  "company_suggestion_status",
+  COMPANY_SUGGESTION_STATUS_VALUES,
+);
