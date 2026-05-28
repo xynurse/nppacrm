@@ -1,5 +1,10 @@
 import { sql, type SQL } from "drizzle-orm";
-import { companies, eventCompanies } from "@/lib/db/schema";
+import {
+  companies,
+  eventCompanies,
+  eventCompanyReviews,
+  eventReviewers,
+} from "@/lib/db/schema";
 import type {
   FilterAst,
   FilterCondition,
@@ -76,6 +81,31 @@ function startOfUtcDay(d: Date): Date {
 function compileCondition(c: FilterCondition): SQL | null {
   const meta = getCompanyField(c.field);
   if (!meta) return null;
+
+  // Boolean virtual-column fields
+  if (c.field === "hasPendingReview") {
+    const existsUnreviewed = sql`EXISTS (
+      SELECT 1 FROM ${eventReviewers} er
+      WHERE er.event_id = ${eventCompanies.eventId}
+      AND NOT EXISTS (
+        SELECT 1 FROM ${eventCompanyReviews} ecr
+        WHERE ecr.event_company_id = ${eventCompanies.id}
+        AND ecr.reviewer_id = er.user_id
+      )
+    )`;
+    if (c.op === "is_true") return existsUnreviewed;
+    if (c.op === "is_false") return sql`NOT EXISTS (
+      SELECT 1 FROM ${eventReviewers} er
+      WHERE er.event_id = ${eventCompanies.eventId}
+      AND NOT EXISTS (
+        SELECT 1 FROM ${eventCompanyReviews} ecr
+        WHERE ecr.event_company_id = ${eventCompanies.id}
+        AND ecr.reviewer_id = er.user_id
+      )
+    )`;
+    return null;
+  }
+
   const col = eventCompanyColumn(c.field);
   if (!col) return null;
 
@@ -194,6 +224,13 @@ export function compileFilter(ast: FilterAst | null | undefined): SQL | null {
     if (piece) parts.push(piece);
   }
   if (parts.length === 0) return null;
+  if (parts.length === 1) return parts[0]!;
+  if (ast.op === "or") {
+    return parts.reduce<SQL>(
+      (acc, cur, i) => (i === 0 ? cur : sql`${acc} OR ${cur}`),
+      parts[0]!,
+    );
+  }
   return parts.reduce<SQL>(
     (acc, cur, i) => (i === 0 ? cur : sql`${acc} AND ${cur}`),
     parts[0]!,

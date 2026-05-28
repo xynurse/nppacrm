@@ -24,6 +24,8 @@ const operatorEnum = z.enum([
   "on",
   "last_n_days",
   "next_n_days",
+  "is_true",
+  "is_false",
 ]);
 
 const valueSchema = z.union([
@@ -42,7 +44,7 @@ const conditionSchema = z.object({
 });
 
 export const filterAstSchema = z.object({
-  op: z.literal("and"),
+  op: z.enum(["and", "or"]),
   conditions: z.array(conditionSchema).max(20),
 });
 
@@ -73,7 +75,7 @@ export function sanitizeFilter(ast: unknown): FilterAst {
     if (!meta.operators.includes(c.op)) continue;
     conditions.push(c as FilterCondition);
   }
-  return { op: "and", conditions };
+  return { op: parsed.data.op, conditions };
 }
 
 export function sanitizeSort(spec: unknown): SortSpec {

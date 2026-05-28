@@ -6,7 +6,8 @@ export type FilterFieldType =
   | "person"
   | "tier"
   | "currency"
-  | "date";
+  | "date"
+  | "boolean";
 
 export type TextOperator = "contains" | "starts_with" | "equals" | "is_empty" | "is_not_empty";
 export type SelectOperator = "is" | "is_not" | "is_one_of" | "is_empty" | "is_not_empty";
@@ -30,11 +31,14 @@ export type NumberOperator =
   | "is_empty"
   | "is_not_empty";
 
+export type BooleanOperator = "is_true" | "is_false";
+
 export type FilterOperator =
   | TextOperator
   | SelectOperator
   | DateOperator
-  | NumberOperator;
+  | NumberOperator
+  | BooleanOperator;
 
 export type FilterValue = string | number | string[] | number[] | null;
 
@@ -46,7 +50,7 @@ export type FilterCondition = {
 };
 
 export type FilterAst = {
-  op: "and";
+  op: "and" | "or";
   conditions: FilterCondition[];
 };
 

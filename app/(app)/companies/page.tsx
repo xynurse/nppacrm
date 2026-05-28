@@ -36,12 +36,14 @@ import {
 } from "@/lib/views/schema";
 import type { FilterAst, SortSpec } from "@/lib/views/types";
 import { EMPTY_FILTER } from "@/lib/views/types";
+import { DEFAULT_COLUMNS } from "@/lib/views/columns";
 
 type SearchParams = Promise<{
   record?: string;
   view?: string;
   f?: string;
   s?: string;
+  col?: string;
 }>;
 
 export default async function CompaniesPage({
@@ -91,6 +93,12 @@ export default async function CompaniesPage({
     params.s != null
       ? adHocSort
       : (activeView?.sort ?? []);
+
+  // Visible columns: decode from URL param, validate against known column keys
+  const rawColumns = params.col != null ? decodeFromParam(params.col) : null;
+  const visibleColumns: string[] = Array.isArray(rawColumns)
+    ? rawColumns.filter((k): k is string => typeof k === "string" && DEFAULT_COLUMNS.includes(k))
+    : DEFAULT_COLUMNS;
 
   const [rows, tiers, users, reviewerIds, reviews, fieldDefinitions] =
     await Promise.all([
@@ -187,6 +195,7 @@ export default async function CompaniesPage({
         initialFilter={filter}
         initialSort={sort}
         initialViewId={activeView?.id ?? null}
+        initialColumns={visibleColumns}
         ownerOptions={ownerFieldOptions}
         tierOptions={tierFieldOptions}
         resultCount={rows.length}
@@ -206,6 +215,8 @@ export default async function CompaniesPage({
         reviewSummaries={reviewSummaries}
         reviewerCount={reviewerIds.length}
         isReviewer={isReviewer}
+        sort={sort}
+        visibleColumns={visibleColumns}
       />
 
       <CompanyDrawer

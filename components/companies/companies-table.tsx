@@ -6,8 +6,13 @@ import {
   useReactTable,
   type ColumnDef,
 } from "@tanstack/react-table";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { encodeToParam } from "@/lib/views/schema";
+import type { SortSpec } from "@/lib/views/types";
+import { COMPANY_FIELDS_BY_KEY } from "@/lib/views/fields";
 import { CellShell } from "@/components/cells/cell-shell";
 import { CurrencyEditor } from "@/components/cells/currency-cell";
 import { DateEditor } from "@/components/cells/date-cell";
@@ -52,6 +57,8 @@ export function CompaniesTable({
   reviewSummaries,
   reviewerCount,
   isReviewer,
+  sort: externalSort,
+  visibleColumns,
 }: {
   rows: EventCompanyRow[];
   activeRecordId: string | null;
@@ -61,11 +68,38 @@ export function CompaniesTable({
   reviewSummaries: Record<string, ReviewSummary>;
   reviewerCount: number;
   isReviewer: boolean;
+  sort?: SortSpec;
+  visibleColumns?: string[];
 }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { density } = useDensity();
   const rowHeight = ROW_HEIGHT_BY_DENSITY[density];
   const [rows, setRows] = useState(initialRows);
   const [selection, setSelection] = useState<Record<string, boolean>>({});
+
+  // Sort-on-column-header toggle
+  const toggleSort = useCallback(
+    (field: string) => {
+      const fieldMeta = COMPANY_FIELDS_BY_KEY[field];
+      if (!fieldMeta?.sortable) return;
+      const current = externalSort ?? [];
+      const existing = current.find((s) => s.field === field);
+      let next: SortSpec;
+      if (!existing) {
+        next = [{ field, dir: "asc" }];
+      } else if (existing.dir === "asc") {
+        next = current.map((s) => (s.field === field ? { field, dir: "desc" as const } : s));
+      } else {
+        next = current.filter((s) => s.field !== field);
+      }
+      const sp = new URLSearchParams(searchParams.toString());
+      sp.delete("s");
+      if (next.length > 0) sp.set("s", encodeToParam(next));
+      router.push(`/companies?${sp.toString()}`, { scroll: false });
+    },
+    [externalSort, router, searchParams],
+  );
   const tierById = useMemo(
     () => new Map(tiers.map((t) => [t.id, t])),
     [tiers],
@@ -121,7 +155,34 @@ export function CompaniesTable({
     [tierById],
   );
 
-  const columns = useMemo<ColumnDef<EventCompanyRow>[]>(
+  // Helper: render a sortable column header
+  const sortHeader = useCallback(
+    (field: string, label: string) => {
+      const current = externalSort ?? [];
+      const entry = current.find((s) => s.field === field);
+      return (
+        <button
+          type="button"
+          onClick={() => toggleSort(field)}
+          className="flex items-center gap-1 hover:text-slate-800 dark:hover:text-slate-100"
+        >
+          {label}
+          {entry ? (
+            entry.dir === "asc" ? (
+              <ArrowUp className="h-3 w-3 text-slate-500" />
+            ) : (
+              <ArrowDown className="h-3 w-3 text-slate-500" />
+            )
+          ) : (
+            <ArrowUpDown className="h-3 w-3 text-slate-400 opacity-0 group-hover:opacity-100" />
+          )}
+        </button>
+      );
+    },
+    [externalSort, toggleSort],
+  );
+
+  const allColumns = useMemo<ColumnDef<EventCompanyRow>[]>(
     () => [
       {
         id: "_select",
@@ -150,7 +211,7 @@ export function CompaniesTable({
       },
       {
         accessorKey: "companyName",
-        header: "Company",
+        header: () => sortHeader("companyName", "Company"),
         cell: ({ row }) => (
           <Link
             href={`/companies?record=${row.original.id}`}
@@ -164,7 +225,7 @@ export function CompaniesTable({
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: () => sortHeader("status", "Status"),
         cell: ({ row }) => (
           <CellShell<string | null>
             fieldKey="eventCompany.status"
@@ -192,7 +253,7 @@ export function CompaniesTable({
       },
       {
         accessorKey: "priority",
-        header: "Priority",
+        header: () => sortHeader("priority", "Priority"),
         cell: ({ row }) => (
           <CellShell<string | null>
             fieldKey="eventCompany.priority"
@@ -220,7 +281,7 @@ export function CompaniesTable({
       },
       {
         accessorKey: "ownerId",
-        header: "Owner",
+        header: () => sortHeader("ownerId", "Owner"),
         cell: ({ row }) => (
           <CellShell
             fieldKey="eventCompany.ownerId"
@@ -242,7 +303,7 @@ export function CompaniesTable({
       },
       {
         accessorKey: "targetTierId",
-        header: "Target tier",
+        header: () => sortHeader("targetTierId", "Target tier"),
         cell: ({ row }) => (
           <CellShell
             fieldKey="eventCompany.targetTierId"
@@ -271,7 +332,11 @@ export function CompaniesTable({
       },
       {
         accessorKey: "proposedAmount",
-        header: () => <span className="block text-right">Proposed</span>,
+        header: () => (
+          <span className="flex justify-end">
+            {sortHeader("proposedAmount", "Proposed")}
+          </span>
+        ),
         cell: ({ row }) => (
           <CellShell
             fieldKey="eventCompany.proposedAmount"
@@ -295,7 +360,11 @@ export function CompaniesTable({
       },
       {
         accessorKey: "confirmedAmount",
-        header: () => <span className="block text-right">Confirmed</span>,
+        header: () => (
+          <span className="flex justify-end">
+            {sortHeader("confirmedAmount", "Confirmed")}
+          </span>
+        ),
         cell: ({ row }) => (
           <CellShell
             fieldKey="eventCompany.confirmedAmount"
@@ -340,7 +409,7 @@ export function CompaniesTable({
       },
       {
         accessorKey: "lastContactedAt",
-        header: "Last contact",
+        header: () => sortHeader("lastContactedAt", "Last contact"),
         cell: ({ row }) => {
           const level = cadenceLevel({
             status: row.original.status,
@@ -375,7 +444,7 @@ export function CompaniesTable({
       },
       {
         accessorKey: "nextActionAt",
-        header: "Next action",
+        header: () => sortHeader("nextActionAt", "Next action"),
         cell: ({ row }) => (
           <CellShell
             fieldKey="eventCompany.nextActionAt"
@@ -403,8 +472,19 @@ export function CompaniesTable({
       reviewSummaries,
       reviewerCount,
       isReviewer,
+      sortHeader,
     ],
   );
+
+  // Filter to visible columns (checkbox + company are always shown)
+  const columns = useMemo(() => {
+    if (!visibleColumns) return allColumns;
+    return allColumns.filter((col) => {
+      const id = col.id ?? ("accessorKey" in col ? String(col.accessorKey) : "");
+      if (id === "_select" || id === "companyName") return true;
+      return visibleColumns.includes(id);
+    });
+  }, [allColumns, visibleColumns]);
 
   const table = useReactTable({
     data: rows,
@@ -439,7 +519,7 @@ export function CompaniesTable({
                 className="border-b border-slate-200 dark:border-slate-800"
               >
                 {hg.headers.map((h) => (
-                  <th key={h.id} className="px-3 py-2 font-medium">
+                  <th key={h.id} className="group px-3 py-2 font-medium">
                     {flexRender(h.column.columnDef.header, h.getContext())}
                   </th>
                 ))}

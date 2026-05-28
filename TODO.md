@@ -45,7 +45,7 @@ load-bearing — chunk N depends on chunks 1..N-1.
       web search. Needs manual `pnpm db:migrate` against prod after merge
       AND env keys (`AI_GATEWAY_API_KEY`, `VALYU_API_KEY`,
       optional `AI_DAILY_SPEND_CAP_USD=2`) before the AI features actually run.
-- [ ] Chunk 14 — Background agents (Discovery + Watch — manual run only at first)
+- [x] Chunk 14 — Discovery agent (manual run, migration 0009) — Watch agent deferred to 14b
 - [x] Chunk 17 — Benefits tracking (migration 0007 in this rebuild — was 0008
       in the original lost chunk plan, but ordering shifted since chunk 14
       hasn't been built yet)
@@ -64,12 +64,7 @@ load-bearing — chunk N depends on chunks 1..N-1.
 
 Listed in approximate decreasing-leverage order.
 
-- [ ] **Per-event branding** _(new — captured 2026-05-25)_
-  - Each event row gets `brandColor` + `logoUrl`; active event drives top-bar
-    logo and accent CSS variables. Lets us white-label LPD vs. future events.
-  - Depth not decided yet — start with logo + one accent color; can expand
-    to full color system later.
-  - ~half day for logo + accent; ~1–2 days for full color system w/ admin UI.
+- ~~**Per-event branding**~~ _(removed from scope 2026-05-28)_
 
 - [x] **Chunk 19 — Reports page**
   - Conversion funnel (cumulative ever-reached counts + stage-to-stage %)
@@ -83,20 +78,18 @@ Listed in approximate decreasing-leverage order.
     headless-Chromium / pdf-lib dep for a feature your team can get with
     "Save as PDF" in the browser. Easy to add later if needed.
 
-- [ ] **Renewal radar** _(deferred from chunk 18)_
-  - Admin button "Generate renewal tasks" — for every prospect with
-    `status=past_sponsor` in past events, create a task for the previous
-    owner due 6 months before the active event's `startDate`
-  - ~30 lines: 1 server action + 1 button on `/admin/events/[id]`
+- ~~**Renewal radar**~~ _(removed from scope 2026-05-28)_
 
-- [ ] **Chunk 23 — Polish**
-  - AND/OR filter groups (chunk 6 AST is flat AND only)
-  - Sort UI on column headers (compiler supports it; no UI binding)
-  - Column-picker per saved view
-  - Drag-reorder of views and field definitions
-  - "Pending Team Review" default view (needs special "any null reviewer
-    vote" operator in the filter compiler)
-  - Recharts pace chart upgrade
+- [x] **Chunk 23 — Polish**
+  - AND/OR filter toggle on filter-bar (connector between chips toggles
+    global op; FilterAst.op is now "and"|"or", compiler handles both)
+  - Sort on column headers (click cycles: off → asc → desc → off;
+    sort icons use ArrowUp/Down/UpDown; pushes ?s= URL param)
+  - Column-picker per session (Columns button in toolbar, ?col= URL param,
+    pinned: companyName always visible)
+  - "Pending Team Review" hasPendingReview field with is_true/is_false
+    operators backed by EXISTS subquery on event_reviewers
+  - Deferred: drag-reorder of views/fields, Recharts pace chart upgrade
 
 - [ ] **Chunk 22 — More custom-field types**
   - multiSelect, datetime, rating, person, relation

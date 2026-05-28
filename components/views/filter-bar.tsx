@@ -31,6 +31,8 @@ type Props = {
 
 function defaultValueFor(meta: FieldMeta, op: FilterOperator): FilterValue {
   if (op === "is_empty" || op === "is_not_empty") return null;
+  if (op === "is_true" || op === "is_false") return null;
+  if (meta.type === "boolean") return null;
   if (op === "is_one_of") return [];
   if (meta.type === "currency") return "";
   if (meta.type === "date") return "";
@@ -54,6 +56,7 @@ function describeValue(
   tierOptions: FieldOption[],
 ): string {
   if (cond.op === "is_empty" || cond.op === "is_not_empty") return "";
+  if (cond.op === "is_true" || cond.op === "is_false") return "";
   const options = getOptionsForField(meta, ownerOptions, tierOptions);
   const optionLabel = (v: string) =>
     options.find((o) => o.value === v)?.label ?? v;
@@ -84,7 +87,13 @@ export function FilterBar({
   const [sortOpen, setSortOpen] = useState(false);
 
   const setConditions = (next: FilterCondition[]) =>
-    onChange({ filter: { op: "and", conditions: next }, sort });
+    onChange({ filter: { op: filter.op, conditions: next }, sort });
+
+  const toggleOp = () =>
+    onChange({
+      filter: { op: filter.op === "and" ? "or" : "and", conditions: filter.conditions },
+      sort,
+    });
 
   const setSort = (next: SortSpec) =>
     onChange({ filter, sort: next });
@@ -130,43 +139,60 @@ export function FilterBar({
       {filter.conditions.map((cond, i) => {
         const meta = COMPANY_FIELDS_BY_KEY[cond.field];
         if (!meta) return null;
+        const valueStr = describeValue(meta, cond, ownerOptions, tierOptions);
         return (
-          <div key={i} className="relative">
-            <button
-              type="button"
-              onClick={() => setEditingIndex(editingIndex === i ? null : i)}
-              className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-            >
-              <span className="font-medium">{meta.label}</span>
-              <span className="text-slate-500 dark:text-slate-400">
-                {OPERATOR_LABELS[cond.op]}
-              </span>
-              <span className="text-slate-700 dark:text-slate-200">
-                {describeValue(meta, cond, ownerOptions, tierOptions)}
-              </span>
+          <div key={i} className="flex items-center gap-1">
+            {/* AND/OR connector between conditions */}
+            {i > 0 ? (
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeCondition(i);
-                }}
-                aria-label="Remove filter"
-                className="ml-1 rounded p-0.5 text-slate-400 hover:bg-slate-300 hover:text-slate-700 dark:hover:bg-slate-600 dark:hover:text-slate-100"
+                onClick={toggleOp}
+                title="Click to toggle AND / OR"
+                className="rounded px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
               >
-                <X className="h-3 w-3" />
+                {filter.op}
               </button>
-            </button>
-
-            {editingIndex === i ? (
-              <ConditionEditor
-                meta={meta}
-                cond={cond}
-                ownerOptions={ownerOptions}
-                tierOptions={tierOptions}
-                onChange={(patch) => updateCondition(i, patch)}
-                onClose={() => setEditingIndex(null)}
-              />
             ) : null}
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setEditingIndex(editingIndex === i ? null : i)}
+                className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                <span className="font-medium">{meta.label}</span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  {OPERATOR_LABELS[cond.op]}
+                </span>
+                {valueStr ? (
+                  <span className="text-slate-700 dark:text-slate-200">
+                    {valueStr}
+                  </span>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeCondition(i);
+                  }}
+                  aria-label="Remove filter"
+                  className="ml-1 rounded p-0.5 text-slate-400 hover:bg-slate-300 hover:text-slate-700 dark:hover:bg-slate-600 dark:hover:text-slate-100"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </button>
+
+              {editingIndex === i ? (
+                <ConditionEditor
+                  meta={meta}
+                  cond={cond}
+                  ownerOptions={ownerOptions}
+                  tierOptions={tierOptions}
+                  onChange={(patch) => updateCondition(i, patch)}
+                  onClose={() => setEditingIndex(null)}
+                />
+              ) : null}
+            </div>
           </div>
         );
       })}
@@ -281,7 +307,12 @@ function ConditionEditor({
     () => getOptionsForField(meta, ownerOptions, tierOptions),
     [meta, ownerOptions, tierOptions],
   );
-  const showsValue = cond.op !== "is_empty" && cond.op !== "is_not_empty";
+  const showsValue =
+    cond.op !== "is_empty" &&
+    cond.op !== "is_not_empty" &&
+    cond.op !== "is_true" &&
+    cond.op !== "is_false" &&
+    meta.type !== "boolean";
   const isMulti = cond.op === "is_one_of";
   const isBetween = cond.op === "between";
 

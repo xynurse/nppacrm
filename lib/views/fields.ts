@@ -57,6 +57,7 @@ const DATE_OPS: FilterOperator[] = [
   "is_empty",
   "is_not_empty",
 ];
+const BOOLEAN_OPS: FilterOperator[] = ["is_true", "is_false"];
 
 export const COMPANY_FIELDS: FieldMeta[] = [
   {
@@ -144,6 +145,13 @@ export const COMPANY_FIELDS: FieldMeta[] = [
     operators: DATE_OPS,
     sortable: true,
   },
+  {
+    key: "hasPendingReview",
+    label: "Pending review",
+    type: "boolean",
+    operators: BOOLEAN_OPS,
+    sortable: false,
+  },
 ];
 
 export const COMPANY_FIELDS_BY_KEY: Record<string, FieldMeta> =
@@ -174,4 +182,6 @@ export const OPERATOR_LABELS: Record<FilterOperator, string> = {
   on: "on",
   last_n_days: "in last N days",
   next_n_days: "in next N days",
+  is_true: "is true",
+  is_false: "is false",
 };
