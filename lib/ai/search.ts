@@ -46,7 +46,7 @@ export async function valyuSearch(opts: {
   };
 
   try {
-    const res = await fetch("https://api.valyu.network/v1/knowledge", {
+    const res = await fetch("https://api.valyu.network/v1/deepsearch", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -62,6 +62,7 @@ export async function valyuSearch(opts: {
     }
 
     const data = (await res.json()) as {
+      success?: boolean;
       results?: Array<{
         title?: string;
         url?: string;
@@ -70,6 +71,10 @@ export async function valyuSearch(opts: {
         published_date?: string;
       }>;
     };
+
+    if (!data.success) {
+      return { hits: [], callCount: 1 };
+    }
 
     const hits: SearchHit[] = (data.results ?? [])
       .filter((r) => r.url && r.title)
