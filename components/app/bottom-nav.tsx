@@ -46,7 +46,7 @@ export function BottomNav() {
             className={cn(
               "flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors",
               active
-                ? "text-slate-900 dark:text-slate-100"
+                ? "text-brand-600 dark:text-brand-400"
                 : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
             )}
             aria-current={active ? "page" : undefined}
