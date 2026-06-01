@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { listActiveEvents } from "@/lib/db/queries/events";
 import { listTasksForEvent } from "@/lib/db/queries/tasks";
+import { listUsers } from "@/lib/db/queries/users";
 import { requireSession } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { TasksPageClient } from "@/components/tasks/tasks-page-client";
 
-type SearchParams = Promise<{ filter?: string }>;
+type SearchParams = Promise<{ filter?: string; view?: string }>;
 
 export default async function TasksPage({
   searchParams,
@@ -22,6 +23,7 @@ export default async function TasksPage({
     | "mine"
     | "overdue"
     | "all";
+  const view = (params.view ?? "list") as "list" | "timeline";
 
   if (!activeEvent) {
     return (
@@ -37,10 +39,13 @@ export default async function TasksPage({
     );
   }
 
-  const tasks = await listTasksForEvent(activeEvent.id, {
-    onlyOpen: filter !== "all",
-    assigneeId: filter === "mine" ? session.user.id : undefined,
-  });
+  const [tasks, allUsers] = await Promise.all([
+    listTasksForEvent(activeEvent.id, {
+      onlyOpen: filter !== "all",
+      assigneeId: filter === "mine" ? session.user.id : undefined,
+    }),
+    listUsers(),
+  ]);
 
   const filtered = (() => {
     if (filter !== "overdue") return tasks;
@@ -51,18 +56,25 @@ export default async function TasksPage({
     );
   })();
 
+  const userOptions = allUsers
+    .filter((u) => u.isActive)
+    .map((u) => ({ id: u.id, name: u.name, email: u.email }));
+
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Tasks</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          {activeEvent.name} · {filtered.length} tasks
+          {activeEvent.name} · {filtered.length} task{filtered.length !== 1 ? "s" : ""}
         </p>
       </div>
       <TasksPageClient
         tasks={filtered}
         currentUserId={session.user.id}
         currentFilter={filter}
+        currentView={view}
+        eventId={activeEvent.id}
+        users={userOptions}
       />
     </div>
   );

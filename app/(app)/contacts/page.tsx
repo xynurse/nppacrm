@@ -2,8 +2,10 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { listActiveEvents } from "@/lib/db/queries/events";
 import { listContactsForEvent } from "@/lib/db/queries/contacts";
+import { listEventCompanies } from "@/lib/db/queries/companies";
 import { requireSession } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { NewContactButton } from "@/components/contacts/new-contact-dialog";
 
 export default async function ContactsPage() {
   const session = await requireSession();
@@ -25,21 +27,35 @@ export default async function ContactsPage() {
     );
   }
 
-  const contacts = await listContactsForEvent(activeEvent.id);
+  const [contacts, allEventCompanies] = await Promise.all([
+    listContactsForEvent(activeEvent.id),
+    listEventCompanies(activeEvent.id),
+  ]);
+
+  // Deduplicate to unique companies for the picker
+  const companyOptions = Array.from(
+    new Map(
+      allEventCompanies.map((ec) => [ec.companyId, { id: ec.companyId, name: ec.companyName }]),
+    ).values(),
+  ).sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Contacts</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          {activeEvent.name} · {contacts.length} contacts
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Contacts</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            {activeEvent.name} · {contacts.length} contacts
+          </p>
+        </div>
+        <NewContactButton companies={companyOptions} />
       </div>
 
       {contacts.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            No contacts yet. Add contacts inside a prospect drawer.
+            No contacts yet. Click <strong>New contact</strong> above or add
+            contacts inside a prospect&apos;s drawer.
           </p>
         </div>
       ) : (

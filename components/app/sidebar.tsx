@@ -13,6 +13,7 @@ import {
   KanbanSquare,
   LayoutDashboard,
   LogOut,
+  Search,
   Settings,
   Users,
 } from "lucide-react";
@@ -149,6 +150,16 @@ export function Sidebar({ role, user, events, activeEventId }: SidebarProps) {
             Admin
           </p>
           <div className="space-y-0.5">
+            {activeEventId ? (
+              <NavLink
+                item={{
+                  href: `/admin/events/${activeEventId}/agents`,
+                  label: "Discover",
+                  Icon: Search,
+                }}
+                pathname={pathname}
+              />
+            ) : null}
             {adminNav.map((item) => (
               <NavLink key={item.href} item={item} pathname={pathname} />
             ))}

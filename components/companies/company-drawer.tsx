@@ -14,6 +14,7 @@ import { UrlDisplay, UrlEditor } from "@/components/cells/url-cell";
 import type { PersonOption, TierOption } from "@/components/cells/types";
 import { AiTab } from "@/components/companies/ai-tab";
 import { BenefitsTab } from "@/components/companies/benefits-tab";
+import { EmailDraftButton } from "@/components/companies/email-draft-dialog";
 import { ProposalDialog } from "@/components/companies/proposal-dialog";
 import { ContactsTab } from "@/components/contacts/contacts-tab";
 import { CustomFieldsSection } from "@/components/custom-fields/custom-fields-section";
@@ -196,6 +197,10 @@ function DrawerContent({
           />
         </div>
         <div className="flex shrink-0 items-start gap-2">
+          <EmailDraftButton
+            eventCompanyId={row.id}
+            companyName={row.companyName}
+          />
           <ProposalDialog
             eventCompanyId={row.id}
             companyName={row.companyName}

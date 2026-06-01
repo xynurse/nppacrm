@@ -4,9 +4,11 @@ import {
   companies,
   eventCompanies,
   interactions,
+  sponsorshipTiers,
   tasks,
   users,
 } from "@/lib/db/schema";
+import { aliasedTable } from "drizzle-orm";
 
 export type StalledRow = {
   id: string;
@@ -153,6 +155,99 @@ export type MyTaskRow = {
   companyName: string | null;
   eventCompanyId: string | null;
 };
+
+export type HotProspectRow = {
+  id: string;
+  companyName: string;
+  status: typeof eventCompanies.$inferSelect.status;
+  ownerName: string | null;
+  targetTierName: string | null;
+  targetTierColor: string | null;
+  lastContactedAt: Date | null;
+};
+
+export async function listHotProspects(
+  eventId: string,
+  limit = 6,
+): Promise<HotProspectRow[]> {
+  const targetTiers = aliasedTable(sponsorshipTiers, "target_tiers_hot");
+  return db
+    .select({
+      id: eventCompanies.id,
+      companyName: companies.name,
+      status: eventCompanies.status,
+      ownerName: users.name,
+      targetTierName: targetTiers.name,
+      targetTierColor: targetTiers.color,
+      lastContactedAt: eventCompanies.lastContactedAt,
+    })
+    .from(eventCompanies)
+    .innerJoin(companies, eq(companies.id, eventCompanies.companyId))
+    .leftJoin(users, eq(users.id, eventCompanies.ownerId))
+    .leftJoin(targetTiers, eq(targetTiers.id, eventCompanies.targetTierId))
+    .where(
+      and(
+        eq(eventCompanies.eventId, eventId),
+        isNull(eventCompanies.deletedAt),
+        eq(eventCompanies.priority, "high"),
+        inArray(eventCompanies.status, [
+          "contacted",
+          "engaged",
+          "proposal_sent",
+          "negotiating",
+        ]),
+      ),
+    )
+    .orderBy(desc(eventCompanies.lastContactedAt))
+    .limit(limit);
+}
+
+export type TierMixRow = {
+  tierName: string;
+  tierColor: string | null;
+  confirmedCount: number;
+  confirmedAmount: number;
+};
+
+export async function listTierMix(
+  eventId: string,
+): Promise<TierMixRow[]> {
+  const rows = await db
+    .select({
+      tierName: sponsorshipTiers.name,
+      tierColor: sponsorshipTiers.color,
+      confirmedAmount: eventCompanies.confirmedAmount,
+    })
+    .from(eventCompanies)
+    .innerJoin(
+      sponsorshipTiers,
+      eq(sponsorshipTiers.id, eventCompanies.confirmedTierId),
+    )
+    .where(
+      and(
+        eq(eventCompanies.eventId, eventId),
+        eq(eventCompanies.status, "confirmed"),
+        isNull(eventCompanies.deletedAt),
+      ),
+    );
+
+  const byTier = new Map<string, TierMixRow>();
+  for (const r of rows) {
+    const existing = byTier.get(r.tierName);
+    if (existing) {
+      existing.confirmedCount += 1;
+      existing.confirmedAmount += r.confirmedAmount ? Number(r.confirmedAmount) : 0;
+    } else {
+      byTier.set(r.tierName, {
+        tierName: r.tierName,
+        tierColor: r.tierColor,
+        confirmedCount: 1,
+        confirmedAmount: r.confirmedAmount ? Number(r.confirmedAmount) : 0,
+      });
+    }
+  }
+  return [...byTier.values()].sort((a, b) => b.confirmedAmount - a.confirmedAmount);
+}
 
 export async function listMyOpenTasks(
   eventId: string,

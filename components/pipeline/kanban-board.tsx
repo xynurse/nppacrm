@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
+import { formatRelativeDate } from "@/lib/format";
 import {
   confirmEventCompany,
   moveEventCompanyStatus,
@@ -300,11 +301,33 @@ function Card({
             </span>
           ) : null}
         </div>
-        {row.ownerName ? (
-          <p className="text-slate-500 dark:text-slate-400">
-            Owner: {row.ownerName}
-          </p>
-        ) : null}
+        <div className="flex items-center justify-between gap-1">
+          {row.ownerName ? (
+            <span className="text-slate-500 dark:text-slate-400 truncate">
+              {row.ownerName}
+            </span>
+          ) : (
+            <span />
+          )}
+          {row.lastContactedAt ? (
+            <span
+              className={cn(
+                "shrink-0 tabular-nums",
+                (() => {
+                  const days =
+                    (Date.now() - new Date(row.lastContactedAt).getTime()) /
+                    86_400_000;
+                  if (days >= 30) return "text-red-500 dark:text-red-400";
+                  if (days >= 14) return "text-amber-500 dark:text-amber-400";
+                  return "text-slate-400 dark:text-slate-500";
+                })(),
+              )}
+              title={`Last contact: ${formatRelativeDate(row.lastContactedAt)}`}
+            >
+              {formatRelativeDate(row.lastContactedAt)}
+            </span>
+          ) : null}
+        </div>
       </div>
       <span className="sr-only">Status: {PROSPECT_STATUS_LABELS[row.status]}</span>
     </div>
