@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNotNull, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, lt } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   companies,
@@ -41,7 +41,7 @@ const ACTIVE_STATUSES = [
   "engaged",
   "proposal_sent",
   "negotiating",
-];
+] as const;
 
 export async function getDashboardMetrics(
   eventId: string,
@@ -106,7 +106,7 @@ export async function listStalledProspects(
       and(
         eq(eventCompanies.eventId, eventId),
         isNull(eventCompanies.deletedAt),
-        sql`${eventCompanies.status} = ANY(${ACTIVE_STATUSES})`,
+        inArray(eventCompanies.status, [...ACTIVE_STATUSES]),
         isNotNull(eventCompanies.lastContactedAt),
         lt(eventCompanies.lastContactedAt, cutoff),
       ),
