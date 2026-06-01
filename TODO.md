@@ -14,7 +14,7 @@ All chunks committed to `main` and deployed at `nppacrm.vercel.app`.
 - [x] Admin account created (mike@thorn.ooo)
 - [x] `pnpm db:seed` run (LPD 2026 event + tiers + default views)
 - [ ] **Connect Anthropic provider in Vercel AI Gateway** (unlocks AI enrichment)
-- [ ] `/admin/events/[id]/import` to bulk-load real Master List CSV
+- [x] `/admin/events/[id]/import` to bulk-load real Master List CSV
 - [ ] **Custom domain** _(deferred — pending final name decision)_
 
 ## v1 chunks to rebuild (in order)
