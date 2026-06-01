@@ -1,7 +1,9 @@
 # TODO
 
-Living roadmap. Rebuild complete through chunk 19 as of 2026-05-28.
-All chunks committed to `main` and deployed at `nppacrm.vercel.app`.
+Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
+state including in-progress work and known bugs.
+
+Latest shipped commit: `d756c6a` (chunk B) — deployed at `nppacrm.vercel.app`.
 
 ## Critical path: remaining setup
 
@@ -59,6 +61,23 @@ load-bearing — chunk N depends on chunks 1..N-1.
       task. Drawer header "Mark proposal sent" dialog. /companies Last
       contact cell tints amber at 14+ days, red at 30+ for active
       statuses. Needs `pnpm db:migrate` after merge.
+
+## Post-v1 lettered chunks (new work on top of the rebuild)
+
+- [x] **Chunk A — Medical design system** (2026-06-01)
+  Dark slate sidebar, teal brand colour (`brand-600`), Inter font, refined
+  typography and spacing throughout.
+
+- [x] **Chunk B — Outreach intelligence & UX enrichment** (2026-06-01)
+  Dashboard v2 (funnel chart, tier mix, hot prospects, richer KPIs), contact
+  creation with company picker, task timeline view + New Task form with
+  assignee, pipeline cards with last-contact age tinting, AI email draft
+  action + modal in company drawer, "Discover" nav link in admin sidebar.
+
+- [ ] **Chunk 14b — Watch agent + Vercel cron** _(in progress — see SESSION-STATE.md)_
+  Watch agent (`lib/agents/watch.ts`) written but not yet committed.
+  Still needs: `vercel.json`, `runWatchAgent` action, agents UI update,
+  fix 3 bugs (unused import, UUID FK mismatch × 2), then typecheck/build/commit.
 
 ## v1.5 — never built (still on the wishlist)
 

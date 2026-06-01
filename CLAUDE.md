@@ -4,10 +4,12 @@
 A modern, password-protected CRM for managing sponsor outreach for Leadership & Professional Development for NPs & PAs.
 Design philosophy: spreadsheet-first, inline-editable, drawer detail, ⌘K palette.
 References: Attio, Twenty, Linear, Notion.
-Full spec: `docs/sponsorship-crm-build-prompt.md`. Project status, what was
-built and lost, and the chunk-by-chunk rebuild plan: `README.md`,
-`CHANGELOG.md`, `TODO.md`. Resume prompt for new sessions:
-`docs/RESUME-PROMPT.md`.
+
+**Primary reference files (read in this order at session start):**
+1. `docs/SESSION-STATE.md` — current state, in-progress work, next tasks. **Read this first.**
+2. `TODO.md` — full backlog with completion status.
+3. `CHANGELOG.md` — history of what was built and when.
+4. `docs/sponsorship-crm-build-prompt.md` — original product spec (read only if working on a new feature area).
 
 ## Stack — do not deviate without asking
 - Next.js 15 App Router, TypeScript strict, Server Actions for mutations
@@ -48,6 +50,21 @@ built and lost, and the chunk-by-chunk rebuild plan: `README.md`,
 - After implementing, run `pnpm typecheck && pnpm lint` and fix anything that breaks. Don't ship type errors.
 - If you find yourself making the same correction twice, stop and ask whether the approach is wrong.
 - Prefer existing libraries already in the project. Ask before adding a new dependency.
+
+## End-of-session protocol (REQUIRED before stopping or /clear)
+
+Before ending any session, you **must** update `docs/SESSION-STATE.md` with:
+
+1. **Last updated** — today's date and what session this was.
+2. **Current git HEAD** — the commit hash and message after any commits this session.
+3. **In progress** — any work started but not committed, with exact file paths and what each file still needs.
+4. **Known bugs** — anything found but not yet fixed, with the exact fix needed.
+5. **Decisions made** — choices made this session and why, so the next session doesn't re-debate them.
+6. **Next sessions queue** — ordered list of what to work on next with enough detail to start cold.
+
+Also update `TODO.md` to mark completed chunks and `CHANGELOG.md` to add an entry for anything that shipped.
+
+**The goal:** a new session reading only `SESSION-STATE.md` should be able to pick up exactly where this one left off without any re-explanation from the user.
 
 ## Commit policy (overrides the global "ask before commit" default)
 - **Commit directly to `main` after every green build. No per-chunk feature branches.** As soon as `tsc --noEmit + next lint + next build` all pass for a chunk, stage the work and create a commit on `main` with a clear message ("chunk N: <one-line summary>" or similar). Don't wait to be asked.

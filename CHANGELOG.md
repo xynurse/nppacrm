@@ -1,10 +1,52 @@
 # Changelog
 
-> ⚠️ **Historical reference.** This log documents the 18-chunk build that
+## Active build (committed to main)
+
+### Chunk 14b — Watch agent + Vercel cron _(in progress, 2026-06-01)_
+- `lib/agents/watch.ts` — Watch agent: for each active prospect runs a Valyu
+  search for recent news/funding/leadership signals, calls Claude Haiku to
+  assess signal relevance, creates a follow-up task on the company if a real
+  signal is found. Max 10 companies/run, skips recently-contacted (7d).
+- `app/api/cron/discovery/route.ts` — GET handler with Bearer auth, runs
+  discovery for all events where the Discovery agent is enabled.
+- `app/api/cron/watch/route.ts` — GET handler with Bearer auth, runs watch
+  for all events where the Watch agent is enabled.
+- `vercel.json` — daily cron schedule (Discovery 6am UTC, Watch 8am UTC).
+- `lib/actions/agents.ts` — `runWatchAgent` server action added.
+- `components/admin/agents-panel.tsx` — Watch row live with toggle + Run now.
+- **Not yet committed.** See `docs/SESSION-STATE.md` for remaining steps.
+
+### Chunk B — Outreach intelligence & UX enrichment _(2026-06-01, commit d756c6a)_
+- **Dashboard v2:** colour-accented KPI cards, horizontal pipeline funnel bar
+  chart, tier-mix confirmed-revenue breakdown, hot-prospects panel (high
+  priority + active status), activity feed with user initials.
+- **Contact creation:** "New contact" button on `/contacts` with searchable
+  company picker; marks primary contact; empty-state copy updated.
+- **Task management:** timeline view grouping tasks into Overdue / Today /
+  This Week / Later / No Due Date buckets with colour banding. List ↔
+  Timeline toggle. Standalone "New task" inline form with due date, priority,
+  and assignee picker across all active users.
+- **Pipeline cards:** last-contacted date shown per card; amber at 14d, red
+  at 30d (matches cadence logic in companies table).
+- **AI email draft:** `draftOutreachEmail` server action (Claude Sonnet, cached
+  prospectus context, company profile + CRM notes + primary contact). Drawer
+  header button opens modal with subject + body, per-field copy buttons,
+  full-email copy, regenerate. System-prompt rules block AI slop phrasing.
+- **Discover nav link:** admin sidebar item pointing straight to the AI agents
+  page for the active event.
+
+### Chunk A — Medical design system _(2026-06-01, commit 4e71273)_
+- Dark slate sidebar (`bg-slate-900`) matching clinical/enterprise aesthetic.
+- Teal brand colour (`brand-600 = #0d9488`, teal-600) replacing generic blue.
+- Inter font via `next/font/google` with `--font-inter` CSS variable.
+- Refined typography scale and spacing throughout shell components.
+
+---
+
+> ⚠️ **Historical reference below.** This documents the 18-chunk build that
 > happened in the `claude/kind-banach-f3fa4b` worktree on 2026-05-08 to -09.
-> That worktree was deleted before any commits landed; none of the code below
-> is in the repo right now. The architectural decisions, schema shape, and
-> chunked ordering are preserved here for the rebuild.
+> That worktree was deleted before any commits landed. Architectural decisions
+> and schema shape are preserved here for reference.
 
 ## v1.5 — AI + sponsor-workflow extensions (built then lost)
 
