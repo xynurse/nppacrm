@@ -2,19 +2,21 @@
 
 ## Active build (committed to main)
 
-### Chunk 14b — Watch agent + Vercel cron _(in progress, 2026-06-01)_
+### Chunk 14b — Watch agent + Vercel cron _(2026-06-01)_
 - `lib/agents/watch.ts` — Watch agent: for each active prospect runs a Valyu
   search for recent news/funding/leadership signals, calls Claude Haiku to
   assess signal relevance, creates a follow-up task on the company if a real
-  signal is found. Max 10 companies/run, skips recently-contacted (7d).
+  signal is found. Max 10 companies/run, skips terminal statuses and anyone
+  contacted within the last 7 days.
 - `app/api/cron/discovery/route.ts` — GET handler with Bearer auth, runs
-  discovery for all events where the Discovery agent is enabled.
+  discovery for all active events where the Discovery agent is enabled.
 - `app/api/cron/watch/route.ts` — GET handler with Bearer auth, runs watch
-  for all events where the Watch agent is enabled.
+  for all active events where the Watch agent is enabled.
 - `vercel.json` — daily cron schedule (Discovery 6am UTC, Watch 8am UTC).
 - `lib/actions/agents.ts` — `runWatchAgent` server action added.
-- `components/admin/agents-panel.tsx` — Watch row live with toggle + Run now.
-- **Not yet committed.** See `docs/SESSION-STATE.md` for remaining steps.
+- `components/admin/agents-panel.tsx` — Watch row live with toggle, Run now,
+  and a signal-task-count badge.
+- `lib/env.ts` / `.env.example` — `CRON_SECRET` added (required in prod).
 
 ### Chunk B — Outreach intelligence & UX enrichment _(2026-06-01, commit d756c6a)_
 - **Dashboard v2:** colour-accented KPI cards, horizontal pipeline funnel bar

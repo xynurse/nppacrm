@@ -97,7 +97,7 @@ export type DiscoveryCandidate = z.infer<
 
 export async function runDiscovery(opts: {
   eventId: string;
-  triggeredBy: string;
+  triggeredBy: string | null;
   modelId?: string;
 }): Promise<{ runId: string; count: number }> {
   const modelId = opts.modelId ?? DEFAULT_MODEL_ID;

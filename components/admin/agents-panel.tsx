@@ -15,6 +15,7 @@ import {
   acceptCompanySuggestion,
   dismissCompanySuggestion,
   runDiscoveryAgent,
+  runWatchAgent,
   toggleAgent,
 } from "@/lib/actions/agents";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,8 @@ type Props = {
   eventId: string;
   discoveryEnabled: boolean;
   lastRunAt: Date | null;
+  watchEnabled: boolean;
+  watchLastRunAt: Date | null;
   suggestions: CompanySuggestionRow[];
   runs: AgentRunRow[];
 };
@@ -32,6 +35,8 @@ export function AgentsPanel({
   eventId,
   discoveryEnabled,
   lastRunAt,
+  watchEnabled,
+  watchLastRunAt,
   suggestions,
   runs,
 }: Props) {
@@ -42,6 +47,18 @@ export function AgentsPanel({
   const [runResult, setRunResult] = useState<{
     count: number;
   } | null>(null);
+
+  const [watchRunning, startWatchRunning] = useTransition();
+  const [watchToggling, startWatchToggling] = useTransition();
+  const [watchError, setWatchError] = useState<string | null>(null);
+  const [watchResult, setWatchResult] = useState<{ count: number } | null>(
+    null,
+  );
+
+  // Total signal tasks created across all watch runs.
+  const watchTaskCount = runs
+    .filter((r) => r.agentType === "watch" && r.status === "completed")
+    .reduce((sum, r) => sum + r.suggestionCount, 0);
 
   const handleRun = () => {
     setRunError(null);
@@ -60,6 +77,27 @@ export function AgentsPanel({
   const handleToggle = (enabled: boolean) => {
     startToggling(async () => {
       await toggleAgent({ eventId, agentType: "discovery", enabled });
+      router.refresh();
+    });
+  };
+
+  const handleRunWatch = () => {
+    setWatchError(null);
+    setWatchResult(null);
+    startWatchRunning(async () => {
+      const res = await runWatchAgent({ eventId });
+      if (!res.ok) {
+        setWatchError(res.error);
+      } else {
+        setWatchResult({ count: res.count });
+        router.refresh();
+      }
+    });
+  };
+
+  const handleToggleWatch = (enabled: boolean) => {
+    startWatchToggling(async () => {
+      await toggleAgent({ eventId, agentType: "watch", enabled });
       router.refresh();
     });
   };
@@ -106,17 +144,40 @@ export function AgentsPanel({
             }
           />
 
-          {/* Watch — coming soon */}
+          {/* Watch */}
           <AgentRow
-            icon={<Bot className="h-4 w-4 opacity-40" />}
+            icon={<Bot className="h-4 w-4" />}
             name="Watch"
-            description="Monitors existing prospects for news, leadership changes, and funding signals."
-            enabled={false}
-            lastRunAt={null}
-            disabled
-            badge="Coming soon"
-            onToggle={() => {}}
-            toggling={false}
+            description="Monitors existing prospects for news, leadership changes, and funding signals. Creates follow-up tasks when a signal is found."
+            enabled={watchEnabled}
+            lastRunAt={watchLastRunAt}
+            badge={
+              watchTaskCount > 0
+                ? `${watchTaskCount} task${watchTaskCount === 1 ? "" : "s"}`
+                : undefined
+            }
+            onToggle={handleToggleWatch}
+            toggling={watchToggling}
+            runButton={
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRunWatch}
+                disabled={watchRunning}
+              >
+                {watchRunning ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    Running…
+                  </>
+                ) : (
+                  <>
+                    <Play className="mr-1.5 h-3.5 w-3.5" />
+                    Run now
+                  </>
+                )}
+              </Button>
+            }
           />
         </div>
 
@@ -129,6 +190,17 @@ export function AgentsPanel({
           <p className="mt-3 text-xs text-emerald-600 dark:text-emerald-400">
             ✓ Run complete — {runResult.count} new candidate
             {runResult.count === 1 ? "" : "s"} added to inbox below.
+          </p>
+        ) : null}
+        {watchError ? (
+          <p className="mt-3 text-xs text-red-600 dark:text-red-400">
+            {watchError}
+          </p>
+        ) : null}
+        {watchResult ? (
+          <p className="mt-3 text-xs text-emerald-600 dark:text-emerald-400">
+            ✓ Watch complete — {watchResult.count} signal task
+            {watchResult.count === 1 ? "" : "s"} created.
           </p>
         ) : null}
       </section>

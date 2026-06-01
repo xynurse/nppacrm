@@ -23,6 +23,7 @@ export const env = createEnv({
     AI_MODEL_ID: z.string().default("anthropic/claude-sonnet-4-6"),
     VALYU_API_KEY: z.string().optional(),
     AI_DAILY_SPEND_CAP_USD: z.coerce.number().positive().default(5),
+    CRON_SECRET: z.string().min(16).optional(),
   },
   client: {},
   runtimeEnv: {
@@ -43,6 +44,7 @@ export const env = createEnv({
     AI_MODEL_ID: process.env.AI_MODEL_ID,
     VALYU_API_KEY: process.env.VALYU_API_KEY,
     AI_DAILY_SPEND_CAP_USD: process.env.AI_DAILY_SPEND_CAP_USD,
+    CRON_SECRET: process.env.CRON_SECRET,
   },
   skipValidation:
     process.env.SKIP_ENV_VALIDATION === "true" ||

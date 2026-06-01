@@ -74,10 +74,10 @@ load-bearing — chunk N depends on chunks 1..N-1.
   assignee, pipeline cards with last-contact age tinting, AI email draft
   action + modal in company drawer, "Discover" nav link in admin sidebar.
 
-- [ ] **Chunk 14b — Watch agent + Vercel cron** _(in progress — see SESSION-STATE.md)_
-  Watch agent (`lib/agents/watch.ts`) written but not yet committed.
-  Still needs: `vercel.json`, `runWatchAgent` action, agents UI update,
-  fix 3 bugs (unused import, UUID FK mismatch × 2), then typecheck/build/commit.
+- [x] **Chunk 14b — Watch agent + Vercel cron**
+  Watch agent monitors active prospects for signals → creates follow-up tasks.
+  Shipped: `vercel.json` daily crons, `/api/cron/{discovery,watch}` routes with
+  `CRON_SECRET` Bearer auth, `runWatchAgent` action, Watch row live in agents UI.
 
 ## v1.5 — never built (still on the wishlist)
 

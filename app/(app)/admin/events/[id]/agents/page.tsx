@@ -17,12 +17,14 @@ export default async function AgentsPage({
   await requireAdmin();
   const { id } = await params;
 
-  const [event, discoverySchedule, suggestions, runs] = await Promise.all([
-    getEventById(id),
-    getAgentSchedule(id, "discovery"),
-    listPendingSuggestions(id),
-    listAgentRuns(id),
-  ]);
+  const [event, discoverySchedule, watchSchedule, suggestions, runs] =
+    await Promise.all([
+      getEventById(id),
+      getAgentSchedule(id, "discovery"),
+      getAgentSchedule(id, "watch"),
+      listPendingSuggestions(id),
+      listAgentRuns(id),
+    ]);
 
   if (!event) notFound();
 
@@ -39,8 +41,9 @@ export default async function AgentsPage({
           AI Agents
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Automated discovery of new sponsorship candidates. Run manually or
-          enable for scheduled runs (coming soon).
+          Automated discovery of new sponsorship candidates and signal
+          monitoring of existing prospects. Run manually or enable for scheduled
+          daily runs.
         </p>
       </div>
 
@@ -48,6 +51,8 @@ export default async function AgentsPage({
         eventId={id}
         discoveryEnabled={discoverySchedule?.enabled ?? false}
         lastRunAt={discoverySchedule?.lastRunAt ?? null}
+        watchEnabled={watchSchedule?.enabled ?? false}
+        watchLastRunAt={watchSchedule?.lastRunAt ?? null}
         suggestions={suggestions}
         runs={runs}
       />

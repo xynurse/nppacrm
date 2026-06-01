@@ -6,6 +6,7 @@ import { z } from "zod";
 import { aiConfigurationStatus } from "@/lib/ai/gateway";
 import { checkSpendCap } from "@/lib/ai/spend";
 import { runDiscovery } from "@/lib/agents/discovery";
+import { runWatch } from "@/lib/agents/watch";
 import { requireAdmin } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { db } from "@/lib/db";
@@ -90,6 +91,61 @@ export async function runDiscoveryAgent(
       userId: session.user.id,
       eventId,
       action: "agent.discovery_run",
+      entityType: "agentRun",
+      entityId: result.runId,
+      changes: { count: result.count },
+    });
+
+    revalidatePath(`/admin/events/${eventId}/agents`);
+    return { ok: true, runId: result.runId, count: result.count };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Agent run failed",
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Run watch agent manually
+// ---------------------------------------------------------------------------
+
+export async function runWatchAgent(
+  raw: unknown,
+): Promise<
+  | { ok: true; runId: string; count: number }
+  | { ok: false; error: string }
+> {
+  const session = await requireAdmin();
+
+  const parsed = runSchema.safeParse(raw);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
+
+  const { eventId } = parsed.data;
+
+  // Gate on AI config
+  const aiStatus = aiConfigurationStatus();
+  if (!aiStatus.ok) return { ok: false, error: aiStatus.reason! };
+
+  // Gate on daily spend cap
+  const spendOk = await checkSpendCap();
+  if (!spendOk)
+    return {
+      ok: false,
+      error: "Daily AI spend cap reached. Try again tomorrow.",
+    };
+
+  try {
+    const result = await runWatch({
+      eventId,
+      triggeredBy: session.user.id,
+    });
+
+    await recordAudit({
+      userId: session.user.id,
+      eventId,
+      action: "agent.watch_run",
       entityType: "agentRun",
       entityId: result.runId,
       changes: { count: result.count },
