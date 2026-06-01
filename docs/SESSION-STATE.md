@@ -8,55 +8,47 @@
 ---
 
 ## Last updated
-2026-06-01 — end of chunk 14b session (partial)
+2026-06-01 — chunk 14b complete (committed + pushed)
 
 ## Current git HEAD
-`d756c6a` — chunk B committed and pushed to `origin/main`
-
-Chunk 14b files were written but **not yet committed** (typecheck/lint/build
-not run yet). See "In progress" below.
+`bc7a336` — chunk 14b: Watch agent + Vercel cron wiring
+(plus a follow-up docs commit updating this file)
 
 ---
 
 ## What's deployed
 **Production URL:** `nppacrm.vercel.app`
 
-Deployed code: everything through commit `d756c6a` (chunk B).
+Deployed code: chunks A, B, and 14b are on `origin/main`. Vercel auto-deploys
+from `main`, so 14b ships on the next deploy.
 
-Chunks A and B are live. Chunk 14b is local only, not committed.
+**Before the crons actually run in prod, two env vars must be set in Vercel:**
+- `CRON_SECRET` — generate with `openssl rand -base64 32`. Required in prod or
+  the cron routes return 500. Vercel cron sends `Authorization: Bearer <it>`.
+- `AI_GATEWAY_API_KEY` — connect the Anthropic provider in the Vercel AI
+  Gateway tab, or the routes return 503 ("AI not configured").
 
 ---
 
-## In progress: Chunk 14b — Watch agent + Vercel cron
+## Chunk 14b — DONE
 
-### Files written this session (not yet committed):
-| File | Status |
-|---|---|
-| `lib/agents/watch.ts` | Written — watch agent logic complete |
-| `lib/env.ts` | Updated — `CRON_SECRET` added |
-| `app/api/cron/discovery/route.ts` | Written |
-| `app/api/cron/watch/route.ts` | Written |
+Shipped in commit `bc7a336`:
+- `lib/agents/watch.ts` — watch agent (Valyu search + Claude Haiku signal
+  assessment → creates follow-up tasks). Skips terminal statuses
+  (`confirmed`/`declined`/`past_sponsor`) and anyone contacted in the last 7
+  days. Max 10 companies/run.
+- `app/api/cron/{discovery,watch}/route.ts` — GET handlers, Bearer auth via
+  `CRON_SECRET`, gate on AI config, run for all `status = active` events with
+  that agent enabled. `triggeredBy` passed as `null` (it's a UUID FK to users).
+- `vercel.json` — discovery 6am UTC, watch 8am UTC.
+- `lib/actions/agents.ts` — `runWatchAgent` (mirrors `runDiscoveryAgent`).
+- `components/admin/agents-panel.tsx` — Watch row live (toggle, Run now,
+  signal-task-count badge). `agents` page fetches the watch schedule.
 
-### Files still to write before chunk 14b is done:
-| File | What it needs |
-|---|---|
-| `vercel.json` | New file at repo root: `{"crons":[{"path":"/api/cron/discovery","schedule":"0 6 * * *"},{"path":"/api/cron/watch","schedule":"0 8 * * *"}]}` |
-| `.env.example` | Add line: `CRON_SECRET=` (secret for Vercel → project → cron auth) |
-| `lib/actions/agents.ts` | Add `runWatchAgent` server action (mirrors `runDiscoveryAgent`, calls `runWatch` from `lib/agents/watch`) |
-| `components/admin/agents-panel.tsx` | Wire Watch row: remove `disabled`/`"Coming soon"`, add real toggle + "Run now" button, show task-count badge |
-| `app/(app)/admin/events/[id]/agents/page.tsx` | Fetch `watchSchedule` and pass `watchEnabled`/`watchLastRunAt` to `AgentsPanel` |
-
-### Known bugs to fix before committing:
-1. **`lib/agents/watch.ts`** — imports `gt` from drizzle-orm but never uses it → remove the import or it'll warn
-2. **`app/api/cron/discovery/route.ts`** — `triggeredBy: "cron"` is a plain string, not a UUID. `agentRuns.triggeredBy` is a UUID FK. Fix: pass `null` instead of `"cron"`.
-3. **`app/api/cron/watch/route.ts`** — same issue, same fix.
-4. **`events.isActive` column** — both cron routes query `events.isActive`. Verify this column exists in `lib/db/schema/events.ts` before typechecking; if it doesn't exist, use `events.archivedAt IS NULL` or just remove that WHERE condition.
-
-### Build gates (must all pass before committing):
-```
-export PATH="/Users/michaelthorn/.npm-global/bin:$PATH"
-pnpm typecheck && pnpm lint && pnpm build
-```
+All bugs from the prior session's notes were fixed: removed unused `gt`
+import, `triggeredBy` now `string | null` (cron passes `null`), and
+`events.isActive` → `events.status = "active"` (there is no `isActive`
+column). typecheck + lint + build all green.
 
 ---
 
@@ -78,10 +70,7 @@ pnpm typecheck && pnpm lint && pnpm build
 
 Work through these in order. One chunk per session.
 
-### 1. Finish chunk 14b (next session's first task)
-See "In progress" section above. ~4 files to write + fix 3 bugs + typecheck/lint/build/commit/push.
-
-### 2. Chunk 15 — TipTap rich notes
+### 1. Chunk 15 — TipTap rich notes
 Replaces `interactions.body` and `tasks.description` (plain text) with TipTap
 jsonb block editor. Needs DB migration.
 
@@ -95,7 +84,7 @@ jsonb block editor. Needs DB migration.
 
 **Prerequisite for:** Chunk 20 (notifications needs `@` mentions)
 
-### 3. Chunk 20 — Notification center
+### 2. Chunk 20 — Notification center
 Bell icon in top bar, `notifications` table, in-app alerts for:
 - Task assignments (`assignedTo` changes)
 - `@` mentions in notes (needs TipTap first)
