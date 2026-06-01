@@ -7,7 +7,7 @@ All chunks committed to `main` and deployed at `nppacrm.vercel.app`.
 
 - [x] Rebuild from spec (chunks 1–19 complete)
 - [x] Push to GitHub
-- [x] Provision Neon + run migrations (0000–0008 applied)
+- [x] Provision Neon + run migrations (0000–0009 applied)
 - [x] Vercel project + env vars wired
 - [x] Vercel Blob integration installed
 - [x] First deploy live
