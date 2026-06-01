@@ -8,7 +8,10 @@ import { recordAudit } from "@/lib/audit";
 import { db } from "@/lib/db";
 import {
   companies,
+  contacts,
   eventCompanies,
+  sponsorshipTiers,
+  users,
   PROSPECT_PRIORITY_VALUES,
   PROSPECT_STATUS_VALUES,
   type ProspectPriority,
@@ -101,23 +104,95 @@ export async function exportEventCompaniesCsv(
   };
 }
 
+const amount = z
+  .string()
+  .regex(/^\d+(\.\d{1,2})?$/u)
+  .optional()
+  .nullable();
+const longText = z.string().trim().max(8000).optional().nullable();
+const shortText = z.string().trim().max(300).optional().nullable();
+const isoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/u)
+  .optional()
+  .nullable();
+
 const importRowSchema = z.object({
   name: z.string().trim().min(1).max(160),
+  website: shortText,
   industry: z.string().trim().max(120).optional().nullable(),
+  subcategory: z.string().trim().max(160).optional().nullable(),
   hqLocation: z.string().trim().max(160).optional().nullable(),
   status: z.enum(PROSPECT_STATUS_VALUES).optional(),
   priority: z.enum(PROSPECT_PRIORITY_VALUES).optional(),
-  proposedAmount: z
-    .string()
-    .regex(/^\d+(\.\d{1,2})?$/u)
-    .optional()
-    .nullable(),
-  confirmedAmount: z
-    .string()
-    .regex(/^\d+(\.\d{1,2})?$/u)
-    .optional()
-    .nullable(),
+  owner: shortText,
+  targetTier: shortText,
+  proposedAmount: amount,
+  confirmedAmount: amount,
+  whyTheyShouldAttend: longText,
+  keyTalkingPoints: longText,
+  emailAngle: longText,
+  sponsorshipHook: longText,
+  relationshipNotes: longText,
+  firstContactedAt: isoDate,
+  lastContactedAt: isoDate,
+  contact1FirstName: shortText,
+  contact1LastName: shortText,
+  contact1Email: shortText,
+  contact1Title: shortText,
+  contact1Phone: shortText,
+  contact1Linkedin: shortText,
+  contact2FirstName: shortText,
+  contact2LastName: shortText,
+  contact2Email: shortText,
+  contact2Title: shortText,
+  contact2Phone: shortText,
+  contact2Linkedin: shortText,
 });
+
+type ImportRow = z.infer<typeof importRowSchema>;
+
+function parseIsoDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const d = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+type ContactSeed = {
+  firstName: string | null;
+  lastName: string | null;
+  fullName: string;
+  email: string | null;
+  title: string | null;
+  phone: string | null;
+  linkedinUrl: string | null;
+  isPrimary: boolean;
+};
+
+function contactFromRow(
+  r: ImportRow,
+  which: 1 | 2,
+): ContactSeed | null {
+  const first = which === 1 ? r.contact1FirstName : r.contact2FirstName;
+  const last = which === 1 ? r.contact1LastName : r.contact2LastName;
+  const email = which === 1 ? r.contact1Email : r.contact2Email;
+  const title = which === 1 ? r.contact1Title : r.contact2Title;
+  const phone = which === 1 ? r.contact1Phone : r.contact2Phone;
+  const linkedin = which === 1 ? r.contact1Linkedin : r.contact2Linkedin;
+  const fullName = [first, last].filter(Boolean).join(" ").trim();
+  const resolvedName = fullName || email?.trim() || "";
+  if (!resolvedName) return null;
+  return {
+    firstName: first?.trim() || null,
+    lastName: last?.trim() || null,
+    fullName: resolvedName,
+    email: email?.trim() || null,
+    title: title?.trim() || null,
+    phone: phone?.trim() || null,
+    linkedinUrl: linkedin?.trim() || null,
+    isPrimary: which === 1,
+  };
+}
 
 const importSchema = z.object({
   eventId: z.uuid(),
@@ -219,6 +294,54 @@ export async function importEventCompaniesCsv(
     };
   }
 
+  // Resolve owner names -> user ids (case-insensitive: full name, first token, or email local-part).
+  const ownerTokens = new Set(
+    rows
+      .map((r) => r.owner?.trim().toLowerCase())
+      .filter((o): o is string => Boolean(o)),
+  );
+  const ownerByToken = new Map<string, string>();
+  if (ownerTokens.size > 0) {
+    const allUsers = await db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users);
+    for (const u of allUsers) {
+      const name = u.name.toLowerCase();
+      const first = name.split(/\s+/u)[0];
+      const local = u.email.toLowerCase().split("@")[0];
+      for (const key of [name, first, local]) {
+        if (key && !ownerByToken.has(key)) ownerByToken.set(key, u.id);
+      }
+    }
+  }
+
+  // Resolve target tier names -> tier ids for this event.
+  const eventTiers = await db
+    .select({ id: sponsorshipTiers.id, name: sponsorshipTiers.name })
+    .from(sponsorshipTiers)
+    .where(eq(sponsorshipTiers.eventId, eventId));
+  const tierByLowerName = new Map(
+    eventTiers.map((t) => [t.name.toLowerCase(), t.id]),
+  );
+
+  // Pre-load existing contacts for already-known companies to dedupe.
+  const knownCompanyIds = Array.from(new Set(companyByLowerName.values()));
+  const contactKeys = new Set<string>();
+  if (knownCompanyIds.length > 0) {
+    const existingContacts = await db
+      .select({
+        companyId: contacts.companyId,
+        email: contacts.email,
+        fullName: contacts.fullName,
+      })
+      .from(contacts)
+      .where(inArray(contacts.companyId, knownCompanyIds));
+    for (const c of existingContacts) {
+      const key = (c.email ?? c.fullName).toLowerCase();
+      contactKeys.add(`${c.companyId}|${key}`);
+    }
+  }
+
   let createdCompanies = 0;
   let attached = 0;
   for (let i = 0; i < rows.length; i += 1) {
@@ -230,6 +353,7 @@ export async function importEventCompaniesCsv(
         .insert(companies)
         .values({
           name: r.name,
+          website: r.website ?? null,
           industry: r.industry ?? null,
           hqLocation: r.hqLocation ?? null,
         })
@@ -240,17 +364,55 @@ export async function importEventCompaniesCsv(
       createdCompanies += 1;
     }
 
+    // Insert contacts (deduped by email or full name within the company).
+    for (const which of [1, 2] as const) {
+      const seed = contactFromRow(r, which);
+      if (!seed) continue;
+      const dedupeKey = `${companyId}|${(seed.email ?? seed.fullName).toLowerCase()}`;
+      if (contactKeys.has(dedupeKey)) continue;
+      contactKeys.add(dedupeKey);
+      await db.insert(contacts).values({
+        companyId,
+        firstName: seed.firstName,
+        lastName: seed.lastName,
+        fullName: seed.fullName,
+        title: seed.title,
+        email: seed.email,
+        phone: seed.phone,
+        linkedinUrl: seed.linkedinUrl,
+        isPrimary: seed.isPrimary,
+      });
+    }
+
     if (alreadyAttached.has(companyId)) continue;
+    const ownerId = r.owner
+      ? (ownerByToken.get(r.owner.trim().toLowerCase()) ?? null)
+      : null;
+    const targetTierId = r.targetTier
+      ? (tierByLowerName.get(r.targetTier.trim().toLowerCase()) ?? null)
+      : null;
+    const customFields = r.subcategory
+      ? { subcategory: r.subcategory }
+      : undefined;
     const inserted = await db
       .insert(eventCompanies)
       .values({
         eventId,
         companyId,
-        ownerId: session.user.id,
+        ownerId,
         status: r.status ?? "prospect",
         priority: (r.priority ?? "medium") as ProspectPriority,
+        targetTierId,
         proposedAmount: r.proposedAmount ?? null,
         confirmedAmount: r.confirmedAmount ?? null,
+        firstContactedAt: parseIsoDate(r.firstContactedAt),
+        lastContactedAt: parseIsoDate(r.lastContactedAt),
+        whyTheyShouldAttend: r.whyTheyShouldAttend ?? null,
+        keyTalkingPoints: r.keyTalkingPoints ?? null,
+        emailAngle: r.emailAngle ?? null,
+        sponsorshipHook: r.sponsorshipHook ?? null,
+        relationshipNotes: r.relationshipNotes ?? null,
+        ...(customFields ? { customFields } : {}),
         createdBy: session.user.id,
         updatedBy: session.user.id,
       })

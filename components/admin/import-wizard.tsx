@@ -16,12 +16,35 @@ import { Label } from "@/components/ui/label";
 
 type ParsedRow = {
   name: string;
+  website?: string | null;
   industry?: string | null;
+  subcategory?: string | null;
   hqLocation?: string | null;
   status?: string;
   priority?: string;
+  owner?: string | null;
+  targetTier?: string | null;
   proposedAmount?: string | null;
   confirmedAmount?: string | null;
+  whyTheyShouldAttend?: string | null;
+  keyTalkingPoints?: string | null;
+  emailAngle?: string | null;
+  sponsorshipHook?: string | null;
+  relationshipNotes?: string | null;
+  firstContactedAt?: string | null;
+  lastContactedAt?: string | null;
+  contact1FirstName?: string | null;
+  contact1LastName?: string | null;
+  contact1Email?: string | null;
+  contact1Title?: string | null;
+  contact1Phone?: string | null;
+  contact1Linkedin?: string | null;
+  contact2FirstName?: string | null;
+  contact2LastName?: string | null;
+  contact2Email?: string | null;
+  contact2Title?: string | null;
+  contact2Phone?: string | null;
+  contact2Linkedin?: string | null;
 };
 
 const FIELD_ALIASES: Record<string, keyof ParsedRow> = {
@@ -29,18 +52,50 @@ const FIELD_ALIASES: Record<string, keyof ParsedRow> = {
   company: "name",
   company_name: "name",
   companyname: "name",
+  website: "website",
+  url: "website",
   industry: "industry",
+  category: "industry",
   sector: "industry",
+  subcategory: "subcategory",
+  sub_category: "subcategory",
   hq: "hqLocation",
   hq_location: "hqLocation",
   headquarters: "hqLocation",
   location: "hqLocation",
   status: "status",
   priority: "priority",
+  owner: "owner",
+  target_tier: "targetTier",
+  sponsorship_target: "targetTier",
+  tier: "targetTier",
   proposed: "proposedAmount",
   proposed_amount: "proposedAmount",
   confirmed: "confirmedAmount",
   confirmed_amount: "confirmedAmount",
+  why_they_should_attend: "whyTheyShouldAttend",
+  key_talking_points: "keyTalkingPoints",
+  email_angle: "emailAngle",
+  sponsorship_hook: "sponsorshipHook",
+  relationship_notes: "relationshipNotes",
+  outreach_notes: "relationshipNotes",
+  first_contacted_at: "firstContactedAt",
+  first_contact: "firstContactedAt",
+  date_contacted: "firstContactedAt",
+  last_contacted_at: "lastContactedAt",
+  last_contact: "lastContactedAt",
+  contact1_first_name: "contact1FirstName",
+  contact1_last_name: "contact1LastName",
+  contact1_email: "contact1Email",
+  contact1_title: "contact1Title",
+  contact1_phone: "contact1Phone",
+  contact1_linkedin: "contact1Linkedin",
+  contact2_first_name: "contact2FirstName",
+  contact2_last_name: "contact2LastName",
+  contact2_email: "contact2Email",
+  contact2_title: "contact2Title",
+  contact2_phone: "contact2Phone",
+  contact2_linkedin: "contact2Linkedin",
 };
 
 function parseCsv(text: string): { header: string[]; rows: string[][] } {
@@ -216,8 +271,12 @@ export function ImportWizard({ eventId }: { eventId: string }) {
             placeholder={`name,industry,hq_location,status,priority\nVertex Therapeutics,Pharma,Boston MA,prospect,high`}
           />
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Recognized columns: name, industry, hq_location, status, priority,
-            proposed_amount, confirmed_amount.
+            Recognized columns: name, website, industry, subcategory,
+            hq_location, status, priority, owner, target_tier, proposed_amount,
+            confirmed_amount, why_they_should_attend, key_talking_points,
+            email_angle, sponsorship_hook, relationship_notes,
+            first_contacted_at, last_contacted_at, and contact1_/contact2_ fields
+            (first_name, last_name, email, title, phone, linkedin).
           </p>
           {unmapped.length > 0 ? (
             <p className="text-xs text-amber-600 dark:text-amber-400">
