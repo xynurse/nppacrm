@@ -30,6 +30,10 @@ STATUS_MAP = {
 
 PRIORITY_MAP = {"high": "high", "medium": "medium", "low": "low"}
 
+# Map the workbook's free-text owner names to a value the CRM importer resolves
+# (it matches users by full name, first name, or email local-part).
+OWNER_ALIASES = {"michael": "Mike Thorn", "mike": "Mike Thorn"}
+
 # Sponsorship targets that map to a real tier; anything else (e.g. "Unknown") -> blank.
 VALID_TIERS = {"platinum", "gold", "silver", "bronze"}
 
@@ -123,7 +127,9 @@ def main():
             "subcategory": s(cell(row, "Subcategory")),
             "status": status,
             "priority": priority,
-            "owner": s(cell(row, "👤 Owner")),
+            "owner": OWNER_ALIASES.get(
+                s(cell(row, "👤 Owner")).lower(), s(cell(row, "👤 Owner"))
+            ),
             "target_tier": target_tier,
             "hq_location": compose_hq(
                 cell(row, "HQ City"), cell(row, "HQ State/Province"), cell(row, "HQ Country")
