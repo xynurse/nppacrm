@@ -3,7 +3,7 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped commit: `d756c6a` (chunk B) — deployed at `nppacrm.vercel.app`.
+Latest shipped commit: `2b43f88` (Master List importer) — deployed at `nppacrm.vercel.app`.
 
 ## Critical path: remaining setup
 
@@ -17,7 +17,20 @@ Latest shipped commit: `d756c6a` (chunk B) — deployed at `nppacrm.vercel.app`.
 - [x] `pnpm db:seed` run (LPD 2026 event + tiers + default views)
 - [ ] **Connect Anthropic provider in Vercel AI Gateway** (unlocks AI enrichment)
 - [x] `/admin/events/[id]/import` to bulk-load real Master List CSV
+  - Importer extended to full Master List fidelity (commits 9776150, 2b43f88);
+    converter at `scripts/excel-to-import-csv.py`; CSV generated to Desktop.
+  - [ ] **Run the actual data load** — admin uploads
+    `~/Desktop/NPPA_LPD_2026_master_list_import.csv` via the import UI (312 rows).
 - [ ] **Custom domain** _(deferred — pending final name decision)_
+
+## Surfaced from Master List import (deferred — "just migrate for now")
+
+- [ ] **Category as a structured field + grouped "By Category" view** — workbook
+  has 24 categories and a dedicated category sheet; CRM only has free-text
+  `industry`. Surface `subcategory` (currently in `customFields`) as a column.
+- [ ] **Payment & fulfillment fields + Confirmed Sponsors view** — agreement
+  signed / invoice sent / paid / booth # / rep names (workbook's Confirmed
+  Sponsors sheet). Needs a migration adding columns to `event_companies`.
 
 ## v1 chunks to rebuild (in order)
 

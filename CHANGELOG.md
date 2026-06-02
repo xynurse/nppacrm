@@ -2,6 +2,22 @@
 
 ## Active build (committed to main)
 
+### Master List CSV import — full-fidelity importer _(2026-06-02, commits 9776150, 2b43f88)_
+- `lib/actions/csv.ts` — the prospect importer now ingests the whole NPPA
+  Master List instead of 7 fields. Added columns: `website`, `subcategory`,
+  `owner`, `target_tier`, the four AI outreach fields (`why_they_should_attend`,
+  `key_talking_points`, `email_angle`, `sponsorship_hook`), `relationship_notes`,
+  `first_contacted_at`, `last_contacted_at`, and `contact1_*`/`contact2_*`.
+  Owner resolves by user name/email, tier by name within the event, contacts are
+  created (contact 1 = primary) deduped by email/name, and `subcategory` is
+  stored in `eventCompanies.customFields`. Unmatched owner → unassigned (null).
+- `components/admin/import-wizard.tsx` — parsed-row shape, header aliases, and
+  help text expanded to match.
+- `scripts/excel-to-import-csv.py` — workbook → importer-ready CSV converter
+  (status/tier remap, `hq_location` composition, owner alias `Michael`→`Mike
+  Thorn`). Generated CSV is kept out of git (contact PII).
+- Data load itself is a manual step (admin runs it via the import UI).
+
 ### Chunk 14b — Watch agent + Vercel cron _(2026-06-01)_
 - `lib/agents/watch.ts` — Watch agent: for each active prospect runs a Valyu
   search for recent news/funding/leadership signals, calls Claude Haiku to
