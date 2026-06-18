@@ -512,7 +512,7 @@ export function CompaniesTable({
     <>
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+          <thead className="bg-slate-50 text-left text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:bg-slate-900 dark:text-slate-400">
             {table.getHeaderGroups().map((hg) => (
               <tr
                 key={hg.id}
@@ -534,7 +534,7 @@ export function CompaniesTable({
                   rowHeight,
                   "transition-colors",
                   activeRecordId === row.original.id
-                    ? "bg-slate-50 dark:bg-slate-800/60"
+                    ? "bg-[var(--accent-tint)] shadow-[inset_2px_0_0_0_var(--accent)]"
                     : "hover:bg-slate-50 dark:hover:bg-slate-800/40",
                 )}
               >

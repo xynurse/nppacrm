@@ -23,8 +23,49 @@
   --color-brand-950: #083344;
 }
 
+/*
+ * Clinical & precise design tokens.
+ * Semantic surfaces/ink/accent that dark-switch in one place. In light mode
+ * these intentionally equal the slate/brand values already used across the app,
+ * so introducing them changes nothing visually until a component opts in via
+ * e.g. border-[var(--hairline)] or bg-[var(--surface)].
+ */
 :root {
   color-scheme: light dark;
+
+  --surface: #ffffff;
+  --surface-muted: #f8fafc; /* slate-50 */
+  --page: #f8fafc;
+  --hairline: #e2e8f0; /* slate-200 */
+  --hairline-strong: #cbd5e1; /* slate-300 */
+  --ink: #0f172a; /* slate-900 */
+  --ink-muted: #64748b; /* slate-500 */
+  --ink-subtle: #94a3b8; /* slate-400 */
+  --accent: #0891b2; /* brand-600 */
+  --accent-strong: #0e7490; /* brand-700 */
+  --accent-tint: #ecfeff; /* brand-50 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #0f172a; /* slate-900 */
+    --surface-muted: #1e293b; /* slate-800 */
+    --page: #020617; /* slate-950 */
+    --hairline: #1e293b; /* slate-800 */
+    --hairline-strong: #334155; /* slate-700 */
+    --ink: #f1f5f9; /* slate-100 */
+    --ink-muted: #94a3b8; /* slate-400 */
+    --ink-subtle: #64748b; /* slate-500 */
+    --accent: #22d3ee; /* brand-400 — brighter on dark */
+    --accent-strong: #67e8f9; /* brand-300 */
+    --accent-tint: rgba(8, 145, 178, 0.12);
+  }
+}
+
+/* Clinical touch: teal text selection */
+::selection {
+  background: #cffafe; /* brand-100 */
+  color: #155e75; /* brand-800 */
 }
 
 html,
