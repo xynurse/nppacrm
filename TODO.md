@@ -3,7 +3,7 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped commit: `2b43f88` (Master List importer) — deployed at `nppacrm.vercel.app`.
+Latest shipped commit: `b2b8ecf` (UI polish phase 2 + view fixes) — deployed at `nppacrm.vercel.app`.
 
 ## Critical path: remaining setup
 
@@ -80,6 +80,15 @@ load-bearing — chunk N depends on chunks 1..N-1.
 - [x] **Chunk A — Medical design system** (2026-06-01)
   Dark slate sidebar, teal brand colour (`brand-600`), Inter font, refined
   typography and spacing throughout.
+
+- [x] **UI polish phase 2** (2026-07-02)
+  Elevation token system + `surface-card` utility, dark-mode class-toggle fix,
+  Button loading state, input focus glow, sidebar left-indicator nav,
+  inline-edit pencil affordance, kanban hover/drop states, drawer tab +
+  Outreach-strategy accent, command palette polish. Plus: `older_than_n_days`
+  filter op (fixes inverted Stale view → "Needs follow-up"),
+  `proposalValidUntil` filterable + "Proposals expiring soon" seed view,
+  `/` and `g r` shortcuts.
 
 - [x] **Chunk B — Outreach intelligence & UX enrichment** (2026-06-01)
   Dashboard v2 (funnel chart, tier mix, hot prospects, richer KPIs), contact

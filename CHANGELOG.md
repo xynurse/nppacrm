@@ -2,6 +2,41 @@
 
 ## Active build (committed to main)
 
+### UI polish phase 2 + view/filter quick wins _(2026-07-02)_
+- **Elevation system** (`app/globals.css`): three shadow tiers
+  (`--shadow-card`/`--shadow-raised`/`--shadow-overlay`, dark-aware),
+  `--ease-out-soft` easing, and `surface-card`/`surface-card-hover`/`kbd-chip`
+  utilities. Dashboard cards, tables, drawer, palette, and dialogs now share
+  one consistent depth language.
+- **Dark-mode toggle fixed**: `dark:` variants and the semantic CSS vars were
+  keyed to `prefers-color-scheme`, but next-themes toggles a `.dark` class —
+  the in-app theme toggle did nothing. Added `@custom-variant dark` and moved
+  the var/body overrides to `.dark`, so light/dark/system all work.
+- **Primitives**: Button gains a `loading` prop (spinner + disable), press
+  scale, hover elevation; Input/Select get soft focus glow (brand ring + border)
+  and hover border states.
+- **Chrome**: sidebar active nav is now a teal left-indicator + subtle tint
+  (was a solid block); top bar has a hairline shadow.
+- **Tables**: inline-edit cells show a pencil affordance + brand tint on hover
+  and a ring while editing; rows get a hover accent rail; richer empty state
+  with icon and guidance.
+- **Kanban**: cards lift on hover, drop-target columns glow teal, empty
+  columns invite a drop.
+- **Command palette / cheat sheet**: overlay shadow + scale-in, teal accent bar
+  on the selected item, `kbd-chip` hints.
+- **Drawer**: overlay shadow + eased slide, brand-underline tabs, and the
+  Outreach section is now an accented "Outreach strategy" card (gradient tint +
+  sparkles) so AI-enriched content stands out.
+- **New filter operator `older_than_n_days`** (types, zod schema, compiler,
+  filter bar). Fixes the seeded "Stale (no contact 14+ days)" view, which used
+  `last_n_days` and matched *recently contacted* companies — the opposite of
+  stale. Replaced by "Needs follow-up (14+ days)" (existing DBs keep the old
+  view; delete it manually and re-run seed, or recreate via the filter bar).
+- **`proposalValidUntil` is now filterable/sortable** + new default view
+  "Proposals expiring soon" (proposal_sent/negotiating with proposal expiry in
+  the next 14 days).
+- **Shortcuts**: `/` opens the palette, `g r` → Reports; cheat sheet updated.
+
 ### Master List CSV import — full-fidelity importer _(2026-06-02, commits 9776150, 2b43f88)_
 - `lib/actions/csv.ts` — the prospect importer now ingests the whole NPPA
   Master List instead of 7 fields. Added columns: `website`, `subcategory`,

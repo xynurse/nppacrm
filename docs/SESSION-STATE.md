@@ -8,11 +8,14 @@
 ---
 
 ## Last updated
-2026-06-02 — Master List CSV import prep (importer extended; data load pending)
+2026-07-02 — UI polish phase 2 (elevation system, dark-toggle fix, cell
+affordances) + filter/view quick wins (older_than_n_days op, follow-up +
+proposal-expiry views, `/` and `g r` shortcuts)
 
 ## Current git HEAD
-`2b43f88` — chore: map Master List owner 'Michael' to Mike Thorn on CSV export
-(prior: `9776150` feat: extend prospect CSV importer to ingest full Master List)
+`b2b8ecf` — ui polish phase 2: elevation system, dark-toggle fix, cell
+affordances + follow-up/proposal views
+(prior: `51cadbe` ui: clinical & precise refresh — phase 1)
 
 ---
 
@@ -101,10 +104,34 @@ column). typecheck + lint + build all green.
 
 ---
 
+## Notes from 2026-07-02 session
+
+- **Dark-mode toggle was silently broken** — `dark:` variants + semantic CSS
+  vars were media-query based while next-themes toggles a `.dark` class. Fixed
+  in globals.css (`@custom-variant dark` + `.dark` selector blocks). If any
+  page looks wrong in dark mode now, it was always wrong — the toggle just
+  never applied before.
+- **Seeded "Stale (no contact 14+ days)" view was inverted** (`last_n_days`
+  matched recently-contacted). New seed view "Needs follow-up (14+ days)" uses
+  the new `older_than_n_days` op. **Prod DB still has the old broken view** —
+  admin should delete it in the UI and either re-run `pnpm db:seed` or create
+  the corrected view manually (it's name-keyed, so seeding inserts the new
+  ones without touching anything else). Same for "Proposals expiring soon".
+- `scripts/reset-admin-password.ts` sits untracked (bcrypt password recovery
+  helper, no secrets in it) — commit or delete, user's call.
+- `.claude/launch.json` added (preview server config, port 3001).
+- Vercel CLI is now installed and logged in (`mike-9206`); project linked.
+  `CRON_SECRET` + `AI_GATEWAY_API_KEY` **still unset in prod**.
+- Repo is **public** on GitHub (`xynurse/nppacrm`) — user was offered
+  `gh repo edit --visibility private` but hasn't decided yet.
+
 ## Decisions made (don't re-debate these)
 
 | Decision | Why |
 |---|---|
+| Elevation via 3 shadow tokens + `surface-card` utility, not per-component classes | One place to tune depth; components opt in |
+| CSS-first motion (transitions + easing token), no Framer Motion | It was dropped in chunk 12 for bundle size; CSS covers current needs |
+| Replace (not rename) the broken Stale seed view | Seed is name-keyed/idempotent; renaming lets re-seed deliver the fix without migrations |
 | Watch signals → tasks (not enrichment suggestions, not company suggestions) | `companySuggestions` has no `eventCompanyId`; `enrichmentSuggestions` field enum only allows 4 outreach fields. Tasks are immediately actionable and show in normal workflow. |
 | Haiku model for Watch agent | Cost control — signal assessment is lightweight; no need for Sonnet |
 | Max 10 companies per watch run | Cost cap; runs daily so stale ones cycle through |
