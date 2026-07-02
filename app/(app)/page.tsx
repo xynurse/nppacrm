@@ -120,7 +120,7 @@ export default async function DashboardPage() {
 
       {/* Goal progress */}
       {goal ? (
-        <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <section className="surface-card p-4 dark:bg-slate-900">
           <div className="mb-3 flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <Target className="h-4 w-4 text-slate-400" />
@@ -153,7 +153,7 @@ export default async function DashboardPage() {
       ) : null}
 
       {/* Funnel bar chart */}
-      <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <section className="surface-card p-4 dark:bg-slate-900">
         <h2 className="mb-4 text-sm font-semibold">Pipeline funnel</h2>
         <div className="space-y-2">
           {funnelStages
@@ -189,7 +189,7 @@ export default async function DashboardPage() {
       {/* Tier mix + Hot prospects */}
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Tier mix */}
-        <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <section className="surface-card p-4 dark:bg-slate-900">
           <div className="mb-3 flex items-center gap-2">
             <Zap className="h-4 w-4 text-slate-400" />
             <h2 className="text-sm font-semibold">Confirmed by tier</h2>
@@ -218,7 +218,7 @@ export default async function DashboardPage() {
         </section>
 
         {/* Hot prospects */}
-        <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <section className="surface-card p-4 dark:bg-slate-900">
           <div className="mb-3 flex items-center gap-2">
             <Flame className="h-4 w-4 text-orange-400" />
             <h2 className="text-sm font-semibold">Hot prospects</h2>
@@ -258,7 +258,7 @@ export default async function DashboardPage() {
 
       {/* Stalled + My tasks */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <section className="surface-card p-4 dark:bg-slate-900">
           <header className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold">Stalled prospects</h2>
             <Link
@@ -293,7 +293,7 @@ export default async function DashboardPage() {
           )}
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <section className="surface-card p-4 dark:bg-slate-900">
           <header className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold">My open tasks</h2>
             <Link
@@ -332,7 +332,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent activity */}
-      <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <section className="surface-card p-4 dark:bg-slate-900">
         <h2 className="mb-3 text-sm font-semibold">Recent activity</h2>
         {recent.length === 0 ? (
           <p className="text-sm text-slate-500">No activity yet.</p>
@@ -401,7 +401,7 @@ function Kpi({
   }[accent];
 
   const body = (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <div className="surface-card p-4 dark:bg-slate-900">
       <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
         <span>{icon}</span>
         <span>{label}</span>

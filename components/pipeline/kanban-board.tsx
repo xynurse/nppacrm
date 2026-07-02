@@ -208,8 +208,9 @@ function Column({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex w-72 shrink-0 flex-col rounded-lg border border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50",
-        isOver && "ring-2 ring-slate-400 dark:ring-slate-500",
+        "flex w-72 shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50/50 transition-[border-color,box-shadow] duration-150 dark:border-slate-800 dark:bg-slate-900/50",
+        isOver &&
+          "border-brand-400 shadow-[0_0_0_3px_var(--accent-tint)] dark:border-brand-500",
       )}
     >
       <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2 dark:border-slate-800">
@@ -225,8 +226,8 @@ function Column({
       </div>
       <div className="flex flex-1 flex-col gap-2 p-2">
         {cards.length === 0 ? (
-          <p className="px-2 py-4 text-center text-xs text-slate-400">
-            No prospects
+          <p className="rounded-lg border border-dashed border-slate-200 px-2 py-4 text-center text-xs text-slate-400 dark:border-slate-700">
+            Drop a card here
           </p>
         ) : (
           cards.map((row) => <DraggableCard key={row.id} row={row} />)
@@ -245,7 +246,10 @@ function DraggableCard({ row }: { row: EventCompanyRow }) {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={cn(isDragging && "opacity-30")}
+      className={cn(
+        "transition-opacity duration-100",
+        isDragging && "opacity-40",
+      )}
     >
       <Card row={row} />
     </div>
@@ -265,8 +269,8 @@ function Card({
   return (
     <div
       className={cn(
-        "rounded-md border border-slate-200 bg-white p-2.5 text-xs shadow-sm dark:border-slate-700 dark:bg-slate-900",
-        dragging && "rotate-1 shadow-lg",
+        "rounded-lg border border-slate-200 bg-white p-2.5 text-xs shadow-[var(--shadow-card)] transition-[box-shadow,border-color,transform] duration-150 ease-[var(--ease-out-soft)] hover:-translate-y-px hover:border-slate-300 hover:shadow-[var(--shadow-raised)] dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600",
+        dragging && "rotate-1 shadow-[var(--shadow-overlay)]",
       )}
     >
       <div className="flex items-start gap-1.5">

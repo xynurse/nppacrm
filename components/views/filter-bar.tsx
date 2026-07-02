@@ -402,7 +402,9 @@ function ConditionEditor({
             />
           </div>
         ) : meta.type === "date" &&
-          (cond.op === "last_n_days" || cond.op === "next_n_days") ? (
+          (cond.op === "last_n_days" ||
+            cond.op === "next_n_days" ||
+            cond.op === "older_than_n_days") ? (
           <Input
             className="h-8 text-xs"
             type="number"

@@ -108,7 +108,7 @@ export function CompanyDrawer({
       />
       <aside
         className={cn(
-          "fixed right-0 top-0 z-40 h-screen w-full max-w-2xl overflow-y-auto border-l border-slate-200 bg-white shadow-2xl transition-transform dark:border-slate-800 dark:bg-slate-900",
+          "fixed right-0 top-0 z-40 h-screen w-full max-w-2xl overflow-y-auto border-l border-slate-200 bg-white shadow-[var(--shadow-overlay)] transition-transform duration-200 ease-[var(--ease-out-soft)] dark:border-slate-800 dark:bg-slate-900",
           row ? "translate-x-0" : "translate-x-full",
         )}
         aria-hidden={!row}
@@ -246,10 +246,10 @@ function DrawerContent({
             type="button"
             onClick={() => setTab(t.id)}
             className={cn(
-              "px-3 py-2 text-sm font-medium transition-colors",
+              "-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors duration-150",
               tab === t.id
-                ? "border-b-2 border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
+                ? "border-brand-600 text-slate-900 dark:border-brand-400 dark:text-slate-100"
+                : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-200",
             )}
           >
             <span className="inline-flex items-center gap-1">
@@ -540,7 +540,7 @@ function OverviewTab({
         />
       </Section>
 
-      <Section title="Outreach">
+      <Section title="Outreach strategy" accent>
         <Para
           label="Why they should attend"
           fieldKey="eventCompany.whyTheyShouldAttend"
@@ -599,14 +599,27 @@ function OverviewTab({
 
 function Section({
   title,
+  accent,
   children,
 }: {
   title: string;
+  /** Accent sections carry AI-enriched outreach content — worth the emphasis. */
+  accent?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-2 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-      <header className="mb-3 flex items-center justify-between">
+    <section
+      className={cn(
+        "mt-2 rounded-xl border p-4 shadow-[var(--shadow-card)]",
+        accent
+          ? "border-brand-200 bg-gradient-to-br from-brand-50/60 to-transparent dark:border-brand-900 dark:from-brand-950/40"
+          : "border-slate-200 dark:border-slate-800",
+      )}
+    >
+      <header className="mb-3 flex items-center gap-1.5">
+        {accent ? (
+          <Sparkles className="h-3.5 w-3.5 text-brand-600 dark:text-brand-400" />
+        ) : null}
         <h3 className="text-sm font-semibold">{title}</h3>
       </header>
       <div className="space-y-2">{children}</div>

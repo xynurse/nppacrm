@@ -24,6 +24,7 @@ const operatorEnum = z.enum([
   "on",
   "last_n_days",
   "next_n_days",
+  "older_than_n_days",
   "is_true",
   "is_false",
 ]);

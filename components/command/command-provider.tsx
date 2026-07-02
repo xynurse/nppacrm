@@ -15,6 +15,7 @@ const NAV_CHORD: Record<string, string> = {
   c: "/companies",
   p: "/pipeline",
   t: "/tasks",
+  r: "/reports",
 };
 
 export function CommandProvider({ eventId, isAdmin }: Props) {
@@ -46,6 +47,12 @@ export function CommandProvider({ eventId, isAdmin }: Props) {
       if (e.key === "?") {
         e.preventDefault();
         setCheatOpen((v) => !v);
+        return;
+      }
+
+      if (e.key === "/") {
+        e.preventDefault();
+        setPaletteOpen(true);
         return;
       }
 

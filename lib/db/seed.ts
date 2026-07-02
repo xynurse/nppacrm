@@ -370,7 +370,10 @@ async function main() {
       displayOrder: 20,
     },
     {
-      name: "Stale (no contact 14+ days)",
+      // Replaces "Stale (no contact 14+ days)", whose last_n_days op matched
+      // recently-contacted companies — the opposite of stale. Existing DBs
+      // keep the old view (seed is name-keyed); delete it manually.
+      name: "Needs follow-up (14+ days)",
       filter: {
         op: "and",
         conditions: [
@@ -379,11 +382,27 @@ async function main() {
             op: "is_one_of",
             value: ["contacted", "engaged", "proposal_sent", "negotiating"],
           },
-          { field: "lastContactedAt", op: "last_n_days", value: 14 },
+          { field: "lastContactedAt", op: "older_than_n_days", value: 14 },
         ],
       },
       sort: [{ field: "lastContactedAt", dir: "asc" }],
       displayOrder: 30,
+    },
+    {
+      name: "Proposals expiring soon",
+      filter: {
+        op: "and",
+        conditions: [
+          {
+            field: "status",
+            op: "is_one_of",
+            value: ["proposal_sent", "negotiating"],
+          },
+          { field: "proposalValidUntil", op: "next_n_days", value: 14 },
+        ],
+      },
+      sort: [{ field: "proposalValidUntil", dir: "asc" }],
+      displayOrder: 40,
     },
   ];
 

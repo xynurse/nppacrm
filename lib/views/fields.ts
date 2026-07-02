@@ -54,6 +54,7 @@ const DATE_OPS: FilterOperator[] = [
   "between",
   "last_n_days",
   "next_n_days",
+  "older_than_n_days",
   "is_empty",
   "is_not_empty",
 ];
@@ -146,6 +147,13 @@ export const COMPANY_FIELDS: FieldMeta[] = [
     sortable: true,
   },
   {
+    key: "proposalValidUntil",
+    label: "Proposal valid until",
+    type: "date",
+    operators: DATE_OPS,
+    sortable: true,
+  },
+  {
     key: "hasPendingReview",
     label: "Pending review",
     type: "boolean",
@@ -182,6 +190,7 @@ export const OPERATOR_LABELS: Record<FilterOperator, string> = {
   on: "on",
   last_n_days: "in last N days",
   next_n_days: "in next N days",
+  older_than_n_days: "more than N days ago",
   is_true: "is true",
   is_false: "is false",
 };

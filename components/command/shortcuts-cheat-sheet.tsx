@@ -5,11 +5,13 @@ import { cn } from "@/lib/cn";
 
 const SHORTCUTS: Array<{ keys: string[]; label: string }> = [
   { keys: ["⌘", "K"], label: "Open command palette" },
+  { keys: ["/"], label: "Search (opens palette)" },
   { keys: ["?"], label: "Show this cheat sheet" },
   { keys: ["g", "d"], label: "Go to Dashboard" },
   { keys: ["g", "c"], label: "Go to Companies" },
   { keys: ["g", "p"], label: "Go to Pipeline" },
   { keys: ["g", "t"], label: "Go to Tasks" },
+  { keys: ["g", "r"], label: "Go to Reports" },
   { keys: ["Esc"], label: "Close drawer / dialog" },
 ];
 
@@ -35,7 +37,7 @@ export function ShortcutsCheatSheet({
         aria-modal="true"
         aria-label="Keyboard shortcuts"
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-slate-200 bg-white p-5 shadow-2xl transition-opacity dark:border-slate-700 dark:bg-slate-900",
+          "fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-overlay)] transition-opacity dark:border-slate-700 dark:bg-slate-900",
           open ? "opacity-100" : "pointer-events-none opacity-0",
         )}
       >
@@ -61,10 +63,7 @@ export function ShortcutsCheatSheet({
               </span>
               <span className="flex gap-1">
                 {s.keys.map((k, i) => (
-                  <kbd
-                    key={i}
-                    className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[11px] font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                  >
+                  <kbd key={i} className="kbd-chip">
                     {k}
                   </kbd>
                 ))}

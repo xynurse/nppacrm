@@ -70,13 +70,22 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
     <Link
       href={item.href}
       className={cn(
-        "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors",
+        "relative flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors duration-150",
         active
-          ? "bg-brand-600 text-white font-medium shadow-sm"
+          ? "bg-white/[0.07] font-medium text-white"
           : "text-slate-400 hover:bg-white/5 hover:text-slate-100",
       )}
     >
-      <item.Icon className="h-4 w-4 shrink-0" />
+      <span
+        className={cn(
+          "absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-brand-400 transition-opacity duration-150",
+          active ? "opacity-100" : "opacity-0",
+        )}
+        aria-hidden
+      />
+      <item.Icon
+        className={cn("h-4 w-4 shrink-0", active && "text-brand-400")}
+      />
       <span>{item.label}</span>
     </Link>
   );

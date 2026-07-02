@@ -35,6 +35,8 @@ function eventCompanyColumn(key: string): SQL | null {
       return sql`${eventCompanies.lastContactedAt}`;
     case "nextActionAt":
       return sql`${eventCompanies.nextActionAt}`;
+    case "proposalValidUntil":
+      return sql`${eventCompanies.proposalValidUntil}`;
     case "companyName":
       return sql`${companies.name}`;
     case "industry":
@@ -203,6 +205,12 @@ function compileCondition(c: FilterCondition): SQL | null {
       const now = new Date();
       const start = startOfUtcDay(new Date(now.getTime() - n * 86400000));
       return sql`${col} >= ${start.toISOString()}::timestamptz AND ${col} <= ${now.toISOString()}::timestamptz`;
+    }
+    case "older_than_n_days": {
+      const n = asNumber(c.value);
+      if (n == null || n < 0) return null;
+      const cutoff = new Date(Date.now() - n * 86400000);
+      return sql`${col} < ${cutoff.toISOString()}::timestamptz`;
     }
     case "next_n_days": {
       const n = asNumber(c.value);

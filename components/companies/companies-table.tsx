@@ -6,7 +6,7 @@ import {
   useReactTable,
   type ColumnDef,
 } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Building2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -500,9 +500,17 @@ export function CompaniesTable({
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          No prospects yet. Use the quick-add row above to create one.
+      <div className="surface-card flex flex-col items-center gap-2 p-12 text-center">
+        <Building2
+          className="h-8 w-8 text-slate-300 dark:text-slate-600"
+          aria-hidden
+        />
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          No prospects in this view
+        </p>
+        <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
+          Use the quick-add row above to create one, or adjust the filters if
+          you expected results here.
         </p>
       </div>
     );
@@ -510,9 +518,9 @@ export function CompaniesTable({
 
   return (
     <>
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-card)] dark:border-slate-800 dark:bg-slate-900">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+          <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:bg-slate-900 dark:text-slate-400">
             {table.getHeaderGroups().map((hg) => (
               <tr
                 key={hg.id}
@@ -532,10 +540,10 @@ export function CompaniesTable({
                 key={row.id}
                 className={cn(
                   rowHeight,
-                  "transition-colors",
+                  "transition-[background-color,box-shadow] duration-100",
                   activeRecordId === row.original.id
                     ? "bg-[var(--accent-tint)] shadow-[inset_2px_0_0_0_var(--accent)]"
-                    : "hover:bg-slate-50 dark:hover:bg-slate-800/40",
+                    : "hover:bg-slate-50 hover:shadow-[inset_2px_0_0_0_var(--hairline-strong)] dark:hover:bg-slate-800/40",
                 )}
               >
                 {row.getVisibleCells().map((cell) => (

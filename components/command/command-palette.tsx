@@ -92,8 +92,10 @@ export function CommandPalette({
         aria-modal="true"
         aria-label="Command palette"
         className={cn(
-          "fixed left-1/2 top-24 z-50 w-[92vw] max-w-xl -translate-x-1/2 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl transition-opacity dark:border-slate-700 dark:bg-slate-900",
-          open ? "opacity-100" : "pointer-events-none opacity-0",
+          "fixed left-1/2 top-24 z-50 w-[92vw] max-w-xl -translate-x-1/2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-overlay)] transition-[opacity,transform] duration-150 ease-[var(--ease-out-soft)] dark:border-slate-700 dark:bg-slate-900",
+          open
+            ? "scale-100 opacity-100"
+            : "pointer-events-none scale-[0.98] opacity-0",
         )}
       >
         {open ? (
@@ -111,9 +113,9 @@ export function CommandPalette({
                 onValueChange={setQuery}
                 className="h-11 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400 dark:text-slate-100"
               />
-              <kbd className="hidden rounded border border-slate-200 px-1.5 py-0.5 text-[10px] text-slate-500 sm:inline dark:border-slate-700 dark:text-slate-400">
-                Esc
-              </kbd>
+              <span className="hidden sm:block">
+                <kbd className="kbd-chip">Esc</kbd>
+              </span>
             </div>
             <Command.List className="max-h-[60vh] overflow-y-auto p-1.5">
               <Command.Empty className="px-3 py-6 text-center text-sm text-slate-500">
@@ -266,9 +268,11 @@ function Item({
     <Command.Item
       value={label}
       onSelect={onSelect}
-      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-700 aria-selected:bg-slate-100 dark:text-slate-200 dark:aria-selected:bg-slate-800"
+      className="group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 aria-selected:bg-brand-50/70 aria-selected:text-slate-900 aria-selected:shadow-[inset_2px_0_0_0_var(--accent)] dark:text-slate-200 dark:aria-selected:bg-brand-950/50 dark:aria-selected:text-white"
     >
-      <span className="text-slate-400">{icon}</span>
+      <span className="text-slate-400 group-aria-selected:text-brand-600 dark:group-aria-selected:text-brand-400">
+        {icon}
+      </span>
       <span className="flex-1 truncate">{label}</span>
       {hint ? (
         <span className="ml-2 truncate text-xs text-slate-400">{hint}</span>

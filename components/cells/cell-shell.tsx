@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { Pencil } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { updateField } from "@/lib/actions/cells";
 import type { FieldKey } from "@/lib/cells/registry";
@@ -75,7 +76,9 @@ export function CellShell<V>({
     <div
       ref={containerRef}
       className={cn(
-        "group relative w-full cursor-text rounded px-1 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800",
+        "group relative w-full cursor-text rounded px-1 py-0.5 transition-colors duration-100 hover:bg-brand-50/60 dark:hover:bg-brand-950/40",
+        editing &&
+          "bg-white ring-1 ring-brand-500/50 dark:bg-slate-900 dark:ring-brand-400/50",
         align === "right" && "text-right",
         className,
       )}
@@ -97,7 +100,16 @@ export function CellShell<V>({
           autoFocus
         />
       ) : (
-        <span className="block truncate">{display}</span>
+        <>
+          <span className="block truncate">{display}</span>
+          <Pencil
+            className={cn(
+              "pointer-events-none absolute top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400 opacity-0 transition-opacity duration-100 group-hover:opacity-100 dark:text-slate-500",
+              align === "right" ? "left-1" : "right-1",
+            )}
+            aria-hidden
+          />
+        </>
       )}
       {error ? (
         <span className="absolute -bottom-4 left-0 text-[10px] text-red-600 dark:text-red-400">
