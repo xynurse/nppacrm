@@ -117,8 +117,11 @@ column). typecheck + lint + build all green.
   admin should delete it in the UI and either re-run `pnpm db:seed` or create
   the corrected view manually (it's name-keyed, so seeding inserts the new
   ones without touching anything else). Same for "Proposals expiring soon".
-- `scripts/reset-admin-password.ts` sits untracked (bcrypt password recovery
-  helper, no secrets in it) — commit or delete, user's call.
+- `scripts/reset-admin-password.ts` is now committed (bcrypt password
+  recovery helper, no secrets in it). The admin password is unrecoverable
+  (bcrypt hash only; `SEED_ADMIN_PASSWORD` is a Vercel sensitive var that
+  pulls back empty) — user was given the reset command to run themselves;
+  unknown whether they've run it yet.
 - `.claude/launch.json` added (preview server config, port 3001).
 - Vercel CLI is now installed and logged in (`mike-9206`); project linked.
   `CRON_SECRET` + `AI_GATEWAY_API_KEY` **still unset in prod**.

@@ -2,6 +2,14 @@
 
 ## Active build (committed to main)
 
+### Admin password recovery script _(2026-07-02)_
+- `scripts/reset-admin-password.ts` — resets a user's password by email
+  (bcrypt cost 12, matching the seed). For recovering admin access when the
+  original `SEED_ADMIN_PASSWORD` is lost — it's stored as a Vercel *sensitive*
+  env var, so it can't be read back. Run manually:
+  `RESET_EMAIL=… RESET_PASSWORD=… pnpm tsx scripts/reset-admin-password.ts`.
+  Targets whatever `DATABASE_URL` points at; no plaintext is ever stored.
+
 ### UI polish phase 2 + view/filter quick wins _(2026-07-02)_
 - **Elevation system** (`app/globals.css`): three shadow tiers
   (`--shadow-card`/`--shadow-raised`/`--shadow-overlay`, dark-aware),
