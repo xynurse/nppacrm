@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { CommandPalette } from "./command-palette";
 import { ShortcutsCheatSheet } from "./shortcuts-cheat-sheet";
+import { NlUpdateDialog } from "@/components/ai/nl-update-dialog";
 
 type Props = {
   eventId: string | null;
@@ -22,6 +23,7 @@ export function CommandProvider({ eventId, isAdmin }: Props) {
   const router = useRouter();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [cheatOpen, setCheatOpen] = useState(false);
+  const [nlOpen, setNlOpen] = useState(false);
   const chordRef = useRef<{ key: string; at: number } | null>(null);
 
   useEffect(() => {
@@ -92,8 +94,10 @@ export function CommandProvider({ eventId, isAdmin }: Props) {
         onOpenChange={setPaletteOpen}
         eventId={eventId}
         isAdmin={isAdmin}
+        onAiQuickUpdate={() => setNlOpen(true)}
       />
       <ShortcutsCheatSheet open={cheatOpen} onClose={() => setCheatOpen(false)} />
+      <NlUpdateDialog open={nlOpen} onOpenChange={setNlOpen} />
     </>
   );
 }

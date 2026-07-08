@@ -24,6 +24,7 @@ import {
   StatusBadge,
 } from "@/components/companies/status-badge";
 import { Button } from "@/components/ui/button";
+import { NlUpdateBox } from "@/components/ai/nl-update-box";
 import { formatCurrency, formatRelativeDate } from "@/lib/format";
 
 const STATUS_ORDER = Object.keys(PROSPECT_STATUS_LABELS) as Array<
@@ -85,6 +86,9 @@ export default async function DashboardPage() {
           {activeEvent.startDate ? ` · starts ${activeEvent.startDate}` : ""}
         </p>
       </div>
+
+      {/* AI quick update */}
+      <NlUpdateBox />
 
       {/* KPI strip */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

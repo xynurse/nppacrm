@@ -10,6 +10,7 @@ import {
   Moon,
   Search,
   Settings,
+  Sparkles,
   Sun,
   Users,
 } from "lucide-react";
@@ -25,6 +26,7 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   eventId: string | null;
   isAdmin: boolean;
+  onAiQuickUpdate: () => void;
 };
 
 export function CommandPalette({
@@ -32,6 +34,7 @@ export function CommandPalette({
   onOpenChange,
   eventId,
   isAdmin,
+  onAiQuickUpdate,
 }: Props) {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
@@ -226,6 +229,15 @@ export function CommandPalette({
                 heading="Actions"
                 className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
               >
+                <Item
+                  icon={<Sparkles className="h-3.5 w-3.5" />}
+                  label="AI quick update"
+                  hint="paste a recap"
+                  onSelect={() => {
+                    onOpenChange(false);
+                    onAiQuickUpdate();
+                  }}
+                />
                 <Item
                   icon={
                     resolvedTheme === "dark" ? (
