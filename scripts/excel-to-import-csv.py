@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Convert the NPPA LPD 2026 Sponsor Tracker workbook into a CSV that the CRM's
+"""Convert the NPPA LPD 2026 Sponsorship Master workbook into a CSV that the CRM's
 in-app importer (/admin/events/[id]/import) can ingest.
 
 Usage:
     python3 scripts/excel-to-import-csv.py <input.xlsx> <output.csv>
 
-Only the "Master List" sheet is read. Status/tier values are remapped to the
-CRM's enum/tier vocabulary; HQ city/state/country are composed into a single
-hq_location string. Output column names match the importer's recognized headers.
-The output CSV contains contact PII — do not commit it.
+Only the "Master List" sheet is read. Status/priority are lowercased to the CRM's
+enum vocabulary; tiers pass through (matched case-insensitively by the importer);
+the single "Best POC" / "Alt Contact Name" full-name fields are split into
+first/last for contact 1 (primary) and contact 2. Output column names match the
+importer's recognized headers. The output CSV contains contact PII — do not commit it.
 """
 import csv
 import sys
@@ -16,7 +17,10 @@ from datetime import date, datetime
 
 import openpyxl
 
+SHEET_NAME = "Master List"
+
 STATUS_MAP = {
+    "prospect": "prospect",
     "not contacted": "prospect",
     "contacted": "contacted",
     "engaged": "engaged",
@@ -34,8 +38,28 @@ PRIORITY_MAP = {"high": "high", "medium": "medium", "low": "low"}
 # (it matches users by full name, first name, or email local-part).
 OWNER_ALIASES = {"michael": "Mike Thorn", "mike": "Mike Thorn"}
 
-# Sponsorship targets that map to a real tier; anything else (e.g. "Unknown") -> blank.
+# Sponsorship tiers that map to a real tier; anything else (e.g. "Unknown") -> blank.
 VALID_TIERS = {"platinum", "gold", "silver", "bronze"}
+
+# Maps each importer output column to the workbook column it is sourced from.
+# Columns needing transformation (name splits, remaps) are handled in main().
+DIRECT_COLUMNS = {
+    "website": "Website",
+    "industry": "Category",
+    "subcategory": "Subcategory",
+    "hq_location": "HQ Location",
+    "why_they_should_attend": "What They Do / Why They Fit",
+    "key_talking_points": "Key Talking Points",
+    "email_angle": "Email Angle",
+    "sponsorship_hook": "Sponsorship Hook",
+    "relationship_notes": "Notes",
+    "first_contacted_at": "First Contacted",
+    "last_contacted_at": "Last Contacted",
+    "contact1_email": "POC Email",
+    "contact1_title": "POC Title",
+    "contact2_email": "Alt Contact Email",
+    "contact2_title": "Alt Contact Title",
+}
 
 OUTPUT_COLUMNS = [
     "name",
@@ -77,9 +101,14 @@ def s(v):
     return str(v).strip()
 
 
-def compose_hq(city, state, country):
-    parts = [p for p in (s(city), s(state), s(country)) if p]
-    return ", ".join(parts)
+def split_name(full):
+    """Split a single full-name string into (first, last)."""
+    parts = s(full).split()
+    if not parts:
+        return "", ""
+    if len(parts) == 1:
+        return parts[0], ""
+    return parts[0], " ".join(parts[1:])
 
 
 def main():
@@ -89,12 +118,21 @@ def main():
     in_path, out_path = sys.argv[1], sys.argv[2]
 
     wb = openpyxl.load_workbook(in_path, data_only=True, read_only=True)
-    ws = wb["🎯 Master List"]
+    if SHEET_NAME not in wb.sheetnames:
+        print(f"ERROR: sheet '{SHEET_NAME}' not found. Sheets: {wb.sheetnames}")
+        sys.exit(1)
+    ws = wb[SHEET_NAME]
     rows = list(ws.iter_rows(values_only=True))
-    header = rows[0]
-    ncol = max(i for i, h in enumerate(header) if h) + 1
-    header = [s(h) for h in header[:ncol]]
+    header = [s(h) for h in rows[0]]
     idx = {h: i for i, h in enumerate(header)}
+
+    missing = [c for c in DIRECT_COLUMNS.values() if c not in idx]
+    for extra in ("Company", "Status", "Priority", "Target Tier", "Owner",
+                  "Best POC", "Alt Contact Name"):
+        if extra not in idx:
+            missing.append(extra)
+    if missing:
+        print(f"WARNING: workbook is missing expected columns: {missing}")
 
     def cell(row, name):
         i = idx.get(name)
@@ -103,57 +141,36 @@ def main():
     out_rows = []
     skipped = 0
     for row in rows[1:]:
-        if not any(c not in (None, "") for c in row[:ncol]):
+        if not any(c not in (None, "") for c in row):
             continue
         name = s(cell(row, "Company"))
         if not name:
             skipped += 1
             continue
 
-        status_raw = s(cell(row, "📊 Status")).lower()
-        status = STATUS_MAP.get(status_raw, "")
-        priority = PRIORITY_MAP.get(s(cell(row, "Priority")).lower(), "")
-        tier_raw = s(cell(row, "Sponsorship Target")).lower()
-        target_tier = tier_raw.capitalize() if tier_raw in VALID_TIERS else ""
+        out = {c: "" for c in OUTPUT_COLUMNS}
+        out["name"] = name
 
-        # First/last contact dates: prefer explicit columns, fall back to "Date Contacted".
-        first_contact = s(cell(row, "📅 First Contact")) or s(cell(row, "📅 Date Contacted"))
-        last_contact = s(cell(row, "📅 Last Contact"))
+        for out_col, src_col in DIRECT_COLUMNS.items():
+            out[out_col] = s(cell(row, src_col))
 
-        out_rows.append({
-            "name": name,
-            "website": s(cell(row, "Website")),
-            "industry": s(cell(row, "Category")),
-            "subcategory": s(cell(row, "Subcategory")),
-            "status": status,
-            "priority": priority,
-            "owner": OWNER_ALIASES.get(
-                s(cell(row, "👤 Owner")).lower(), s(cell(row, "👤 Owner"))
-            ),
-            "target_tier": target_tier,
-            "hq_location": compose_hq(
-                cell(row, "HQ City"), cell(row, "HQ State/Province"), cell(row, "HQ Country")
-            ),
-            "why_they_should_attend": s(cell(row, "Why They Should Attend")),
-            "key_talking_points": s(cell(row, "Key Talking Points")),
-            "email_angle": s(cell(row, "Email Angle")),
-            "sponsorship_hook": s(cell(row, "Sponsorship Hook")),
-            "relationship_notes": s(cell(row, "Outreach Notes")),
-            "first_contacted_at": first_contact,
-            "last_contacted_at": last_contact,
-            "contact1_first_name": s(cell(row, "Contact 1 First Name")),
-            "contact1_last_name": s(cell(row, "Contact 1 Last Name")),
-            "contact1_email": s(cell(row, "Contact 1 Email")),
-            "contact1_title": s(cell(row, "Contact 1 Title")),
-            "contact1_phone": s(cell(row, "Contact 1 Phone")),
-            "contact1_linkedin": s(cell(row, "Contact 1 LinkedIn")),
-            "contact2_first_name": s(cell(row, "Contact 2 First Name")),
-            "contact2_last_name": s(cell(row, "Contact 2 Last Name")),
-            "contact2_email": s(cell(row, "Contact 2 Email")),
-            "contact2_title": s(cell(row, "Contact 2 Title")),
-            "contact2_phone": s(cell(row, "Contact 2 Phone")),
-            "contact2_linkedin": s(cell(row, "Contact 2 LinkedIn")),
-        })
+        out["status"] = STATUS_MAP.get(s(cell(row, "Status")).lower(), "")
+        out["priority"] = PRIORITY_MAP.get(s(cell(row, "Priority")).lower(), "")
+
+        tier_raw = s(cell(row, "Target Tier")).lower()
+        out["target_tier"] = tier_raw.capitalize() if tier_raw in VALID_TIERS else ""
+
+        owner_raw = s(cell(row, "Owner"))
+        out["owner"] = OWNER_ALIASES.get(owner_raw.lower(), owner_raw)
+
+        out["contact1_first_name"], out["contact1_last_name"] = split_name(
+            cell(row, "Best POC")
+        )
+        out["contact2_first_name"], out["contact2_last_name"] = split_name(
+            cell(row, "Alt Contact Name")
+        )
+
+        out_rows.append(out)
 
     with open(out_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=OUTPUT_COLUMNS)
