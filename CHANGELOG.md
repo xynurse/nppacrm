@@ -2,6 +2,34 @@
 
 ## Active build (committed to main)
 
+### Chunk C — Natural-language "AI quick update" _(2026-07-08, commit fdddf09)_
+- In-app version of the `/sync-outreach` Claude Code skill. Paste a plain-English
+  outreach recap; Claude proposes whitelisted, structured CRM updates per matched
+  company; the user reviews individually-toggleable diff cards; accepted items are
+  written through the **existing** server actions so audit rows, validation, and
+  cache revalidation all come for free. Nothing is written until Apply.
+- `lib/ai/nl-update.ts` — model layer (Zod proposal schema + `runNlUpdate`),
+  mirroring `lib/ai/gateway.ts`. Whitelisted ops only: `set_status`,
+  `log_interaction`, `bump_last_contacted`, `set_next_action_at`, `create_task`.
+  Never deletes, never writes amount/tier; unknown company mentions go to
+  `unmatched` instead of being guessed. Uses `AI_MODEL_ID` (currently Opus 4.7).
+- `lib/actions/nl-update.ts` — `proposeNlUpdate` (read-only: AI-config gate +
+  daily spend-cap pre-flight, loads the active event's prospects, drops
+  hallucinated ids, audit `ai.nl_update_propose`) and `applyNlUpdate`
+  (re-validates the whitelist server-side, dispatches to
+  `moveEventCompanyStatus` / `logInteraction` / `updateField` / `createTask`,
+  batch audit `ai.nl_update_apply`). `confirmed` is skipped and routed to the
+  pipeline confirm modal so amount + tier + benefits stay atomic.
+- `components/ai/nl-update-dialog.tsx` — input → loading → toggleable review
+  cards + unmatched warnings → apply → per-company summary.
+- `components/ai/nl-update-box.tsx` — dashboard entry box (parses on submit).
+- Wired into the ⌘K palette (Actions group) and the dashboard header.
+- No DB migration. typecheck + lint + build green. Read-only propose path
+  verified end-to-end against the live gateway; the write path and live model
+  output need the AI provider enabled **with credits** in Vercel (the gateway
+  currently returns `403 byok_requires_paid_credits` — same prereq that gates
+  enrichment / email-draft / agents).
+
 ### Admin password recovery script _(2026-07-02)_
 - `scripts/reset-admin-password.ts` — resets a user's password by email
   (bcrypt cost 12, matching the seed). For recovering admin access when the

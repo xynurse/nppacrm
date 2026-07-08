@@ -8,14 +8,15 @@
 ---
 
 ## Last updated
-2026-07-08 — Admin access recovered + Master List LOADED into prod +
-`/sync-outreach` skill + Cowork project setup + Chunk C spec'd (next up)
+2026-07-08 (session 2) — **Chunk C shipped** (natural-language "AI quick
+update"). Prior same-day session: admin access recovered + Master List loaded +
+`/sync-outreach` skill + Cowork setup.
 
 ## Current git HEAD
-See `git log` — this session's commits: 6a02bef (Excel converter fix),
-a71bbc4 (/sync-outreach skill), 22a4de9 (CLAUDE.md: docs must be pushed at
-session close), plus this docs commit.
-(prior: `18ef6eb` password recovery script; `b2b8ecf` ui polish phase 2)
+`fdddf09` feat(chunk C): natural-language AI quick update — plus this docs
+commit on top.
+(prior: `b4281b0` docs queue; `6a02bef` Excel converter fix; `a71bbc4`
+/sync-outreach skill; `22a4de9` docs-push policy)
 
 ---
 
@@ -85,6 +86,42 @@ Source workbook: `~/Desktop/LPD 2026/NPPA_LPD_2026_Sponsor_Tracker_RESTRUCTURED.
   surfaced as a column/filter).
 
 ---
+
+## Chunk C — DONE (2026-07-08, commit `fdddf09`)
+
+Natural-language "AI quick update" — in-app twin of the `/sync-outreach` skill.
+
+**Shipped:**
+- `lib/ai/nl-update.ts` — model layer. Zod proposal schema (`matches[]` +
+  `unmatched[]`) with a **flat op shape** (chosen over a discriminated union for
+  robust structured-output across providers; per-kind required fields are
+  re-validated in `applyNlUpdate`). Whitelisted ops: `set_status`,
+  `log_interaction`, `bump_last_contacted`, `set_next_action_at`, `create_task`.
+  `runNlUpdate` mirrors `runEnrichment` in `lib/ai/gateway.ts`; system prompt =
+  static `/sync-outreach` rules, user prompt = prospect list + recap.
+- `lib/actions/nl-update.ts` — `proposeNlUpdate` (read-only) and `applyNlUpdate`.
+  Apply dispatches to the EXISTING actions (`moveEventCompanyStatus`,
+  `logInteraction`, `updateField` for last-contact/next-action, `createTask`) so
+  audit/validation/revalidation are free. `confirmed` is skipped + surfaced as
+  "confirm in the pipeline modal" (amount + tier stay atomic).
+- `components/ai/nl-update-dialog.tsx` (controlled modal) +
+  `components/ai/nl-update-box.tsx` (dashboard box, autoRun).
+- Wired into `command-palette.tsx` (Actions group) via a new `onAiQuickUpdate`
+  prop hosted in `command-provider.tsx`, and into the dashboard (`app/(app)/page.tsx`).
+
+**Verification:** typecheck + lint + build green. A throwaway read-only script
+ran the real prospect list (prod DB) through `runNlUpdate` against the live AI
+Gateway — request was well-formed; gateway returned
+`403 byok_requires_paid_credits`. So the code path is correct end-to-end; **live
+use is blocked only by the account-level AI billing gate** (below). No writes
+were made; the write path (Apply) was intentionally not exercised because
+`.env.local`'s `DATABASE_URL` points at prod.
+
+**Prereq to make it work live (unchanged from before, now confirmed via 403):**
+Enable the Anthropic provider **with paid credits** in Vercel → AI tab. This is
+the same gate that blocks enrichment / email-draft / agents. Also note
+`AI_MODEL_ID` currently resolves to **Opus 4.7** — override the env var to
+Sonnet/Haiku if cheaper NL parsing is wanted (no code change).
 
 ## Chunk 14b — DONE
 
@@ -157,22 +194,9 @@ column). typecheck + lint + build all green.
 
 Work through these in order. One chunk per session.
 
-### 1. Chunk C — Natural-language updates ("AI quick update") ← START HERE
-Full spec in TODO.md under "Chunk C". Summary: user types plain English in
-the app, Claude (via existing AI Gateway plumbing) proposes structured
-updates (status / interaction / last-contact / next-action / task) against a
-whitelisted Zod schema, a confirmation UI shows per-company diff cards, and
-accepted items apply through the EXISTING server actions so audit +
-optimistic UI come free. Reuse chunk 13 (enrichment) patterns for model
-calls, spend cap, and the review-then-accept UX. No migration needed.
-**Prereq:** `AI_GATEWAY_API_KEY` must be set in Vercel prod (dashboard → AI
-tab) or it 503s in production — set `CRON_SECRET` at the same time.
-In-app version of the `/sync-outreach` Claude Code skill
-(`.claude/skills/sync-outreach/SKILL.md`) — mirror its guardrails: never
-propose deletes, flag unmatched companies instead of guessing, route
-`confirmed` through the existing confirm modal.
+> **Chunk C is DONE (commit `fdddf09`).** Next up is Chunk 15.
 
-### 2. Chunk 15 — TipTap rich notes
+### 1. Chunk 15 — TipTap rich notes ← START HERE
 Replaces `interactions.body` and `tasks.description` (plain text) with TipTap
 jsonb block editor. Needs DB migration.
 
@@ -186,7 +210,7 @@ jsonb block editor. Needs DB migration.
 
 **Prerequisite for:** Chunk 20 (notifications needs `@` mentions)
 
-### 3. Chunk 20 — Notification center
+### 2. Chunk 20 — Notification center
 Bell icon in top bar, `notifications` table, in-app alerts for:
 - Task assignments (`assignedTo` changes)
 - `@` mentions in notes (needs TipTap first)

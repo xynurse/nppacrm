@@ -101,7 +101,18 @@ load-bearing — chunk N depends on chunks 1..N-1.
   Shipped: `vercel.json` daily crons, `/api/cron/{discovery,watch}` routes with
   `CRON_SECRET` Bearer auth, `runWatchAgent` action, Watch row live in agents UI.
 
-## Chunk C — Natural-language updates ("AI quick update") — NEXT UP
+## Chunk C — Natural-language updates ("AI quick update") — ✅ DONE (2026-07-08, commit fdddf09)
+
+Shipped: `lib/ai/nl-update.ts` (model layer), `lib/actions/nl-update.ts`
+(`proposeNlUpdate` read-only + `applyNlUpdate` through existing actions),
+`components/ai/nl-update-dialog.tsx` + `nl-update-box.tsx`, wired into the ⌘K
+palette and dashboard. Whitelisted ops only, `confirmed` routed to the confirm
+modal, unmatched companies flagged. No migration. typecheck/lint/build green.
+**Still needs** the AI provider enabled with credits in Vercel prod before it
+works live (gateway returns `403 byok_requires_paid_credits` until then). See
+CHANGELOG for detail.
+
+Original spec (for reference):
 
 Type plain English in the app ("Met with Boston Scientific, they want the
 Gold prospectus; Stryker no reply to 2nd email"), AI proposes structured CRM
