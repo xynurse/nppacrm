@@ -101,6 +101,37 @@ load-bearing — chunk N depends on chunks 1..N-1.
   Shipped: `vercel.json` daily crons, `/api/cron/{discovery,watch}` routes with
   `CRON_SECRET` Bearer auth, `runWatchAgent` action, Watch row live in agents UI.
 
+## Chunk C — Natural-language updates ("AI quick update") — NEXT UP
+
+Type plain English in the app ("Met with Boston Scientific, they want the
+Gold prospectus; Stryker no reply to 2nd email"), AI proposes structured CRM
+updates, user confirms before anything is written. In-app version of the
+`/sync-outreach` Claude Code skill.
+
+- **Input surface:** new "AI update" entry in the ⌘K palette + a box on the
+  dashboard. Textarea, submit → loading → proposal review.
+- **Server action** (`lib/actions/ai.ts` or new `lib/actions/nl-update.ts`):
+  send user text + the event's prospect list (id, company name, status) to
+  Claude via the existing AI Gateway plumbing (reuse chunk 13 patterns:
+  model resolution, spend cap, `generateObject`/structured output).
+- **Structured output schema (Zod)** — the model may ONLY propose whitelisted
+  ops per matched company: `set_status` (enum), `log_interaction` (type,
+  subject, body, occurredAt), `bump_last_contacted`, `set_next_action_at`,
+  `create_task` (title, dueDate, priority). Plus `unmatched: string[]` for
+  company mentions it couldn't resolve. No deletes, no amount/tier writes.
+- **Confirmation UI:** diff card per company with individually toggleable
+  items + Apply button. Unmatched mentions shown as warnings. `confirmed`
+  status proposals redirect the user to the existing confirm modal (amount +
+  tier + benefits must stay atomic).
+- **Apply path:** accepted items call the EXISTING server actions
+  (`logInteraction`, `updateField`, task create) so audit rows, optimistic
+  UI, and validation come free. New audit action `ai.nl_update_apply` for
+  the batch summary.
+- **Prereq:** `AI_GATEWAY_API_KEY` set in Vercel prod (dashboard → AI tab →
+  connect Anthropic) or the feature 503s in production. Set `CRON_SECRET`
+  while in there (crons currently 500).
+- No DB migration needed.
+
 ## v1.5 — never built (still on the wishlist)
 
 Listed in approximate decreasing-leverage order.

@@ -8,14 +8,14 @@
 ---
 
 ## Last updated
-2026-07-02 — UI polish phase 2 (elevation system, dark-toggle fix, cell
-affordances) + filter/view quick wins (older_than_n_days op, follow-up +
-proposal-expiry views, `/` and `g r` shortcuts)
+2026-07-08 — Admin access recovered + Master List LOADED into prod +
+`/sync-outreach` skill + Cowork project setup + Chunk C spec'd (next up)
 
 ## Current git HEAD
-`b2b8ecf` — ui polish phase 2: elevation system, dark-toggle fix, cell
-affordances + follow-up/proposal views
-(prior: `51cadbe` ui: clinical & precise refresh — phase 1)
+See `git log` — this session's commits: 6a02bef (Excel converter fix),
+a71bbc4 (/sync-outreach skill), 22a4de9 (CLAUDE.md: docs must be pushed at
+session close), plus this docs commit.
+(prior: `18ef6eb` password recovery script; `b2b8ecf` ui polish phase 2)
 
 ---
 
@@ -33,10 +33,14 @@ from `main`, so 14b ships on the next deploy.
 
 ---
 
-## Master List import — IN PROGRESS (data not yet loaded)
+## Master List import — DONE (2026-07-08)
 
-Goal this session: migrate the real NPPA Master List (312 prospects) from the
-restructured Excel workbook into the CRM via the in-app importer.
+**The user ran the import — all 312 prospects are live in production.**
+Admin login also recovered (password reset via `scripts/reset-admin-password.ts`;
+user holds the new password). Historical context below:
+
+Goal of the earlier session: migrate the real NPPA Master List (312 prospects)
+from the restructured Excel workbook into the CRM via the in-app importer.
 
 **Shipped (commits `9776150`, `2b43f88`):**
 - `lib/actions/csv.ts` — the importer now ingests the full Master List, not just
@@ -153,7 +157,22 @@ column). typecheck + lint + build all green.
 
 Work through these in order. One chunk per session.
 
-### 1. Chunk 15 — TipTap rich notes
+### 1. Chunk C — Natural-language updates ("AI quick update") ← START HERE
+Full spec in TODO.md under "Chunk C". Summary: user types plain English in
+the app, Claude (via existing AI Gateway plumbing) proposes structured
+updates (status / interaction / last-contact / next-action / task) against a
+whitelisted Zod schema, a confirmation UI shows per-company diff cards, and
+accepted items apply through the EXISTING server actions so audit +
+optimistic UI come free. Reuse chunk 13 (enrichment) patterns for model
+calls, spend cap, and the review-then-accept UX. No migration needed.
+**Prereq:** `AI_GATEWAY_API_KEY` must be set in Vercel prod (dashboard → AI
+tab) or it 503s in production — set `CRON_SECRET` at the same time.
+In-app version of the `/sync-outreach` Claude Code skill
+(`.claude/skills/sync-outreach/SKILL.md`) — mirror its guardrails: never
+propose deletes, flag unmatched companies instead of guessing, route
+`confirmed` through the existing confirm modal.
+
+### 2. Chunk 15 — TipTap rich notes
 Replaces `interactions.body` and `tasks.description` (plain text) with TipTap
 jsonb block editor. Needs DB migration.
 
@@ -167,7 +186,7 @@ jsonb block editor. Needs DB migration.
 
 **Prerequisite for:** Chunk 20 (notifications needs `@` mentions)
 
-### 2. Chunk 20 — Notification center
+### 3. Chunk 20 — Notification center
 Bell icon in top bar, `notifications` table, in-app alerts for:
 - Task assignments (`assignedTo` changes)
 - `@` mentions in notes (needs TipTap first)
