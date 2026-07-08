@@ -64,7 +64,9 @@ Before ending any session, you **must** update `docs/SESSION-STATE.md` with:
 
 Also update `TODO.md` to mark completed chunks and `CHANGELOG.md` to add an entry for anything that shipped.
 
-**The goal:** a new session reading only `SESSION-STATE.md` should be able to pick up exactly where this one left off without any re-explanation from the user.
+**Then commit those doc updates and push to `origin/main` as the final act of the session.** Updating SESSION-STATE / TODO / CHANGELOG locally is not "done" — the session is only closed once the docs commit is on GitHub. Never end a session with uncommitted changes to these three files (typical close-out: a `docs: …` commit after the session's code commits).
+
+**The goal:** a new session reading only `SESSION-STATE.md` should be able to pick up exactly where this one left off without any re-explanation from the user — including a session starting from a fresh GitHub clone on another machine, which is why the docs must be pushed, never just saved locally.
 
 ## Commit policy (overrides the global "ask before commit" default)
 - **Commit directly to `main` after every green build. No per-chunk feature branches.** As soon as `tsc --noEmit + next lint + next build` all pass for a chunk, stage the work and create a commit on `main` with a clear message ("chunk N: <one-line summary>" or similar). Don't wait to be asked.
