@@ -27,6 +27,8 @@ import {
 import { BulkActionBar } from "./bulk-action-bar";
 import { ReviewerCell } from "./reviewer-cell";
 import {
+  BouncedBadge,
+  hasBouncedTag,
   PROSPECT_STATUS_LABELS,
   StatusBadge,
 } from "./status-badge";
@@ -213,14 +215,17 @@ export function CompaniesTable({
         accessorKey: "companyName",
         header: () => sortHeader("companyName", "Company"),
         cell: ({ row }) => (
-          <Link
-            href={`/companies?record=${row.original.id}`}
-            scroll={false}
-            className="font-medium text-slate-900 hover:underline dark:text-slate-100"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {row.original.companyName}
-          </Link>
+          <span className="flex items-center gap-1.5">
+            <Link
+              href={`/companies?record=${row.original.id}`}
+              scroll={false}
+              className="font-medium text-slate-900 hover:underline dark:text-slate-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {row.original.companyName}
+            </Link>
+            {hasBouncedTag(row.original.tagsCache) ? <BouncedBadge /> : null}
+          </span>
         ),
       },
       {
