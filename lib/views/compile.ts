@@ -108,6 +108,29 @@ function compileCondition(c: FilterCondition): SQL | null {
     return null;
   }
 
+  // Tags live in the `tagsCache` text[] array — match with array predicates.
+  if (c.field === "tags") {
+    const arr = sql`${eventCompanies.tagsCache}`;
+    switch (c.op) {
+      case "is_empty":
+        return sql`coalesce(cardinality(${arr}), 0) = 0`;
+      case "is_not_empty":
+        return sql`coalesce(cardinality(${arr}), 0) > 0`;
+      case "equals": {
+        const v = asString(c.value);
+        if (!v) return null;
+        return sql`exists (select 1 from unnest(${arr}) as t(v) where lower(t.v) = lower(${v}))`;
+      }
+      case "contains": {
+        const v = asString(c.value);
+        if (!v) return null;
+        return sql`exists (select 1 from unnest(${arr}) as t(v) where t.v ilike ${`%${v}%`})`;
+      }
+      default:
+        return null;
+    }
+  }
+
   const col = eventCompanyColumn(c.field);
   if (!col) return null;
 

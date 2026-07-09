@@ -17,6 +17,7 @@ export const COMPANY_COLUMNS: ColumnDef[] = [
   { key: "review", label: "Review" },
   { key: "lastContactedAt", label: "Last contact" },
   { key: "nextActionAt", label: "Next action" },
+  { key: "tags", label: "Tags" },
 ];
 
 /** Keys shown by default (all non-select columns). */

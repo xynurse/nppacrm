@@ -160,6 +160,15 @@ export const COMPANY_FIELDS: FieldMeta[] = [
     operators: BOOLEAN_OPS,
     sortable: false,
   },
+  {
+    key: "tags",
+    label: "Tags",
+    type: "text",
+    // Matches against the tagsCache array — "contains" does a partial match on
+    // any tag, "equals" matches a whole tag (both case-insensitive).
+    operators: ["contains", "equals", "is_empty", "is_not_empty"],
+    sortable: false,
+  },
 ];
 
 export const COMPANY_FIELDS_BY_KEY: Record<string, FieldMeta> =

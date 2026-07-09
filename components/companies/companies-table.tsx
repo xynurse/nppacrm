@@ -27,6 +27,7 @@ import {
 import { BulkActionBar } from "./bulk-action-bar";
 import { ReviewerCell } from "./reviewer-cell";
 import {
+  BOUNCED_TAG,
   BouncedBadge,
   hasBouncedTag,
   PROSPECT_STATUS_LABELS,
@@ -466,6 +467,31 @@ export function CompaniesTable({
             Editor={DateEditor}
           />
         ),
+      },
+      {
+        id: "tags",
+        header: () => <span className="text-xs">Tags</span>,
+        cell: ({ row }) => {
+          const tags = row.original.tagsCache;
+          if (!tags || tags.length === 0)
+            return <span className="text-xs text-slate-300 dark:text-slate-600">—</span>;
+          return (
+            <div className="flex flex-wrap gap-1">
+              {tags.map((t) =>
+                t === BOUNCED_TAG ? (
+                  <BouncedBadge key={t} />
+                ) : (
+                  <span
+                    key={t}
+                    className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300"
+                  >
+                    {t}
+                  </span>
+                ),
+              )}
+            </div>
+          );
+        },
       },
     ],
     [
