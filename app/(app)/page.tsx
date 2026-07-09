@@ -25,11 +25,41 @@ import {
 } from "@/components/companies/status-badge";
 import { Button } from "@/components/ui/button";
 import { NlUpdateBox } from "@/components/ai/nl-update-box";
+import { encodeToParam } from "@/lib/views/schema";
+import type { FilterCondition } from "@/lib/views/types";
 import { formatCurrency, formatRelativeDate } from "@/lib/format";
 
 const STATUS_ORDER = Object.keys(PROSPECT_STATUS_LABELS) as Array<
   keyof typeof PROSPECT_STATUS_LABELS
 >;
+
+// Stages the dashboard treats as "active / in-flight" (mirrors the queries in
+// lib/db/queries/dashboard.ts for hot + stalled prospects).
+const ACTIVE_STATUSES = [
+  "contacted",
+  "engaged",
+  "proposal_sent",
+  "negotiating",
+];
+
+/** Build a /companies link pre-filtered with the given conditions. Uses the
+ * same `f` param the companies view decodes, so the drill-down lands on a
+ * real filtered table (not just the unfiltered list). */
+function companiesHref(conditions: FilterCondition[]): string {
+  return `/companies?f=${encodeToParam({ op: "and", conditions })}`;
+}
+
+const CONFIRMED_HREF = companiesHref([
+  { field: "status", op: "is", value: "confirmed" },
+]);
+const HOT_HREF = companiesHref([
+  { field: "priority", op: "is", value: "high" },
+  { field: "status", op: "is_one_of", value: ACTIVE_STATUSES },
+]);
+const STALLED_HREF = companiesHref([
+  { field: "status", op: "is_one_of", value: ACTIVE_STATUSES },
+  { field: "lastContactedAt", op: "older_than_n_days", value: 30 },
+]);
 
 export default async function DashboardPage() {
   const session = await requireSession();
@@ -104,6 +134,7 @@ export default async function DashboardPage() {
           label="Confirmed revenue"
           value={formatCurrency(metrics.confirmedAmount)}
           sublabel={`${metrics.confirmedCount} sponsor${metrics.confirmedCount !== 1 ? "s" : ""}`}
+          href={CONFIRMED_HREF}
           accent="green"
         />
         <Kpi
@@ -111,6 +142,7 @@ export default async function DashboardPage() {
           label="Pipeline value"
           value={formatCurrency(pipelineAmount)}
           sublabel="proposed + confirmed"
+          href="/pipeline"
           accent="blue"
         />
         <Kpi
@@ -118,6 +150,7 @@ export default async function DashboardPage() {
           label="Stalled (30+ days)"
           value={String(stalled.length)}
           sublabel={stalled.length > 0 ? "Needs follow-up" : "All good"}
+          href={STALLED_HREF}
           accent={stalled.length > 0 ? "amber" : "default"}
         />
       </div>
@@ -126,10 +159,13 @@ export default async function DashboardPage() {
       {goal ? (
         <section className="surface-card p-4 dark:bg-slate-900">
           <div className="mb-3 flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
+            <Link
+              href="/reports"
+              className="flex items-center gap-2 hover:underline"
+            >
               <Target className="h-4 w-4 text-slate-400" />
               <span className="font-semibold">Fundraising goal</span>
-            </div>
+            </Link>
             <span className="tabular-nums text-slate-500 dark:text-slate-400">
               {formatCurrency(metrics.confirmedAmount)} /{" "}
               {formatCurrency(goal)}
@@ -167,8 +203,9 @@ export default async function DashboardPage() {
               return (
                 <div key={f.status} className="flex items-center gap-3">
                   <Link
-                    href={`/companies?v=${encodeURIComponent(JSON.stringify({ filter: { op: "and", conditions: [{ field: "status", op: "eq", value: f.status }] } }))}`}
-                    scroll={false}
+                    href={companiesHref([
+                      { field: "status", op: "is", value: f.status },
+                    ])}
                     className="w-28 shrink-0"
                   >
                     <StatusBadge status={f.status} />
@@ -197,6 +234,12 @@ export default async function DashboardPage() {
           <div className="mb-3 flex items-center gap-2">
             <Zap className="h-4 w-4 text-slate-400" />
             <h2 className="text-sm font-semibold">Confirmed by tier</h2>
+            <Link
+              href="/reports"
+              className="ml-auto text-xs text-slate-500 hover:underline dark:text-slate-400"
+            >
+              View report →
+            </Link>
           </div>
           {tierMix.length === 0 ? (
             <p className="text-sm text-slate-500">No confirmed sponsors yet.</p>
@@ -226,9 +269,12 @@ export default async function DashboardPage() {
           <div className="mb-3 flex items-center gap-2">
             <Flame className="h-4 w-4 text-orange-400" />
             <h2 className="text-sm font-semibold">Hot prospects</h2>
-            <span className="ml-auto text-xs text-slate-500">
-              High priority, active stage
-            </span>
+            <Link
+              href={HOT_HREF}
+              className="ml-auto text-xs text-slate-500 hover:underline dark:text-slate-400"
+            >
+              View all →
+            </Link>
           </div>
           {hotProspects.length === 0 ? (
             <p className="text-sm text-slate-500">
@@ -266,7 +312,7 @@ export default async function DashboardPage() {
           <header className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold">Stalled prospects</h2>
             <Link
-              href="/companies?filter=stalled"
+              href={STALLED_HREF}
               className="text-xs text-slate-500 hover:underline dark:text-slate-400"
             >
               View all →
@@ -311,12 +357,9 @@ export default async function DashboardPage() {
             <p className="text-sm text-slate-500">No open tasks assigned to you.</p>
           ) : (
             <ul className="space-y-1.5 text-sm">
-              {myTasks.map((t) => (
-                <li
-                  key={t.id}
-                  className="flex items-center justify-between gap-2"
-                >
-                  <span className="flex min-w-0 items-center gap-2">
+              {myTasks.map((t) => {
+                const inner = (
+                  <>
                     <CheckSquare className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                     <span className="truncate">{t.title}</span>
                     {t.companyName ? (
@@ -324,12 +367,32 @@ export default async function DashboardPage() {
                         · {t.companyName}
                       </span>
                     ) : null}
-                  </span>
-                  <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">
-                    {t.dueDate ?? "—"}
-                  </span>
-                </li>
-              ))}
+                  </>
+                );
+                return (
+                  <li
+                    key={t.id}
+                    className="flex items-center justify-between gap-2"
+                  >
+                    {t.eventCompanyId ? (
+                      <Link
+                        href={`/companies?record=${t.eventCompanyId}`}
+                        scroll={false}
+                        className="flex min-w-0 items-center gap-2 hover:underline"
+                      >
+                        {inner}
+                      </Link>
+                    ) : (
+                      <span className="flex min-w-0 items-center gap-2">
+                        {inner}
+                      </span>
+                    )}
+                    <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">
+                      {t.dueDate ?? "—"}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

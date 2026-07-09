@@ -140,7 +140,10 @@ function compileCondition(c: FilterCondition): SQL | null {
     case "is_one_of": {
       const arr = asStringArray(c.value);
       if (arr.length === 0) return null;
-      return sql`${col} = ANY(${arr})`;
+      return sql`${col} IN (${sql.join(
+        arr.map((a) => sql`${a}`),
+        sql`, `,
+      )})`;
     }
     case "eq": {
       const n = asNumber(c.value);
