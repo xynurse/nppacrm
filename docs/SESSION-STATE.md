@@ -35,14 +35,37 @@ also applied to prod as data-only writes, no commit.)
 
 ---
 
-## Outreach batch — APPLIED (2026-07-09, data-only, no commit)
-The 66 fresh-prospect outreach emails (#1–66) were logged: 66 `email`
-interactions (each linked to the named recipient contact), 64 status flips
-`prospect→contacted`, 66 `firstContactedAt`/`lastContactedAt` bumps to
-today, 132 audit rows (`userAgent: claude-code sync-outreach`). Vivian
-Health (kept `negotiating`) and Amwell (already `contacted`) were not moved
-backward but still got the email + last-contact bump. Verified via
-throwaway script. Event now sits at ~65 contacted / rest prospect.
+## Outreach batches — APPLIED (2026-07-09, data-only, no commit)
+
+**Batch 1 (66 fresh prospects, #1–66):** 66 `email` interactions (each
+linked to the named recipient contact), 64 status flips `prospect→contacted`,
+66 first/last-contacted bumps, 132 audit rows. Vivian Health (kept
+`negotiating`) and Amwell (already `contacted`) not moved backward but still
+got the email + last-contact bump.
+
+**Batch 2 (40 companies) + bounce handling:**
+- 16 *delivered* → `contacted` (GE HealthCare & Optum were already contacted
+  → email logged + last-contact bump only). Companies incl. Osmosis, VisualDx,
+  ShiftWizard, Berxi, Imprivata, TruBridge, Panacea Financial, Laurel Road,
+  Quest Diagnostics, QuidelOrtho, Prime Therapeutics, Omada Health, Personify
+  Health, CM&F Group.
+- 24 *undeliverable/bounced* → **new `BOUNCED` tag** (color `#ef4444`;
+  `tags` row + `companyTags` links + added to each `eventCompanies.tagsCache`),
+  an `email` interaction marked UNDELIVERABLE, and a **follow-up task**
+  "Replace undeliverable email — find valid address" (due 2026-07-12,
+  assigned to Mike, priority high). Status deliberately **not** changed and
+  last-contact **not** bumped (a bounce isn't a real contact). Per user's
+  call, the 9 already-`contacted` bounced companies (Augmedix, Get Well,
+  Premier Inc., DispatchHealth, Maxim Healthcare Services, Torch, Suki, Redox,
+  Notable) were **not reverted** — just tagged/noted/tasked.
+- Skipped (unmatched, per user): The Doctors Group, Summit Strategic
+  Communication (PR agency), Ketchum (PR agency), Microsoft.
+
+**Convention established:** `BOUNCED` tag = the address on file is dead / needs
+replacing. Tags currently only live in `tagsCache` (no dedicated table column
+or filter chip in the UI yet) — they ARE matched by the new Companies +
+Pipeline keyword search, but a proper tags column/filter is a possible
+follow-up. There are now 24 open "Replace undeliverable email" tasks.
 
 ## Contact email history — BUILT (2026-07-09, commit `e353f9c`)
 Captures & archives a contact's OLD email whenever it changes/clears.
