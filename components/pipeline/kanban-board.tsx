@@ -11,9 +11,10 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
+import { Search, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { formatRelativeDate } from "@/lib/format";
 import {
   confirmEventCompany,
@@ -47,25 +48,50 @@ export function KanbanBoard({ rows: initialRows, tiers }: Props) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const [confirmFor, setConfirmFor] = useState<EventCompanyRow | null>(null);
+  const [query, setQuery] = useState("");
+
+  // Reflect server updates (drag persistence, drawer edits via router.refresh)
+  // back into the board's local state.
+  useEffect(() => setRows(initialRows), [initialRows]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
+  const q = query.trim().toLowerCase();
+  const filteredRows = useMemo(() => {
+    if (!q) return rows;
+    const terms = q.split(/\s+/).filter(Boolean);
+    return rows.filter((r) => {
+      const hay = [
+        r.companyName,
+        r.ownerName,
+        r.companyIndustry,
+        r.confirmedTierName,
+        r.targetTierName,
+        ...(r.tagsCache ?? []),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return terms.every((t) => hay.includes(t));
+    });
+  }, [rows, q]);
+
   const grouped = useMemo(() => {
     const map = new Map<ProspectStatus, EventCompanyRow[]>();
     for (const s of COLUMN_ORDER) map.set(s, []);
-    for (const r of rows) {
+    for (const r of filteredRows) {
       const list = map.get(r.status as ProspectStatus);
       if (list) list.push(r);
     }
     return map;
-  }, [rows]);
+  }, [filteredRows]);
 
   const totals = useMemo(() => {
     const t = new Map<ProspectStatus, { count: number; amount: number }>();
     for (const s of COLUMN_ORDER) t.set(s, { count: 0, amount: 0 });
-    for (const r of rows) {
+    for (const r of filteredRows) {
       const entry = t.get(r.status as ProspectStatus);
       if (!entry) continue;
       entry.count += 1;
@@ -73,7 +99,7 @@ export function KanbanBoard({ rows: initialRows, tiers }: Props) {
       if (v) entry.amount += Number(v);
     }
     return t;
-  }, [rows]);
+  }, [filteredRows]);
 
   const draggingRow = draggingId
     ? rows.find((r) => r.id === draggingId)
@@ -154,6 +180,34 @@ export function KanbanBoard({ rows: initialRows, tiers }: Props) {
 
   return (
     <>
+      <div className="flex items-center gap-2">
+        <div className="relative w-full sm:w-72">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Filter cards by company, owner, tier, tag…"
+            className="h-8 w-full rounded-md border border-slate-200 bg-white pl-8 pr-7 text-sm shadow-[var(--shadow-card)] transition-[border-color,box-shadow] duration-150 placeholder:text-slate-400 hover:border-slate-300 focus-visible:border-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/25 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 [&::-webkit-search-cancel-button]:appearance-none"
+          />
+          {query ? (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Clear filter"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+        </div>
+        {q ? (
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            {filteredRows.length} of {rows.length} shown
+          </span>
+        ) : null}
+      </div>
+
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
@@ -276,7 +330,7 @@ function Card({
       <div className="flex items-start gap-1.5">
         <PriorityDot priority={row.priority} />
         <Link
-          href={`/companies?record=${row.id}`}
+          href={`/pipeline?record=${row.id}`}
           scroll={false}
           className="flex-1 font-medium text-slate-900 hover:underline dark:text-slate-100"
           onClick={(e) => e.stopPropagation()}

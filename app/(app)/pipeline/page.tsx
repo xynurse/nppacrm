@@ -1,14 +1,35 @@
 import Link from "next/link";
+import {
+  getActiveProspectus,
+  listRecentJobsForEventCompany,
+  listSuggestionsForEventCompany,
+} from "@/lib/db/queries/ai";
+import { listBenefitsForEventCompany } from "@/lib/db/queries/benefits";
 import { listActiveEvents } from "@/lib/db/queries/events";
 import {
   listEventCompanies,
   listTiersForEvent,
 } from "@/lib/db/queries/companies";
+import { listContactsForCompany } from "@/lib/db/queries/contacts";
+import { listFieldDefinitionsForEvent } from "@/lib/db/queries/custom-fields";
+import { listInteractionsForEventCompany } from "@/lib/db/queries/interactions";
+import { listTasksForEventCompany } from "@/lib/db/queries/tasks";
+import { listUsers } from "@/lib/db/queries/users";
 import { requireSession } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import {
+  CompanyDrawer,
+  type DrawerData,
+} from "@/components/companies/company-drawer";
 import { KanbanBoard } from "@/components/pipeline/kanban-board";
 
-export default async function PipelinePage() {
+type SearchParams = Promise<{ record?: string }>;
+
+export default async function PipelinePage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const session = await requireSession();
   const events = await listActiveEvents();
   const activeEvent =
@@ -28,9 +49,13 @@ export default async function PipelinePage() {
     );
   }
 
-  const [rows, tiers] = await Promise.all([
+  const params = await searchParams;
+
+  const [rows, tiers, users, fieldDefinitions] = await Promise.all([
     listEventCompanies(activeEvent.id),
     listTiersForEvent(activeEvent.id),
+    listUsers(),
+    listFieldDefinitionsForEvent(activeEvent.id),
   ]);
 
   const tierOptions = tiers.map((t) => ({
@@ -38,6 +63,40 @@ export default async function PipelinePage() {
     name: t.name,
     color: t.color,
   }));
+  const owners = users
+    .filter((u) => u.isActive)
+    .map((u) => ({ id: u.id, name: u.name, email: u.email }));
+
+  const recordId = typeof params.record === "string" ? params.record : null;
+  const drawerRow = recordId
+    ? (rows.find((r) => r.id === recordId) ?? null)
+    : null;
+
+  let drawerData: DrawerData | null = null;
+  if (drawerRow) {
+    const [contacts, interactions, tasks, suggestions, jobs, prospectus, benefits] =
+      await Promise.all([
+        listContactsForCompany(drawerRow.companyId),
+        listInteractionsForEventCompany(drawerRow.id),
+        listTasksForEventCompany(drawerRow.id),
+        listSuggestionsForEventCompany(drawerRow.id),
+        listRecentJobsForEventCompany(drawerRow.id, 5),
+        getActiveProspectus(activeEvent.id),
+        listBenefitsForEventCompany(drawerRow.id),
+      ]);
+    drawerData = {
+      contacts,
+      interactions,
+      tasks,
+      ai: {
+        suggestions,
+        jobs,
+        hasProspectus: !!prospectus,
+        prospectusFileName: prospectus?.fileName ?? null,
+      },
+      benefits,
+    };
+  }
 
   return (
     <div className="space-y-4">
@@ -49,6 +108,17 @@ export default async function PipelinePage() {
         </p>
       </div>
       <KanbanBoard rows={rows} tiers={tierOptions} />
+
+      <CompanyDrawer
+        row={drawerRow}
+        owners={owners}
+        tiers={tierOptions}
+        data={drawerData}
+        currentUserId={session.user.id}
+        isAdmin={session.user.role === "admin"}
+        fieldDefinitions={fieldDefinitions}
+        closeHref="/pipeline"
+      />
     </div>
   );
 }

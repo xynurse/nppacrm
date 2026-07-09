@@ -74,6 +74,7 @@ export function CompanyDrawer({
   currentUserId,
   isAdmin,
   fieldDefinitions,
+  closeHref = "/companies",
 }: {
   row: EventCompanyRow | null;
   owners: PersonOption[];
@@ -82,6 +83,9 @@ export function CompanyDrawer({
   currentUserId: string;
   isAdmin: boolean;
   fieldDefinitions: CustomFieldDefinition[];
+  /** Where the backdrop/close control navigates. Lets the drawer close
+   * in-place on whatever page it is rendered on (e.g. /pipeline). */
+  closeHref?: string;
 }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -98,7 +102,7 @@ export function CompanyDrawer({
     <>
       <Link
         id="close-drawer"
-        href="/companies"
+        href={closeHref}
         scroll={false}
         className={cn(
           "fixed inset-0 z-30 bg-slate-900/30 backdrop-blur-sm transition-opacity",
@@ -122,6 +126,7 @@ export function CompanyDrawer({
             currentUserId={currentUserId}
             isAdmin={isAdmin}
             fieldDefinitions={fieldDefinitions}
+            closeHref={closeHref}
           />
         ) : null}
       </aside>
@@ -137,6 +142,7 @@ function DrawerContent({
   currentUserId,
   isAdmin,
   fieldDefinitions,
+  closeHref,
 }: {
   row: EventCompanyRow;
   owners: PersonOption[];
@@ -145,6 +151,7 @@ function DrawerContent({
   currentUserId: string;
   isAdmin: boolean;
   fieldDefinitions: CustomFieldDefinition[];
+  closeHref: string;
 }) {
   const [row, setRow] = useState(initial);
   const [tab, setTab] = useState<DrawerTab>("overview");
@@ -210,7 +217,7 @@ function DrawerContent({
             existingProposalValidUntil={row.proposalValidUntil}
           />
           <Link
-            href="/companies"
+            href={closeHref}
             scroll={false}
             className="rounded-md p-1 hover:bg-slate-100 dark:hover:bg-slate-800"
             title="Close"
