@@ -20,6 +20,8 @@ import {
   listTierMix,
 } from "@/lib/db/queries/dashboard";
 import {
+  BOUNCED_TAG,
+  BouncedBadge,
   PROSPECT_STATUS_LABELS,
   StatusBadge,
 } from "@/components/companies/status-badge";
@@ -104,7 +106,11 @@ export default async function DashboardPage() {
     status: s,
     count: metrics.byStatus[s] ?? 0,
   }));
-  const maxCount = Math.max(...funnelStages.map((f) => f.count), 1);
+  const maxCount = Math.max(
+    ...funnelStages.map((f) => f.count),
+    metrics.bouncedCount,
+    1,
+  );
 
   return (
     <div className="space-y-6">
@@ -224,6 +230,33 @@ export default async function DashboardPage() {
                 </div>
               );
             })}
+
+          {/* Bounced overlay — a data-quality flag, not a funnel stage */}
+          {metrics.bouncedCount > 0 ? (
+            <div className="mt-1 flex items-center gap-3 border-t border-slate-100 pt-2 dark:border-slate-800">
+              <Link
+                href={companiesHref([
+                  { field: "tags", op: "contains", value: BOUNCED_TAG },
+                ])}
+                className="w-28 shrink-0"
+              >
+                <BouncedBadge />
+              </Link>
+              <div className="flex flex-1 items-center gap-2">
+                <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-slate-100 dark:bg-slate-800">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-sm bg-red-500/70 transition-all duration-300"
+                    style={{
+                      width: `${Math.round((metrics.bouncedCount / maxCount) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <span className="w-8 text-right text-xs tabular-nums font-medium text-slate-700 dark:text-slate-300">
+                  {metrics.bouncedCount}
+                </span>
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
 
