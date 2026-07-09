@@ -8,15 +8,79 @@
 ---
 
 ## Last updated
-2026-07-08 (session 2) — **Chunk C shipped** (natural-language "AI quick
-update"). Prior same-day session: admin access recovered + Master List loaded +
-`/sync-outreach` skill + Cowork setup.
+2026-07-09 — **Platform UX pass shipped**: 4 self-contained UX chunks
+(A–D below) covering inline search, dashboard drill-downs, pipeline
+edit-in-place, and a new event profile page. Also fixed a real
+`is_one_of` filter crash. Prior session (2026-07-08): Chunk C
+(natural-language AI quick update).
 
 ## Current git HEAD
-`fdddf09` feat(chunk C): natural-language AI quick update — plus this docs
-commit on top.
-(prior: `b4281b0` docs queue; `6a02bef` Excel converter fix; `a71bbc4`
-/sync-outreach skill; `22a4de9` docs-push policy)
+`b1357b5` feat(chunk D): event profile page in the nav.
+(this session, in order: `2c35b90` chunk A inline search · `93bb3d7`
+chunk B pipeline search+edit · `c0c7608` chunk C dashboard drill-downs +
+is_one_of fix · `b1357b5` chunk D event page — plus this docs commit on top.)
+
+> ⚠️ **Naming note:** the "chunk A–D" in *this* session's commits are the
+> UX pass described below — NOT the old lettered chunks. The backlog's
+> next numbered item is still **Chunk 15 (TipTap)**.
+
+---
+
+## Pending / not done — outreach batch (queued, NOT applied)
+At the start of this session the user pasted 66 fresh-prospect outreach
+emails (Batch 1 #1–55 + Batch 2 #56–66) and asked to **mark those
+companies "contacted"** via `/sync-outreach`. I loaded CRM state, matched
+all 66 1:1 (recipients already exist as contacts), and **previewed** the
+writes — then the user pivoted to the UX work below. **No DB writes were
+made.** To finish: re-run `/sync-outreach` with that list (or say "apply
+the outreach") — uniform action is status `prospect→contacted`,
+`firstContactedAt`/`lastContactedAt` → today, one `email` interaction each
+linked to the named recipient. **Exception: Vivian Health (#16) is already
+`negotiating`** — do NOT move it backward; log the email + bump last-contact
+only. (The full 66-row list with names/titles/emails is in this session's
+first user message.)
+
+## This session — Platform UX pass (all shipped, 2026-07-09)
+
+**Chunk A — inline keyword search (Companies + Contacts)** `2c35b90`
+- New `components/ui/search-input.tsx` — debounced box that drives a `q`
+  URL param; server re-queries (no client filtering). Preserves other params.
+- `listEventCompanies` gained a `keyword` opt: wide ILIKE across company
+  name/website/industry/HQ/description, company+event tags, outreach/notes
+  fields, and an EXISTS subquery over the company's contacts (name/email/
+  title). Multi-term = AND-of-terms, OR-of-fields. LIKE wildcards escaped.
+- `listContactsForEvent` gained `keyword` (name/email/title/phone/company).
+- Search boxes wired into `views-toolbar.tsx` and the contacts page.
+
+**Chunk B — pipeline search + edit-in-place** `93bb3d7`
+- Client-side filter box on the kanban (company/owner/tier/tag, multi-term).
+- Company drawer now renders on `/pipeline` (cards link to `/pipeline?record=`).
+  `CompanyDrawer` took a `closeHref` prop so close/backdrop stay on-page.
+- `KanbanBoard` syncs local state to `initialRows` via effect so drawer
+  edits + drag persistence reflect after `router.refresh()`.
+
+**Chunk C — dashboard drill-downs** `c0c7608`
+- Static dashboard cards/sections now navigate: Confirmed→confirmed list,
+  Pipeline value→/pipeline, Stalled→stalled filter, funnel bars→that status,
+  goal/tier→/reports, hot prospects→hot filter, task rows→their drawer.
+- **Bug fix:** funnel/stalled links used params (`?v=`, `?filter=stalled`)
+  the companies page never read — they did nothing. Now use the real `f`
+  param + `sanitizeFilter`; verified filtered counts equal the dashboard's.
+- **Real bug fixed in `lib/views/compile.ts`:** `is_one_of` compiled to
+  `= ANY((a,b,c))` (a row constructor) → Postgres error "requires array on
+  right side". Now `IN (...)`. This crashed the companies filter UI too
+  whenever anyone picked "is any of".
+
+**Chunk D — event profile page** `b1357b5`
+- New `/event` route + "Event" sidebar nav item (CalendarDays icon).
+- Extensive: header (dates/tz/status/countdown), fundraising target vs goal
+  + stat cards, prospects-by-stage (links to filtered lists), tiers & targets
+  table, team leaderboard, outreach cadence health, avg days-in-stage,
+  reviewer roster, admin manage links. All from existing report queries.
+
+**Answered for the user:** dragging a pipeline card writes the single shared
+`eventCompanies.status` — it propagates to dashboard/companies/reports
+instantly (one source of truth), and revalidates `/companies` + `/pipeline`.
 
 ---
 
@@ -187,6 +251,10 @@ column). typecheck + lint + build all green.
 | Master List `Category` → `companies.industry`; `Subcategory` → `customFields.subcategory` | No schema change needed for "just migrate" scope; a real category field/view is deferred |
 | Unmatched import owner → null (unassigned), not the importing user | A blank owner in the source means genuinely unassigned; avoids 235 rows silently landing on the admin |
 | Import CSV with PII stays on Desktop, uncommitted | Contains contact emails/names; only the generator script is committed |
+| Companies/Contacts search = server-side `q` param; Pipeline search = client-side | Companies/Contacts already re-query per URL param and need cross-field/contact matching in SQL; pipeline loads all rows client-side and drag is optimistic, so instant client filtering is simpler and avoids refetch |
+| `CompanyDrawer` reused on /pipeline via a `closeHref` prop, not a second drawer | One drawer component, one set of editors; only the close/backdrop target differs per host page |
+| Dashboard drill-downs build the `f` filter param via `encodeToParam` + `sanitizeFilter` | Lands on a real filtered companies table (verified counts match dashboard); the old ad-hoc `?v=`/`?filter=` params were silently ignored |
+| Fixed `is_one_of` → `IN (...)` instead of switching to drizzle `inArray` | `compileCondition` works on a `sql` column fragment, not a column object; `IN` with `sql.join` is the minimal correct fix and repairs the existing filter UI |
 
 ---
 

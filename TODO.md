@@ -3,7 +3,17 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped commit: `b2b8ecf` (UI polish phase 2 + view fixes) — deployed at `nppacrm.vercel.app`.
+Latest shipped commit: `b1357b5` (event profile page — end of the 2026-07-09 UX pass) — deployed at `nppacrm.vercel.app`.
+
+## Platform UX pass — shipped 2026-07-09
+
+- [x] Inline keyword search on Companies + Contacts (`q` param, wide match incl. contacts) — `2c35b90`
+- [x] Pipeline search box + open/edit company drawer in place on `/pipeline` — `93bb3d7`
+- [x] Dashboard boxes drill into filtered views; fixed `is_one_of` filter crash — `c0c7608`
+- [x] `/event` event profile page + "Event" nav item — `b1357b5`
+- [ ] **Outreach batch NOT applied** — user pasted 66 outreach emails to mark
+  "contacted" via `/sync-outreach`; previewed + matched but pivoted before Apply.
+  Re-run `/sync-outreach` to finish (Vivian Health stays `negotiating`). See SESSION-STATE.
 
 ## Critical path: remaining setup
 

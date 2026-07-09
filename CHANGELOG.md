@@ -2,6 +2,41 @@
 
 ## Active build (committed to main)
 
+### Platform UX pass — search + drill-downs + event page _(2026-07-09)_
+Four self-contained UX chunks (commits `2c35b90`, `93bb3d7`, `c0c7608`,
+`b1357b5`). All typecheck + lint + build green; DB-touching logic verified
+with throwaway read-only scripts against prod.
+
+- **Inline keyword search on Companies & Contacts.** New debounced
+  `components/ui/search-input.tsx` drives a `q` URL param; server components
+  re-query, so results update as you type (no client filtering) and coexist
+  with saved views/filters. `listEventCompanies` matches `q` wide — company
+  name/website/industry/HQ/description, company + event tags, outreach/notes
+  fields, and the company's contacts (name/email/title) via an EXISTS
+  subquery; multi-term is AND-of-terms, OR-of-fields, with LIKE wildcards
+  escaped. `listContactsForEvent` matches name/email/title/phone/company.
+- **Pipeline search + edit-in-place.** Client-side filter box on the kanban
+  (company/owner/tier/tag). The company drawer now opens on `/pipeline`
+  itself (cards link to `/pipeline?record=`; `CompanyDrawer` gained a
+  `closeHref` prop). Board state syncs to server refreshes so drawer edits
+  and drag persistence reflect immediately.
+- **Clickable dashboard boxes.** The static KPI cards and section headers now
+  drill into the matching view (confirmed list, /pipeline, stalled filter,
+  per-status funnel, /reports, hot-prospects filter, task drawers). The old
+  funnel/stalled links used params the companies page never read and silently
+  did nothing — replaced with real `f`-param filters (counts verified against
+  the dashboard's own numbers).
+- **Event profile page.** New `/event` route + "Event" sidebar item. Shows
+  event metadata + countdown, fundraising target vs goal, prospects-by-stage,
+  sponsorship tiers & targets, team leaderboard, outreach cadence health,
+  average days-in-stage, and the reviewer roster — all from existing report
+  queries.
+- **Bug fix (`lib/views/compile.ts`):** the `is_one_of` filter operator
+  compiled to `col = ANY((a,b,c))`, which Postgres parses as a row
+  constructor and rejects ("op ANY/ALL (array) requires array on right
+  side"). Now compiles to `col IN (...)`. This also fixes the existing
+  companies filter UI, which crashed whenever a user picked "is any of".
+
 ### Chunk C — Natural-language "AI quick update" _(2026-07-08, commit fdddf09)_
 - In-app version of the `/sync-outreach` Claude Code skill. Paste a plain-English
   outreach recap; Claude proposes whitelisted, structured CRM updates per matched
