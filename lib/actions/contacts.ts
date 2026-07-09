@@ -6,7 +6,14 @@ import { z } from "zod";
 import { requireSession } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { db } from "@/lib/db";
-import { contacts } from "@/lib/db/schema";
+import { contactEmailHistory, contacts } from "@/lib/db/schema";
+import { isUndefinedTableError } from "@/lib/db/queries/contacts";
+
+/** Normalize for a case/whitespace-insensitive email comparison (matches the
+ * citext column semantics), so a pure case change isn't treated as a change. */
+function normalizeEmail(v: string | null | undefined): string {
+  return (v ?? "").trim().toLowerCase();
+}
 
 type ActionResult<T = unknown> =
   | { ok: true; data?: T }
@@ -103,23 +110,60 @@ export async function updateContact(raw: unknown): Promise<ActionResult> {
     updates.linkedinUrl = patch.linkedinUrl ? patch.linkedinUrl : null;
   if ("isPrimary" in patch) updates.isPrimary = patch.isPrimary;
 
-  if ("firstName" in patch || "lastName" in patch) {
+  // Fetch the existing row when we need to recompute the name OR archive a
+  // changed email.
+  const needsExisting =
+    "firstName" in patch || "lastName" in patch || "email" in patch;
+  let archivedEmail: string | null = null;
+  if (needsExisting) {
     const [existing] = await db
       .select({
         firstName: contacts.firstName,
         lastName: contacts.lastName,
-        companyId: contacts.companyId,
+        email: contacts.email,
       })
       .from(contacts)
       .where(eq(contacts.id, id))
       .limit(1);
     if (!existing) return { ok: false, error: "Contact not found" };
-    const first = "firstName" in patch ? patch.firstName ?? null : existing.firstName;
-    const last = "lastName" in patch ? patch.lastName ?? null : existing.lastName;
-    updates.fullName = buildFullName(first, last);
+
+    if ("firstName" in patch || "lastName" in patch) {
+      const first =
+        "firstName" in patch ? patch.firstName ?? null : existing.firstName;
+      const last =
+        "lastName" in patch ? patch.lastName ?? null : existing.lastName;
+      updates.fullName = buildFullName(first, last);
+    }
+
+    // Archive the OLD email whenever the address actually changes (or is
+    // cleared) and there was a non-empty prior address to retain.
+    if ("email" in patch) {
+      const newEmail = patch.email ? patch.email : null;
+      const oldEmail = existing.email;
+      if (
+        oldEmail &&
+        normalizeEmail(oldEmail) !== normalizeEmail(newEmail)
+      ) {
+        archivedEmail = oldEmail;
+      }
+    }
   }
 
   await db.update(contacts).set(updates).where(eq(contacts.id, id));
+
+  if (archivedEmail) {
+    // Best-effort: archiving must never block saving the contact. If the
+    // table isn't migrated yet, skip silently; rethrow anything else.
+    try {
+      await db.insert(contactEmailHistory).values({
+        contactId: id,
+        email: archivedEmail,
+        changedBy: session.user.id,
+      });
+    } catch (err) {
+      if (!isUndefinedTableError(err)) throw err;
+    }
+  }
 
   if (patch.isPrimary === true) {
     const [row] = await db

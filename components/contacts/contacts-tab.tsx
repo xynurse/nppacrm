@@ -1,8 +1,8 @@
 "use client";
 
-import { Plus, Star, Trash2 } from "lucide-react";
+import { History, Plus, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import {
   createContact,
   deleteContact,
@@ -10,16 +10,31 @@ import {
 } from "@/lib/actions/contacts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { ContactRow } from "@/lib/db/queries/contacts";
+import type {
+  ArchivedEmailRow,
+  ContactRow,
+} from "@/lib/db/queries/contacts";
+import { formatRelativeDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 export function ContactsTab({
   companyId,
   contacts,
+  emailHistory = [],
 }: {
   companyId: string;
   contacts: ContactRow[];
+  emailHistory?: ArchivedEmailRow[];
 }) {
+  const historyByContact = useMemo(() => {
+    const map = new Map<string, ArchivedEmailRow[]>();
+    for (const h of emailHistory) {
+      const list = map.get(h.contactId);
+      if (list) list.push(h);
+      else map.set(h.contactId, [h]);
+    }
+    return map;
+  }, [emailHistory]);
   const router = useRouter();
   const [adding, setAdding] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -76,14 +91,24 @@ export function ContactsTab({
 
       <ul className="divide-y divide-slate-100 dark:divide-slate-800">
         {contacts.map((c) => (
-          <ContactItem key={c.id} contact={c} />
+          <ContactItem
+            key={c.id}
+            contact={c}
+            emailHistory={historyByContact.get(c.id) ?? []}
+          />
         ))}
       </ul>
     </div>
   );
 }
 
-function ContactItem({ contact }: { contact: ContactRow }) {
+function ContactItem({
+  contact,
+  emailHistory,
+}: {
+  contact: ContactRow;
+  emailHistory: ArchivedEmailRow[];
+}) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -140,6 +165,26 @@ function ContactItem({ contact }: { contact: ContactRow }) {
           {contact.email ? <span>{contact.email}</span> : null}
           {contact.phone ? <span>{contact.phone}</span> : null}
         </div>
+        {emailHistory.length > 0 ? (
+          <div className="mt-1 space-y-0.5 border-l-2 border-slate-100 pl-2 dark:border-slate-800">
+            <div className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+              <History className="h-3 w-3" />
+              Previous email{emailHistory.length > 1 ? "s" : ""}
+            </div>
+            {emailHistory.map((h) => (
+              <div
+                key={h.id}
+                className="text-xs text-slate-400 dark:text-slate-500"
+              >
+                <span className="line-through">{h.email}</span>
+                <span className="ml-1.5 text-[10px]">
+                  archived {formatRelativeDate(h.archivedAt)}
+                  {h.changedByName ? ` · ${h.changedByName}` : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </button>
       <div className="flex items-center gap-1">
         {!contact.isPrimary ? (

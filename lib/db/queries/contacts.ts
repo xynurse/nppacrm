@@ -1,6 +1,12 @@
 import { and, asc, desc, eq, ilike, isNull, or, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { companies, contacts, eventCompanies } from "@/lib/db/schema";
+import {
+  companies,
+  contactEmailHistory,
+  contacts,
+  eventCompanies,
+  users,
+} from "@/lib/db/schema";
 
 /** Escape LIKE wildcards so user input is matched literally. */
 function likePattern(term: string): string {
@@ -46,6 +52,49 @@ export type ContactRow = {
 export type ContactDirectoryRow = ContactRow & {
   eventCompanyId: string;
 };
+
+export type ArchivedEmailRow = {
+  id: string;
+  contactId: string;
+  email: string;
+  archivedAt: Date;
+  changedByName: string | null;
+};
+
+/** Postgres "undefined_table" — the migration for this feature hasn't been
+ * applied yet. Lets the drawer degrade gracefully in the deploy→migrate gap. */
+export function isUndefinedTableError(err: unknown): boolean {
+  const code = (err as { code?: string; cause?: { code?: string } })?.code
+    ?? (err as { cause?: { code?: string } })?.cause?.code;
+  return code === "42P01";
+}
+
+/**
+ * Archived (superseded) emails for every contact at a company, newest first.
+ * Feeds the "previous emails" list under each contact in the drawer.
+ */
+export async function listEmailHistoryForCompany(
+  companyId: string,
+): Promise<ArchivedEmailRow[]> {
+  try {
+    return await db
+      .select({
+        id: contactEmailHistory.id,
+        contactId: contactEmailHistory.contactId,
+        email: contactEmailHistory.email,
+        archivedAt: contactEmailHistory.archivedAt,
+        changedByName: users.name,
+      })
+      .from(contactEmailHistory)
+      .innerJoin(contacts, eq(contacts.id, contactEmailHistory.contactId))
+      .leftJoin(users, eq(users.id, contactEmailHistory.changedBy))
+      .where(eq(contacts.companyId, companyId))
+      .orderBy(desc(contactEmailHistory.archivedAt));
+  } catch (err) {
+    if (isUndefinedTableError(err)) return [];
+    throw err;
+  }
+}
 
 export async function listContactsForCompany(
   companyId: string,

@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { citext } from "./columns";
 import { companies } from "./companies";
+import { users } from "./users";
 
 export const contacts = pgTable(
   "contacts",
@@ -48,3 +49,38 @@ export const contacts = pgTable(
 
 export type Contact = typeof contacts.$inferSelect;
 export type NewContact = typeof contacts.$inferInsert;
+
+/**
+ * Archive of superseded contact email addresses. A row is written whenever a
+ * contact's `email` changes (or is cleared) to a different value — the OLD
+ * address is retained here with who changed it and when. `contacts.email`
+ * stays the single current address; this is a history-only side table.
+ */
+export const contactEmailHistory = pgTable(
+  "contact_email_history",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    contactId: uuid("contact_id")
+      .notNull()
+      .references(() => contacts.id, { onDelete: "cascade" }),
+    email: citext("email").notNull(),
+    changedBy: uuid("changed_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    archivedAt: timestamp("archived_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [
+    index("contact_email_history_contact_idx").on(
+      table.contactId,
+      table.archivedAt,
+    ),
+  ],
+);
+
+export type ContactEmailHistory = typeof contactEmailHistory.$inferSelect;
+export type NewContactEmailHistory = typeof contactEmailHistory.$inferInsert;

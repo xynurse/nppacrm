@@ -10,7 +10,10 @@ import {
   listEventCompanies,
   listTiersForEvent,
 } from "@/lib/db/queries/companies";
-import { listContactsForCompany } from "@/lib/db/queries/contacts";
+import {
+  listContactsForCompany,
+  listEmailHistoryForCompany,
+} from "@/lib/db/queries/contacts";
 import { listFieldDefinitionsForEvent } from "@/lib/db/queries/custom-fields";
 import { listInteractionsForEventCompany } from "@/lib/db/queries/interactions";
 import {
@@ -134,6 +137,7 @@ export default async function CompaniesPage({
   if (drawerRow) {
     const [
       contacts,
+      emailHistory,
       interactions,
       tasks,
       suggestions,
@@ -142,6 +146,7 @@ export default async function CompaniesPage({
       benefits,
     ] = await Promise.all([
       listContactsForCompany(drawerRow.companyId),
+      listEmailHistoryForCompany(drawerRow.companyId),
       listInteractionsForEventCompany(drawerRow.id),
       listTasksForEventCompany(drawerRow.id),
       listSuggestionsForEventCompany(drawerRow.id),
@@ -151,6 +156,7 @@ export default async function CompaniesPage({
     ]);
     drawerData = {
       contacts,
+      emailHistory,
       interactions,
       tasks,
       ai: {

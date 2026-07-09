@@ -32,7 +32,10 @@ import {
   PROSPECT_PRIORITY_VALUES,
   PROSPECT_STATUS_VALUES,
 } from "@/lib/db/schema";
-import type { ContactRow } from "@/lib/db/queries/contacts";
+import type {
+  ArchivedEmailRow,
+  ContactRow,
+} from "@/lib/db/queries/contacts";
 import type { EventCompanyRow } from "@/lib/db/queries/companies";
 import type { InteractionRow } from "@/lib/db/queries/interactions";
 import type { TaskRow } from "@/lib/db/queries/tasks";
@@ -55,6 +58,7 @@ type DrawerTab =
 
 export type DrawerData = {
   contacts: ContactRow[];
+  emailHistory: ArchivedEmailRow[];
   interactions: InteractionRow[];
   tasks: TaskRow[];
   ai: {
@@ -315,7 +319,11 @@ function DrawerContent({
             fieldDefinitions={fieldDefinitions}
           />
         ) : tab === "contacts" ? (
-          <ContactsTab companyId={row.companyId} contacts={data.contacts} />
+          <ContactsTab
+            companyId={row.companyId}
+            contacts={data.contacts}
+            emailHistory={data.emailHistory}
+          />
         ) : tab === "activity" ? (
           <ActivityTab
             eventCompanyId={row.id}
