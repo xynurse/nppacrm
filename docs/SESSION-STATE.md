@@ -8,17 +8,26 @@
 ---
 
 ## Last updated
-2026-07-09 — **Platform UX pass shipped**: 4 self-contained UX chunks
-(A–D below) covering inline search, dashboard drill-downs, pipeline
-edit-in-place, and a new event profile page. Also fixed a real
+2026-07-09 — **Platform UX pass** (4 chunks A–D) **+ contact email-history
+feature** + applied the 66-company outreach batch. Also fixed a real
 `is_one_of` filter crash. Prior session (2026-07-08): Chunk C
 (natural-language AI quick update).
 
+## ⚠️ ACTION REQUIRED — apply migration 0010
+`lib/db/migrations/0010_opposite_lady_vermin.sql` (contact email history)
+is committed but **NOT yet applied to prod**. Run it manually:
+`pnpm db:migrate` (or paste the SQL into the Neon console). The code is
+written to degrade gracefully until then (email history shows empty,
+archiving no-ops — verified against prod, 42P01 guarded), so deploying
+before migrating is safe. Feature goes fully live once the table exists.
+
 ## Current git HEAD
-`b1357b5` feat(chunk D): event profile page in the nav.
-(this session, in order: `2c35b90` chunk A inline search · `93bb3d7`
-chunk B pipeline search+edit · `c0c7608` chunk C dashboard drill-downs +
-is_one_of fix · `b1357b5` chunk D event page — plus this docs commit on top.)
+`e353f9c` feat: capture + archive old contact emails on change.
+(this session: `2c35b90` chunk A inline search · `93bb3d7` chunk B pipeline
+search+edit · `c0c7608` chunk C dashboard drill-downs + is_one_of fix ·
+`b1357b5` chunk D event page · `f727d2f` docs · `e353f9c` contact email
+history — plus this docs commit on top. The 66-company outreach batch was
+also applied to prod as data-only writes, no commit.)
 
 > ⚠️ **Naming note:** the "chunk A–D" in *this* session's commits are the
 > UX pass described below — NOT the old lettered chunks. The backlog's
@@ -26,19 +35,29 @@ is_one_of fix · `b1357b5` chunk D event page — plus this docs commit on top.)
 
 ---
 
-## Pending / not done — outreach batch (queued, NOT applied)
-At the start of this session the user pasted 66 fresh-prospect outreach
-emails (Batch 1 #1–55 + Batch 2 #56–66) and asked to **mark those
-companies "contacted"** via `/sync-outreach`. I loaded CRM state, matched
-all 66 1:1 (recipients already exist as contacts), and **previewed** the
-writes — then the user pivoted to the UX work below. **No DB writes were
-made.** To finish: re-run `/sync-outreach` with that list (or say "apply
-the outreach") — uniform action is status `prospect→contacted`,
-`firstContactedAt`/`lastContactedAt` → today, one `email` interaction each
-linked to the named recipient. **Exception: Vivian Health (#16) is already
-`negotiating`** — do NOT move it backward; log the email + bump last-contact
-only. (The full 66-row list with names/titles/emails is in this session's
-first user message.)
+## Outreach batch — APPLIED (2026-07-09, data-only, no commit)
+The 66 fresh-prospect outreach emails (#1–66) were logged: 66 `email`
+interactions (each linked to the named recipient contact), 64 status flips
+`prospect→contacted`, 66 `firstContactedAt`/`lastContactedAt` bumps to
+today, 132 audit rows (`userAgent: claude-code sync-outreach`). Vivian
+Health (kept `negotiating`) and Amwell (already `contacted`) were not moved
+backward but still got the email + last-contact bump. Verified via
+throwaway script. Event now sits at ~65 contacted / rest prospect.
+
+## Contact email history — BUILT (2026-07-09, commit `e353f9c`)
+Captures & archives a contact's OLD email whenever it changes/clears.
+- New `contact_email_history` table (migration **0010 — apply manually**,
+  see ACTION REQUIRED above). Columns: `contactId`, `email` (archived),
+  `changedBy`, `archivedAt`, `createdAt`.
+- `updateContact` archives the old email on change (citext-aware compare);
+  best-effort insert so it never blocks saving.
+- Contacts tab in the company drawer shows a struck-through "Previous
+  email(s)" list per contact with archived-when + by-whom. Fed by
+  `listEmailHistoryForCompany` (drawer data on both /companies + /pipeline).
+- Read + write both guard on Postgres 42P01 (`isUndefinedTableError`) so
+  the deploy→migrate gap can't crash the drawer or contact editing.
+- Deliberately NO multi-email model and NO restore button (user chose the
+  minimal history-log scope). Restore could be added later.
 
 ## This session — Platform UX pass (all shipped, 2026-07-09)
 
@@ -340,6 +359,7 @@ git log --oneline -8
 | 0006 | ✅ | prospectuses, enrichment_jobs, enrichment_suggestions |
 | 0007 | ✅ | company_benefits |
 | 0008 | ✅ | proposal fields on event_companies |
-| 0009 | ✅ | agent_schedules, agent_runs, company_suggestions |
+| 0009 | ✅ | agent_schedules, agent_runs, company_suggestions (⚠️ its snapshot was never committed; `0010_snapshot.json` re-baselines the full schema) |
+| 0010 | ❌ **apply manually** | `contact_email_history` (contact email archive). SQL trimmed to only this table; safe to apply — see ACTION REQUIRED at top. |
 
-**Next migration:** Chunk 15 (TipTap) will need 0010 — `interactions.body` + `tasks.description` → jsonb, `companies.notes_doc` jsonb column.
+**Next migration:** Chunk 15 (TipTap) will be 0011 — `interactions.body` + `tasks.description` → jsonb, `companies.notes_doc` jsonb column. (0010 is taken by contact email history.)

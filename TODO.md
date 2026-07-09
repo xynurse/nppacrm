@@ -11,9 +11,10 @@ Latest shipped commit: `b1357b5` (event profile page — end of the 2026-07-09 U
 - [x] Pipeline search box + open/edit company drawer in place on `/pipeline` — `93bb3d7`
 - [x] Dashboard boxes drill into filtered views; fixed `is_one_of` filter crash — `c0c7608`
 - [x] `/event` event profile page + "Event" nav item — `b1357b5`
-- [ ] **Outreach batch NOT applied** — user pasted 66 outreach emails to mark
-  "contacted" via `/sync-outreach`; previewed + matched but pivoted before Apply.
-  Re-run `/sync-outreach` to finish (Vivian Health stays `negotiating`). See SESSION-STATE.
+- [x] Outreach batch of 66 companies logged as contacted (data-only, 2026-07-09)
+- [x] Contact email-history capture + archive (drawer "Previous emails") — `e353f9c`
+  - [ ] **Apply migration 0010** (`contact_email_history`) to prod — `pnpm db:migrate`.
+    Code degrades gracefully until then; feature is live once applied.
 
 ## Critical path: remaining setup
 

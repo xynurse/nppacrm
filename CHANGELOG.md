@@ -2,6 +2,24 @@
 
 ## Active build (committed to main)
 
+### Contact email history — capture + archive old emails _(2026-07-09, commit e353f9c)_
+- When a contact's email is changed or cleared, the **previous** address is now
+  retained instead of being silently overwritten. New `contact_email_history`
+  table (**migration 0010 — apply manually**) stores the old email, who changed
+  it, and when. `contacts.email` remains the single current address.
+- `updateContact` archives the old email on any real change (case/whitespace-
+  insensitive compare, matching the citext column); the archive insert is
+  best-effort so it can never block saving the contact.
+- The company drawer's Contacts tab shows a struck-through "Previous email(s)"
+  list under each contact, with when it was archived and by whom
+  (`listEmailHistoryForCompany`, wired into both `/companies` and `/pipeline`
+  drawers).
+- Both the read and write **degrade gracefully** (empty list / skip archive) if
+  the migration isn't applied yet, guarded on Postgres error `42P01` — verified
+  against prod — so deploying ahead of the manual migration is safe.
+- Scope was intentionally minimal: no multi-email model, no one-click restore
+  (per the chosen scope); those can be added later.
+
 ### Platform UX pass — search + drill-downs + event page _(2026-07-09)_
 Four self-contained UX chunks (commits `2c35b90`, `93bb3d7`, `c0c7608`,
 `b1357b5`). All typecheck + lint + build green; DB-touching logic verified
