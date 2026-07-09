@@ -44,6 +44,7 @@ type SearchParams = Promise<{
   f?: string;
   s?: string;
   col?: string;
+  q?: string;
 }>;
 
 export default async function CompaniesPage({
@@ -100,9 +101,11 @@ export default async function CompaniesPage({
     ? rawColumns.filter((k): k is string => typeof k === "string" && DEFAULT_COLUMNS.includes(k))
     : DEFAULT_COLUMNS;
 
+  const keyword = typeof params.q === "string" ? params.q : null;
+
   const [rows, tiers, users, reviewerIds, reviews, fieldDefinitions] =
     await Promise.all([
-      listEventCompanies(activeEvent.id, { filter, sort }),
+      listEventCompanies(activeEvent.id, { filter, sort, keyword }),
       listTiersForEvent(activeEvent.id),
       listUsers(),
       listReviewerIdsForEvent(activeEvent.id),
@@ -185,6 +188,7 @@ export default async function CompaniesPage({
           <h1 className="text-xl font-semibold tracking-tight">Companies</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             {activeEvent.name} · {rows.length} prospects
+            {keyword ? ` matching “${keyword}”` : ""}
           </p>
         </div>
       </div>

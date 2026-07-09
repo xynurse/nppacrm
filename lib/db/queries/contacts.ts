@@ -1,6 +1,31 @@
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, isNull, or, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { companies, contacts, eventCompanies } from "@/lib/db/schema";
+
+/** Escape LIKE wildcards so user input is matched literally. */
+function likePattern(term: string): string {
+  return `%${term.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+}
+
+/**
+ * Keyword condition for the contacts directory. Every whitespace-separated
+ * term must match at least one field (name, email, title, phone, or company).
+ */
+function buildContactKeywordCondition(keyword: string | null): SQL | null {
+  const terms = (keyword ?? "").trim().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return null;
+  const perTerm = terms.map((term) => {
+    const p = likePattern(term);
+    return or(
+      ilike(contacts.fullName, p),
+      ilike(contacts.email, p),
+      ilike(contacts.title, p),
+      ilike(contacts.phone, p),
+      ilike(companies.name, p),
+    );
+  });
+  return and(...perTerm) ?? null;
+}
 
 export type ContactRow = {
   id: string;
@@ -52,7 +77,9 @@ export async function listContactsForCompany(
 
 export async function listContactsForEvent(
   eventId: string,
+  opts: { keyword?: string | null } = {},
 ): Promise<ContactDirectoryRow[]> {
+  const keywordSql = buildContactKeywordCondition(opts.keyword ?? null);
   const rows = await db
     .select({
       id: contacts.id,
@@ -82,6 +109,7 @@ export async function listContactsForEvent(
         isNull(eventCompanies.deletedAt),
         isNull(contacts.deletedAt),
         isNull(companies.deletedAt),
+        ...(keywordSql ? [keywordSql] : []),
       ),
     )
     .orderBy(asc(companies.name), desc(contacts.isPrimary), asc(contacts.fullName));

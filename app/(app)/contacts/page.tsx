@@ -5,9 +5,16 @@ import { listContactsForEvent } from "@/lib/db/queries/contacts";
 import { listEventCompanies } from "@/lib/db/queries/companies";
 import { requireSession } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { SearchInput } from "@/components/ui/search-input";
 import { NewContactButton } from "@/components/contacts/new-contact-dialog";
 
-export default async function ContactsPage() {
+type SearchParams = Promise<{ q?: string }>;
+
+export default async function ContactsPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const session = await requireSession();
   const events = await listActiveEvents();
   const activeEvent =
@@ -27,8 +34,11 @@ export default async function ContactsPage() {
     );
   }
 
+  const params = await searchParams;
+  const keyword = typeof params.q === "string" ? params.q : null;
+
   const [contacts, allEventCompanies] = await Promise.all([
-    listContactsForEvent(activeEvent.id),
+    listContactsForEvent(activeEvent.id, { keyword }),
     listEventCompanies(activeEvent.id),
   ]);
 
@@ -46,16 +56,28 @@ export default async function ContactsPage() {
           <h1 className="text-xl font-semibold tracking-tight">Contacts</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             {activeEvent.name} · {contacts.length} contacts
+            {keyword ? ` matching “${keyword}”` : ""}
           </p>
         </div>
         <NewContactButton companies={companyOptions} />
       </div>
 
+      <SearchInput
+        placeholder="Search contacts by name, email, title, company…"
+        className="w-full sm:w-96"
+      />
+
       {contacts.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            No contacts yet. Click <strong>New contact</strong> above or add
-            contacts inside a prospect&apos;s drawer.
+            {keyword ? (
+              <>No contacts match “{keyword}”. Try a different search.</>
+            ) : (
+              <>
+                No contacts yet. Click <strong>New contact</strong> above or add
+                contacts inside a prospect&apos;s drawer.
+              </>
+            )}
           </p>
         </div>
       ) : (

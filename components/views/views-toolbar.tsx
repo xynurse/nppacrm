@@ -4,6 +4,7 @@ import { Columns3 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SearchInput } from "@/components/ui/search-input";
 import type { FieldOption } from "@/lib/views/fields";
 import { encodeToParam } from "@/lib/views/schema";
 import type { FilterAst, SortSpec } from "@/lib/views/types";
@@ -170,6 +171,10 @@ export function ViewsToolbar({
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          placeholder="Search companies, contacts, notes…"
+          className="w-full sm:w-64"
+        />
         <ViewSwitcher
           eventId={eventId}
           views={views}

@@ -1,4 +1,15 @@
-import { aliasedTable, and, asc, desc, eq, isNull, type SQL } from "drizzle-orm";
+import {
+  aliasedTable,
+  and,
+  asc,
+  desc,
+  eq,
+  ilike,
+  isNull,
+  or,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   companies,
@@ -12,6 +23,44 @@ import type { FilterAst, SortSpec } from "@/lib/views/types";
 const owners = aliasedTable(users, "owners");
 const targetTiers = aliasedTable(sponsorshipTiers, "target_tiers");
 const confirmedTiers = aliasedTable(sponsorshipTiers, "confirmed_tiers");
+
+/** Escape LIKE wildcards so user input is matched literally. */
+function likePattern(term: string): string {
+  return `%${term.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+}
+
+/**
+ * Build a wide keyword condition for the companies list. Splits the query into
+ * whitespace-separated terms; a row matches when EVERY term is found in at
+ * least one field (company name, website, industry, HQ, description, tags,
+ * outreach/notes fields, or any of the company's contacts).
+ */
+function buildCompanyKeywordCondition(keyword: string | null): SQL | null {
+  const terms = (keyword ?? "").trim().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return null;
+
+  const perTerm = terms.map((term) => {
+    const p = likePattern(term);
+    return or(
+      ilike(companies.name, p),
+      ilike(companies.website, p),
+      ilike(companies.industry, p),
+      ilike(companies.hqLocation, p),
+      ilike(companies.shortDescription, p),
+      ilike(eventCompanies.companyContext, p),
+      ilike(eventCompanies.relationshipNotes, p),
+      ilike(eventCompanies.whyTheyShouldAttend, p),
+      ilike(eventCompanies.keyTalkingPoints, p),
+      ilike(eventCompanies.emailAngle, p),
+      ilike(eventCompanies.sponsorshipHook, p),
+      sql`array_to_string(${companies.tagsCache}, ' ') ilike ${p}`,
+      sql`array_to_string(${eventCompanies.tagsCache}, ' ') ilike ${p}`,
+      sql`exists (select 1 from contacts c where c.company_id = ${companies.id} and c.deleted_at is null and (c.full_name ilike ${p} or c.email ilike ${p} or c.title ilike ${p}))`,
+    );
+  });
+
+  return and(...perTerm) ?? null;
+}
 
 export type EventCompanyRow = {
   id: string;
@@ -50,22 +99,22 @@ export type EventCompanyRow = {
 
 export async function listEventCompanies(
   eventId: string,
-  opts: { filter?: FilterAst | null; sort?: SortSpec | null } = {},
+  opts: {
+    filter?: FilterAst | null;
+    sort?: SortSpec | null;
+    keyword?: string | null;
+  } = {},
 ): Promise<EventCompanyRow[]> {
   const filterSql = compileFilter(opts.filter ?? null);
   const sortSql = compileSort(opts.sort ?? null);
-  const whereClause: SQL = filterSql
-    ? and(
-        eq(eventCompanies.eventId, eventId),
-        isNull(eventCompanies.deletedAt),
-        isNull(companies.deletedAt),
-        filterSql,
-      )!
-    : and(
-        eq(eventCompanies.eventId, eventId),
-        isNull(eventCompanies.deletedAt),
-        isNull(companies.deletedAt),
-      )!;
+  const keywordSql = buildCompanyKeywordCondition(opts.keyword ?? null);
+  const whereClause: SQL = and(
+    eq(eventCompanies.eventId, eventId),
+    isNull(eventCompanies.deletedAt),
+    isNull(companies.deletedAt),
+    ...(filterSql ? [filterSql] : []),
+    ...(keywordSql ? [keywordSql] : []),
+  )!;
 
   const baseQuery = db
     .select({
