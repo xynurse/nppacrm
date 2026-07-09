@@ -8,10 +8,16 @@
 ---
 
 ## Last updated
-2026-07-09 — **Platform UX pass** (4 chunks A–D) **+ contact email-history
-feature** + applied the 66-company outreach batch. Also fixed a real
-`is_one_of` filter crash. Prior session (2026-07-08): Chunk C
-(natural-language AI quick update).
+2026-07-09 — big session. **Platform UX pass** (4 chunks A–D) **+ contact
+email-history feature** **+ bounced-email tracking suite** (BOUNCED tag,
+red badge, Tags column + filter, dashboard funnel bar) + applied two
+outreach batches (66 fresh prospects, then 40 more with bounce handling) +
+tagged 33 companies BOUNCED. Also fixed a real `is_one_of` filter crash.
+Prior session (2026-07-08): Chunk C (natural-language AI quick update).
+
+**Session close:** user could not run migration 0010 (see ACTION REQUIRED);
+all code is committed + pushed; docs updated. Next session should verify
+0010 once applied, then resume the numbered backlog at Chunk 15 (TipTap).
 
 ## ⚠️ ACTION REQUIRED — apply migration 0010
 `lib/db/migrations/0010_opposite_lady_vermin.sql` (contact email history)
@@ -22,12 +28,15 @@ archiving no-ops — verified against prod, 42P01 guarded), so deploying
 before migrating is safe. Feature goes fully live once the table exists.
 
 ## Current git HEAD
-`e353f9c` feat: capture + archive old contact emails on change.
-(this session: `2c35b90` chunk A inline search · `93bb3d7` chunk B pipeline
-search+edit · `c0c7608` chunk C dashboard drill-downs + is_one_of fix ·
-`b1357b5` chunk D event page · `f727d2f` docs · `e353f9c` contact email
-history — plus this docs commit on top. The 66-company outreach batch was
-also applied to prod as data-only writes, no commit.)
+`a0cca97` feat: show Bounced count on the dashboard pipeline funnel — plus
+this docs commit on top.
+(this session, in order: `2c35b90` chunk A inline search · `93bb3d7` chunk B
+pipeline search+edit · `c0c7608` chunk C dashboard drill-downs + is_one_of
+fix · `b1357b5` chunk D event page · `f727d2f` docs · `e353f9c` contact
+email history · `ab614ab` docs · `cdfc16e` bounced badge · `5fd131c` docs ·
+`85abac1` tags column+filter · `9d80823` docs · `a0cca97` bounced funnel bar.
+Two outreach batches + 33 BOUNCED taggings were applied to prod as data-only
+writes, no commit.)
 
 > ⚠️ **Naming note:** the "chunk A–D" in *this* session's commits are the
 > UX pass described below — NOT the old lettered chunks. The backlog's
@@ -67,7 +76,7 @@ Medline, TeamHealth, Top Echelon, ECG Management Consultants, Staff Care, AMN
 Healthcare, Vizient, symplr — tag-only, no note/task for these 9). There are 24
 open "Replace undeliverable email" tasks (only the first batch got tasks).
 
-**Bounced now has UI (commits `cdfc16e`, `85abac1`):**
+**Bounced now has UI (commits `cdfc16e`, `85abac1`, `a0cca97`):**
 - Red **Bounced** badge (`BouncedBadge` in `status-badge.tsx`, driven by
   `hasBouncedTag(tagsCache)`) on the companies table name cell, pipeline cards,
   and drawer header.
@@ -75,6 +84,13 @@ open "Replace undeliverable email" tasks (only the first batch got tasks).
   **Tags filter** field (contains / equals / is empty / is not empty, compiled
   against the `tagsCache` array in `compile.ts`). Filter "tags contains
   BOUNCED" → the 33. Tags are also matched by the keyword search boxes.
+- **Dashboard pipeline funnel** has a red "Bounced" overlay bar (below the
+  status bars, divider-separated) showing the BOUNCED count, linking to the
+  filtered list. `getDashboardMetrics` now returns `bouncedCount`.
+- Four ways to find bounced companies: badge, Tags filter, keyword search,
+  funnel bar. **Not yet built** (possible follow-up): a select-style tag
+  picker in the filter UI (currently a text field — type "BOUNCED"), and a
+  bulk "clear BOUNCED tag" action once an email is fixed.
 
 ## Contact email history — BUILT (2026-07-09, commit `e353f9c`)
 Captures & archives a contact's OLD email whenever it changes/clears.

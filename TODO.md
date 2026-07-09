@@ -3,18 +3,32 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped commit: `b1357b5` (event profile page — end of the 2026-07-09 UX pass) — deployed at `nppacrm.vercel.app`.
+Latest shipped commit: `a0cca97` (bounced count on the dashboard funnel — end of the 2026-07-09 session) — deployed at `nppacrm.vercel.app`.
 
-## Platform UX pass — shipped 2026-07-09
+## Shipped 2026-07-09 (this session)
 
+Platform UX pass:
 - [x] Inline keyword search on Companies + Contacts (`q` param, wide match incl. contacts) — `2c35b90`
 - [x] Pipeline search box + open/edit company drawer in place on `/pipeline` — `93bb3d7`
 - [x] Dashboard boxes drill into filtered views; fixed `is_one_of` filter crash — `c0c7608`
 - [x] `/event` event profile page + "Event" nav item — `b1357b5`
-- [x] Outreach batch of 66 companies logged as contacted (data-only, 2026-07-09)
+
+Contact email history:
 - [x] Contact email-history capture + archive (drawer "Previous emails") — `e353f9c`
-  - [ ] **Apply migration 0010** (`contact_email_history`) to prod — `pnpm db:migrate`.
-    Code degrades gracefully until then; feature is live once applied.
+  - [ ] **Apply migration 0010** (`contact_email_history`) to prod — `pnpm db:migrate`
+    (blocked: user couldn't run it this session). Code degrades gracefully
+    until applied; feature is live once the table exists. **Next session: verify.**
+
+Bounced-email tracking:
+- [x] `BOUNCED` tag convention + red **Bounced** badge (table / pipeline / drawer) — `cdfc16e`
+- [x] Tags column + Tags filter (contains/equals/empty) on the companies table — `85abac1`
+- [x] Bounced overlay bar on the dashboard pipeline funnel — `a0cca97`
+- [ ] _(follow-up, not built)_ select-style tag picker in the filter UI; bulk "clear BOUNCED" action after an email is fixed.
+
+Data-only (no commit):
+- [x] Outreach batch 1 — 66 fresh prospects logged as contacted
+- [x] Outreach batch 2 — 16 delivered → contacted; 24 undeliverable → BOUNCED tag + note + follow-up task
+- [x] 9 more companies tagged BOUNCED (33 total carry the tag)
 
 ## Critical path: remaining setup
 

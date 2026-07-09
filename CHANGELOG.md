@@ -2,6 +2,27 @@
 
 ## Active build (committed to main)
 
+### Bounced-email tracking _(2026-07-09, commits cdfc16e · 85abac1 · a0cca97)_
+End-to-end handling of outreach that comes back undeliverable, built on a
+`BOUNCED` tag (lives in `eventCompanies.tagsCache`; `tags` row + `companyTags`
+link created too). Applied to 33 companies so far via the `/sync-outreach`
+flow (data-only).
+- **Red "Bounced" badge** (`BouncedBadge` + `hasBouncedTag` in
+  `status-badge.tsx`) shown wherever a company appears — companies table name
+  cell, pipeline cards, and the drawer header — when it carries the tag.
+- **Tags column** on the companies table (toggleable, on by default) renders
+  `tagsCache` as pills (BOUNCED in red, others neutral).
+- **Tags filter** field — `contains` / `equals` / `is empty` / `is not empty`,
+  compiled against the `tagsCache` array (`unnest`, case-insensitive) in
+  `compile.ts`. "tags contains BOUNCED" → exactly the bounced companies.
+- **Dashboard pipeline funnel** gains a red "Bounced" overlay bar (below the
+  status bars, divider-separated, shown only when > 0) linking to the filtered
+  list; `getDashboardMetrics` now returns `bouncedCount`.
+- Undeliverable outreach also logs an `email` interaction marked UNDELIVERABLE
+  and (for the first bounce batch) a "Replace undeliverable email" follow-up
+  task. Bounces never advance status or bump last-contact — a bounce isn't a
+  real contact.
+
 ### Contact email history — capture + archive old emails _(2026-07-09, commit e353f9c)_
 - When a contact's email is changed or cleared, the **previous** address is now
   retained instead of being silently overwritten. New `contact_email_history`

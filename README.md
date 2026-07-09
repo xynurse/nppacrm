@@ -8,9 +8,18 @@ event the team takes on.
 
 ## Status
 
-Chunks 1–12 of the rebuild are committed. The product is shippable but has
-not been deployed yet. See [TODO.md](TODO.md) for the v1.5 backlog and the
-deploy checklist.
+**Live at `nppacrm.vercel.app`.** v1 + v1.5 rebuild (chunks 1–19) are
+committed and deployed, plus AI enrichment/agents (chunks 13–14b), a
+natural-language "AI quick update", and a 2026-07-09 UX + data-quality pass
+(inline search, event profile page, pipeline edit-in-place, dashboard
+drill-downs, contact email history, and bounced-email tracking). The real
+Master List (312 prospects) is loaded. See [TODO.md](TODO.md) for the backlog
+and [docs/SESSION-STATE.md](docs/SESSION-STATE.md) for the authoritative
+current state.
+
+> **Pending prod migration:** `0010` (contact email history) is committed but
+> not yet applied — run `pnpm db:migrate` against prod. The code degrades
+> gracefully until then.
 
 A prior session built the full v1 + most of v1.5 across 18 chunks in a
 worktree that was deleted before any commits landed. This repo is the
@@ -31,18 +40,27 @@ Next.js 15 App Router · TypeScript strict · Drizzle + Neon Postgres ·
 Auth.js v5 (Credentials) · Tailwind v4 + shadcn-style primitives ·
 TanStack Table v8 · `@dnd-kit` · cmdk · Vercel Blob · Playwright · pnpm.
 
-## What's shipped (chunks 1–12)
+## What's shipped
 
 | Surface | What it does |
 |---|---|
-| `/` Dashboard | KPI strip · pipeline funnel · action items · pace histogram · owners · target tiers · priority · hot prospects · stalled (>30d) · recent activity · my open tasks |
-| `/companies` | TanStack Table with inline-editable cells, saved views sidebar, filter chips; slide-over drawer with About / Contacts / Activity / Tasks / Files tabs |
-| `/contacts` | Cross-company directory; deep-link to drawer |
+| `/` Dashboard | KPI strip (clickable drill-downs) · pipeline funnel with a red **Bounced** overlay bar · fundraising goal · tier mix · hot / stalled prospects · recent activity · my open tasks |
+| `/event` | Event profile: dates + countdown, fundraising target vs goal, prospects-by-stage, tiers & targets, team leaderboard, outreach cadence health, avg days-in-stage, reviewers |
+| `/companies` | TanStack Table with inline-editable cells, **inline keyword search** (wide match incl. contacts), saved views, filter chips, **Tags column + filter**; slide-over drawer (Overview / Contacts / Activity / Tasks / Benefits / AI). Contacts tab shows archived **previous emails**; bounced companies show a **Bounced** badge |
+| `/contacts` | Cross-company directory with keyword search; deep-link to drawer |
 | `/tasks` | Open + Completed sections, filter chips |
-| `/pipeline` | `@dnd-kit` kanban, status columns; drop on Confirmed opens atomic amount + tier modal |
+| `/pipeline` | `@dnd-kit` kanban with a keyword filter; click a card to open/edit the drawer in place; drop on Confirmed opens the atomic amount + tier modal |
 | `/admin/users` | Invite, role, deactivate, reset password |
-| `/admin/events` | CRUD + reviewer panel; per-event sub-pages: tiers · custom fields · CSV import |
+| `/admin/events` | CRUD + reviewer panel; per-event sub-pages: tiers · custom fields · CSV import · prospectus · AI agents |
 | `/admin/audit` | Filterable audit log, soft-delete recovery |
+
+AI features (Vercel AI Gateway + Valyu search): on-demand prospect enrichment,
+email drafting, discovery + watch agents, and a natural-language "AI quick
+update" on the dashboard. They no-op cleanly until the provider is enabled
+with credits.
+
+**Bounced-email tracking:** outreach that bounces gets a `BOUNCED` tag →
+red badge, a Tags filter, a dashboard funnel bar, and a follow-up task.
 
 Product principles:
 - **Spreadsheet-first.** The table is the primary surface, not a form view.
@@ -76,8 +94,10 @@ Required env vars (see [.env.example](.env.example) for the full list):
 
 Optional:
 - `BLOB_READ_WRITE_TOKEN` — Vercel Blob (file uploads)
-- `ANTHROPIC_API_KEY` / `VALYU_API_KEY` — AI features ship in chunks 13–14
-  and no-op cleanly when absent
+- `AI_GATEWAY_API_KEY` (+ `AI_MODEL_ID`) / `VALYU_API_KEY` — AI enrichment,
+  agents, and the NL quick-update. No-op cleanly when absent; in prod they
+  need the provider enabled **with credits** in the Vercel AI Gateway tab.
+- `CRON_SECRET` — required in prod for the discovery/watch cron routes
 
 ## Quality gates
 
