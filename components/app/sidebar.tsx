@@ -7,6 +7,7 @@ import {
   Activity,
   BarChart3,
   Building2,
+  CalendarDays,
   CheckSquare,
   ChevronDown,
   History,
@@ -30,6 +31,7 @@ type NavItem = {
 
 const mainNav: NavItem[] = [
   { href: "/", label: "Dashboard", Icon: LayoutDashboard },
+  { href: "/event", label: "Event", Icon: CalendarDays },
   { href: "/companies", label: "Companies", Icon: Building2 },
   { href: "/contacts", label: "Contacts", Icon: Users },
   { href: "/tasks", label: "Tasks", Icon: CheckSquare },
