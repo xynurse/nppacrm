@@ -62,10 +62,19 @@ got the email + last-contact bump.
   Communication (PR agency), Ketchum (PR agency), Microsoft.
 
 **Convention established:** `BOUNCED` tag = the address on file is dead / needs
-replacing. Tags currently only live in `tagsCache` (no dedicated table column
-or filter chip in the UI yet) — they ARE matched by the new Companies +
-Pipeline keyword search, but a proper tags column/filter is a possible
-follow-up. There are now 24 open "Replace undeliverable email" tasks.
+replacing. **33 companies** now carry it (the 24 above + 9 added later: Huron,
+Medline, TeamHealth, Top Echelon, ECG Management Consultants, Staff Care, AMN
+Healthcare, Vizient, symplr — tag-only, no note/task for these 9). There are 24
+open "Replace undeliverable email" tasks (only the first batch got tasks).
+
+**Bounced now has UI (commits `cdfc16e`, `85abac1`):**
+- Red **Bounced** badge (`BouncedBadge` in `status-badge.tsx`, driven by
+  `hasBouncedTag(tagsCache)`) on the companies table name cell, pipeline cards,
+  and drawer header.
+- **Tags column** (toggleable, default on) renders `tagsCache` as pills, and a
+  **Tags filter** field (contains / equals / is empty / is not empty, compiled
+  against the `tagsCache` array in `compile.ts`). Filter "tags contains
+  BOUNCED" → the 33. Tags are also matched by the keyword search boxes.
 
 ## Contact email history — BUILT (2026-07-09, commit `e353f9c`)
 Captures & archives a contact's OLD email whenever it changes/clears.
