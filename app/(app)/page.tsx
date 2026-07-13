@@ -22,6 +22,8 @@ import {
 import {
   BOUNCED_TAG,
   BouncedBadge,
+  DEFERRED_TAG,
+  DeferredBadge,
   PROSPECT_STATUS_LABELS,
   StatusBadge,
 } from "@/components/companies/status-badge";
@@ -253,6 +255,33 @@ export default async function DashboardPage() {
                 </div>
                 <span className="w-8 text-right text-xs tabular-nums font-medium text-slate-700 dark:text-slate-300">
                   {metrics.bouncedCount}
+                </span>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Deferred overlay — held-for-later prospects, not a funnel stage */}
+          {metrics.deferredCount > 0 ? (
+            <div className="mt-1 flex items-center gap-3 border-t border-slate-100 pt-2 dark:border-slate-800">
+              <Link
+                href={companiesHref([
+                  { field: "tags", op: "contains", value: DEFERRED_TAG },
+                ])}
+                className="w-28 shrink-0"
+              >
+                <DeferredBadge />
+              </Link>
+              <div className="flex flex-1 items-center gap-2">
+                <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-slate-100 dark:bg-slate-800">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-sm bg-violet-500/70 transition-all duration-300"
+                    style={{
+                      width: `${Math.round((metrics.deferredCount / maxCount) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <span className="w-8 text-right text-xs tabular-nums font-medium text-slate-700 dark:text-slate-300">
+                  {metrics.deferredCount}
                 </span>
               </div>
             </div>

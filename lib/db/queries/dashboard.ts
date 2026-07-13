@@ -37,6 +37,9 @@ export type DashboardMetrics = {
   /** Companies flagged with the BOUNCED tag (undeliverable email). Overlaps
    * the status buckets — it's a data-quality overlay, not a funnel stage. */
   bouncedCount: number;
+  /** Companies flagged with the DEFERRED tag (held from a batch, still a
+   * future prospect). Also an overlay, not a funnel stage. */
+  deferredCount: number;
   fundraisingGoal: string | null;
 };
 
@@ -71,6 +74,7 @@ export async function getDashboardMetrics(
   let confirmedAmount = 0;
   let proposedAmount = 0;
   let bouncedCount = 0;
+  let deferredCount = 0;
   const byStatus: Record<string, number> = {};
 
   for (const r of rows) {
@@ -82,6 +86,7 @@ export async function getDashboardMetrics(
     }
     if (r.proposedAmount) proposedAmount += Number(r.proposedAmount);
     if (r.tagsCache?.includes("BOUNCED")) bouncedCount += 1;
+    if (r.tagsCache?.includes("DEFERRED")) deferredCount += 1;
   }
 
   return {
@@ -91,6 +96,7 @@ export async function getDashboardMetrics(
     proposedAmount,
     byStatus,
     bouncedCount,
+    deferredCount,
     fundraisingGoal: null,
   };
 }

@@ -8,14 +8,18 @@
 ---
 
 ## Last updated
-2026-07-13 — **Mayo Clinic NPPA LPD 2026 outreach batch** applied (data-only,
-no code change): 24 companies → `contacted` + email interaction, 7 bounced →
-`BOUNCED` tag + bounce interaction (status untouched), 34 deferred → **new
-`DEFERRED` tag** + note interaction (status untouched). 65 interactions + 89
-audit rows. Decided **deferred is a tag, not a status** (mirrors BOUNCED — a
-workflow flag orthogonal to the pipeline stage; avoids a `prospect_status` enum
-migration and keeps deferred companies in the prospect funnel count). See the
-batch section below. Prior:
+2026-07-13 — **Mayo Clinic NPPA LPD 2026 outreach batch** applied (data-only):
+24 companies → `contacted` + email interaction, 7 bounced → `BOUNCED` tag +
+bounce interaction (status untouched), 34 deferred → **new `DEFERRED` tag** +
+note interaction (status untouched). 65 interactions + 89 audit rows. Decided
+**deferred is a tag, not a status** (mirrors BOUNCED — a workflow flag
+orthogonal to the pipeline stage; avoids a `prospect_status` enum migration and
+keeps deferred companies in the prospect funnel count). **Then shipped the
+`DEFERRED` UI** (code commit) for visual parity with Bounced: violet "Deferred"
+badge (clock icon) on the companies table, kanban cards, and drawer header; a
+violet Deferred overlay bar on the dashboard funnel (`deferredCount` in
+`getDashboardMetrics`); DEFERRED rendered as its own badge in the Tags column.
+typecheck + lint + build all green. See the batch section below. Prior:
 
 2026-07-09 — big session. **Platform UX pass** (4 chunks A–D) **+ contact
 email-history feature** **+ bounced-email tracking suite** (BOUNCED tag,
@@ -83,10 +87,21 @@ via a throwaway `apply-sync.tmp.ts` (deleted after; mirrors the app's own
 future prospect. Chosen over adding a `deferred` enum status (that would need a
 Postgres `ALTER TYPE` migration + edits across funnel/kanban/pipeline/dropdown/
 CSV, and would drop these companies out of the prospect funnel count). Renders
-today as a neutral gray pill via the existing Tags column and is filterable
-(`tags contains DEFERRED`) and keyword-searchable with **no code change**.
-Possible follow-up (deferred, not built): a styled `DeferredBadge` + a
-dashboard funnel overlay for visual parity with Bounced.
+filterable (`tags contains DEFERRED`) and keyword-searchable.
+
+**DEFERRED UI — BUILT (2026-07-13, code commit)** for visual parity with
+Bounced, mirroring the BOUNCED pattern file-for-file:
+- `status-badge.tsx` — `DEFERRED_TAG`, `hasDeferredTag`, `DeferredBadge`
+  (violet pill, `Clock` icon; violet is unused by any status hue so it's
+  scannable and distinct from the red Bounced badge).
+- Badge renders on the **companies table** name cell + as its own pill in the
+  Tags column, **kanban** cards, and the **company drawer** header.
+- **Dashboard funnel** gains a violet "Deferred" overlay bar below Bounced;
+  `getDashboardMetrics` now returns `deferredCount` (counts the DEFERRED tag in
+  `tagsCache`, same as `bouncedCount`). Links to `tags contains DEFERRED`.
+- Still **not built** (possible later): a select-style tag picker in the filter
+  UI, and a bulk "clear DEFERRED tag" action when a deferred prospect is
+  reactivated (same gaps noted for BOUNCED).
 
 ## Outreach batches — APPLIED (2026-07-09, data-only, no commit)
 

@@ -29,7 +29,9 @@ import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
 import {
   BouncedBadge,
+  DeferredBadge,
   hasBouncedTag,
+  hasDeferredTag,
   PROSPECT_STATUS_LABELS,
   StatusBadge,
 } from "@/components/companies/status-badge";
@@ -341,6 +343,7 @@ function Card({
           {row.companyName}
         </Link>
         {hasBouncedTag(row.tagsCache) ? <BouncedBadge /> : null}
+        {hasDeferredTag(row.tagsCache) ? <DeferredBadge /> : null}
       </div>
       <div className="mt-1 space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
         {row.companyIndustry ? <p>{row.companyIndustry}</p> : null}

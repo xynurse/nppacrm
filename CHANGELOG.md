@@ -13,8 +13,19 @@ Applied via `/sync-outreach` against prod (65 companies, all matched exactly):
 - **New `DEFERRED` tag convention** — a workflow flag for prospects intentionally
   held this batch, modeled as a tag (not a `prospect_status` enum value) so it
   overlays the pipeline without a migration and keeps them in the funnel count.
-  Filterable via `tags contains DEFERRED` and shown in the Tags column today; a
-  styled badge + funnel overlay are a possible later polish.
+  Filterable via `tags contains DEFERRED`.
+
+### Deferred-prospect UI _(2026-07-13, code commit)_
+Visual parity with the Bounced suite, mirroring that pattern file-for-file.
+- **Violet "Deferred" badge** (`DeferredBadge` + `hasDeferredTag` in
+  `status-badge.tsx`, `Clock` icon) shown wherever a company appears — companies
+  table name cell, kanban cards, and the drawer header — when it carries the
+  `DEFERRED` tag. Rendered as its own violet pill in the Tags column too.
+- **Dashboard pipeline funnel** gains a violet "Deferred" overlay bar (below the
+  Bounced bar, shown only when > 0) linking to the filtered list;
+  `getDashboardMetrics` now also returns `deferredCount`.
+- Violet was chosen because it's unused by any status hue, so Deferred stays
+  visually distinct from both the red Bounced badge and every stage pill.
 
 ### Bounced-email tracking _(2026-07-09, commits cdfc16e · 85abac1 · a0cca97)_
 End-to-end handling of outreach that comes back undeliverable, built on a

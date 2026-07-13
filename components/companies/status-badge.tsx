@@ -1,4 +1,4 @@
-import { MailX } from "lucide-react";
+import { Clock, MailX } from "lucide-react";
 import type { ProspectStatus } from "@/lib/db/schema";
 import { cn } from "@/lib/cn";
 
@@ -71,6 +71,30 @@ export function BouncedBadge() {
     >
       <MailX className="h-2.5 w-2.5" />
       Bounced
+    </span>
+  );
+}
+
+/** Tag applied when a company was intentionally held back from a batch —
+ * still a live future prospect, just not being worked right now. */
+export const DEFERRED_TAG = "DEFERRED";
+
+export function hasDeferredTag(tags: string[] | null | undefined): boolean {
+  return Array.isArray(tags) && tags.includes(DEFERRED_TAG);
+}
+
+/** Violet micro-pill flagging that outreach is deferred — future prospect. */
+export function DeferredBadge() {
+  return (
+    <span
+      title="Deferred — no outreach this batch; kept as a future sponsorship prospect"
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider",
+        "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-300",
+      )}
+    >
+      <Clock className="h-2.5 w-2.5" />
+      Deferred
     </span>
   );
 }

@@ -29,7 +29,10 @@ import { ReviewerCell } from "./reviewer-cell";
 import {
   BOUNCED_TAG,
   BouncedBadge,
+  DEFERRED_TAG,
+  DeferredBadge,
   hasBouncedTag,
+  hasDeferredTag,
   PROSPECT_STATUS_LABELS,
   StatusBadge,
 } from "./status-badge";
@@ -226,6 +229,7 @@ export function CompaniesTable({
               {row.original.companyName}
             </Link>
             {hasBouncedTag(row.original.tagsCache) ? <BouncedBadge /> : null}
+            {hasDeferredTag(row.original.tagsCache) ? <DeferredBadge /> : null}
           </span>
         ),
       },
@@ -480,6 +484,8 @@ export function CompaniesTable({
               {tags.map((t) =>
                 t === BOUNCED_TAG ? (
                   <BouncedBadge key={t} />
+                ) : t === DEFERRED_TAG ? (
+                  <DeferredBadge key={t} />
                 ) : (
                   <span
                     key={t}

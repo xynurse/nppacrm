@@ -26,7 +26,9 @@ import type { BenefitRow } from "@/lib/db/queries/benefits";
 import { PriorityDot } from "./priority-dot";
 import {
   BouncedBadge,
+  DeferredBadge,
   hasBouncedTag,
+  hasDeferredTag,
   PROSPECT_STATUS_LABELS,
   StatusBadge,
 } from "./status-badge";
@@ -236,6 +238,7 @@ function DrawerContent({
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <StatusBadge status={row.status} />
         {hasBouncedTag(row.tagsCache) ? <BouncedBadge /> : null}
+        {hasDeferredTag(row.tagsCache) ? <DeferredBadge /> : null}
         <PriorityDot priority={row.priority} />
         {row.targetTierName ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-xs dark:bg-slate-800">
