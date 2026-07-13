@@ -8,6 +8,15 @@
 ---
 
 ## Last updated
+2026-07-13 — **Mayo Clinic NPPA LPD 2026 outreach batch** applied (data-only,
+no code change): 24 companies → `contacted` + email interaction, 7 bounced →
+`BOUNCED` tag + bounce interaction (status untouched), 34 deferred → **new
+`DEFERRED` tag** + note interaction (status untouched). 65 interactions + 89
+audit rows. Decided **deferred is a tag, not a status** (mirrors BOUNCED — a
+workflow flag orthogonal to the pipeline stage; avoids a `prospect_status` enum
+migration and keeps deferred companies in the prospect funnel count). See the
+batch section below. Prior:
+
 2026-07-09 — big session. **Platform UX pass** (4 chunks A–D) **+ contact
 email-history feature** **+ bounced-email tracking suite** (BOUNCED tag,
 red badge, Tags column + filter, dashboard funnel bar) + applied two
@@ -43,6 +52,41 @@ writes, no commit.)
 > next numbered item is still **Chunk 15 (TipTap)**.
 
 ---
+
+## Outreach batch — APPLIED (2026-07-13, Mayo Clinic NPPA LPD 2026, data-only)
+
+Third outreach batch, 65 companies, all matched exactly (0 unmatched). Applied
+via a throwaway `apply-sync.tmp.ts` (deleted after; mirrors the app's own
+`interaction.log` / `move_status` / `update_field` audit shapes, `userAgent:
+"claude-code sync-outreach"`).
+- **24 emails sent** → `email` interaction ("Initial sponsorship outreach email
+  sent for Mayo Clinic NPPA LPD 2026."), status `prospect→contacted`, first +
+  last contacted = 2026-07-13. (Regard, Wiley, Owens & Minor, Northwestern
+  Mutual, 3D Systems Healthcare, Gaumard Scientific, Limbs & Things, Simulab,
+  BoardVitals, McGraw Hill, Sigma Theta Tau, Arcadia, Lightbeam Health
+  Solutions, Trilliant Health, NCQA, Medtronic, Stryker, Boston Scientific,
+  Johnson & Johnson, GoodRx, BetterHelp, FIGS, Hyro, Kore.ai.)
+- **7 bounced** → `email` interaction documenting the bounce, **`BOUNCED` tag**
+  appended to `tagsCache` (red badge lights up everywhere). Status **not**
+  changed, last-contact **not** bumped. (Whova, Oxford University Press,
+  Mölnlycke, Ramsey Solutions, GE Vscan, SonoSite, Clarify Health.)
+- **34 deferred** → `note` interaction ("Deferred for now… keep as future
+  sponsorship prospect…"), **new `DEFERRED` tag** appended to `tagsCache`.
+  Status **not** changed. (Hilton, Visit Salt Lake, Utah Office of Tourism,
+  Delta Air Lines, Southwest Airlines, Cvent, Bizzabo, Springer Nature, Kaufman
+  Hall, Medical Protective, Henry Schein, Ecolab, Flywire, Coronis Health,
+  Merck, Novo Nordisk, Pfizer, Sanofi, Regeneron, CVS Caremark, Cencora,
+  Evernorth, Baxter, AbbVie, Amgen, AstraZeneca, Bristol Myers Squibb, Eli
+  Lilly, GSK, MDLive, Solv, Wheel, Hinge Health, Doctor On Demand.)
+
+**New convention — `DEFERRED` tag** = intentionally held this batch, still a
+future prospect. Chosen over adding a `deferred` enum status (that would need a
+Postgres `ALTER TYPE` migration + edits across funnel/kanban/pipeline/dropdown/
+CSV, and would drop these companies out of the prospect funnel count). Renders
+today as a neutral gray pill via the existing Tags column and is filterable
+(`tags contains DEFERRED`) and keyword-searchable with **no code change**.
+Possible follow-up (deferred, not built): a styled `DeferredBadge` + a
+dashboard funnel overlay for visual parity with Bounced.
 
 ## Outreach batches — APPLIED (2026-07-09, data-only, no commit)
 

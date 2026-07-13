@@ -2,6 +2,20 @@
 
 ## Active build (committed to main)
 
+### Mayo Clinic NPPA LPD 2026 outreach batch _(2026-07-13, data-only, no code change)_
+Applied via `/sync-outreach` against prod (65 companies, all matched exactly):
+- **24 emails sent** → `email` interaction, status `prospect→contacted`, first +
+  last contacted stamped 2026-07-13.
+- **7 bounced** → bounce `email` interaction + existing **`BOUNCED` tag**;
+  status and last-contact left untouched (a bounce isn't a real contact).
+- **34 deferred** → `note` interaction + **new `DEFERRED` tag** on `tagsCache`;
+  status left at `prospect`.
+- **New `DEFERRED` tag convention** — a workflow flag for prospects intentionally
+  held this batch, modeled as a tag (not a `prospect_status` enum value) so it
+  overlays the pipeline without a migration and keeps them in the funnel count.
+  Filterable via `tags contains DEFERRED` and shown in the Tags column today; a
+  styled badge + funnel overlay are a possible later polish.
+
 ### Bounced-email tracking _(2026-07-09, commits cdfc16e · 85abac1 · a0cca97)_
 End-to-end handling of outreach that comes back undeliverable, built on a
 `BOUNCED` tag (lives in `eventCompanies.tagsCache`; `tags` row + `companyTags`
