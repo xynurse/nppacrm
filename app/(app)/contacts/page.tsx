@@ -68,7 +68,7 @@ export default async function ContactsPage({
       />
 
       {contacts.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-zinc-900">
           <p className="text-sm text-slate-600 dark:text-slate-400">
             {keyword ? (
               <>No contacts match “{keyword}”. Try a different search.</>
@@ -81,9 +81,9 @@ export default async function ContactsPage({
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-zinc-900">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+            <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:bg-zinc-900 dark:text-slate-400">
               <tr className="border-b border-slate-200 dark:border-slate-800">
                 <th className="px-3 py-2 font-medium">Name</th>
                 <th className="px-3 py-2 font-medium">Title</th>
@@ -97,7 +97,7 @@ export default async function ContactsPage({
               {contacts.map((c) => (
                 <tr
                   key={c.id}
-                  className="h-10 hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                  className="h-10 hover:bg-slate-50 dark:hover:bg-zinc-800/40"
                 >
                   <td className="px-3">
                     <span className="font-medium">{c.fullName}</span>

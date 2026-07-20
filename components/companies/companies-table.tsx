@@ -489,7 +489,7 @@ export function CompaniesTable({
                 ) : (
                   <span
                     key={t}
-                    className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300"
+                    className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-600 dark:border-slate-700 dark:bg-zinc-800/60 dark:text-slate-300"
                   >
                     {t}
                   </span>
@@ -555,9 +555,9 @@ export function CompaniesTable({
 
   return (
     <>
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-card)] dark:border-slate-800 dark:bg-slate-900">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-card)] dark:border-slate-800 dark:bg-zinc-900">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+          <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:bg-zinc-900 dark:text-slate-400">
             {table.getHeaderGroups().map((hg) => (
               <tr
                 key={hg.id}
@@ -580,7 +580,7 @@ export function CompaniesTable({
                   "transition-[background-color,box-shadow] duration-100",
                   activeRecordId === row.original.id
                     ? "bg-[var(--accent-tint)] shadow-[inset_2px_0_0_0_var(--accent)]"
-                    : "hover:bg-slate-50 hover:shadow-[inset_2px_0_0_0_var(--hairline-strong)] dark:hover:bg-slate-800/40",
+                    : "hover:bg-slate-50 hover:shadow-[inset_2px_0_0_0_var(--hairline-strong)] dark:hover:bg-zinc-800/40",
                 )}
               >
                 {row.getVisibleCells().map((cell) => (

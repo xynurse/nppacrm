@@ -190,7 +190,7 @@ function ContactItem({
         {!contact.isPrimary ? (
           <button
             type="button"
-            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-amber-500 dark:hover:bg-slate-800"
+            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-amber-500 dark:hover:bg-zinc-800"
             disabled={pending}
             title="Make primary"
             onClick={() =>
@@ -205,7 +205,7 @@ function ContactItem({
         ) : null}
         <button
           type="button"
-          className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-500 dark:hover:bg-slate-800"
+          className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-500 dark:hover:bg-zinc-800"
           disabled={pending}
           title="Delete"
           onClick={() => {
@@ -267,7 +267,7 @@ function ContactForm({
         onSubmit(values);
       }}
       className={cn(
-        "space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900",
+        "space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-zinc-900",
       )}
     >
       <div className="grid grid-cols-2 gap-2">

@@ -206,13 +206,13 @@ export function ViewsToolbar({
           </Button>
 
           {colPickerOpen ? (
-            <div className="absolute left-0 top-full z-30 mt-1 w-48 space-y-0.5 rounded-md border border-slate-200 bg-white p-1.5 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+            <div className="absolute left-0 top-full z-30 mt-1 w-48 space-y-0.5 rounded-md border border-slate-200 bg-white p-1.5 shadow-lg dark:border-slate-700 dark:bg-zinc-900">
               {COMPANY_COLUMNS.map((col) => {
                 const visible = columns.includes(col.key);
                 return (
                   <label
                     key={col.key}
-                    className={`flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 ${
+                    className={`flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-slate-100 dark:hover:bg-zinc-800 ${
                       col.pinned ? "opacity-50" : ""
                     }`}
                   >

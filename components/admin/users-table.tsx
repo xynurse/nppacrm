@@ -18,7 +18,7 @@ export function UsersTable({ users }: { users: UserRow[] }) {
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
       <table className="w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
-        <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+        <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:bg-zinc-900 dark:text-slate-400">
           <tr>
             <th className="px-4 py-2">Name</th>
             <th className="px-4 py-2">Email</th>
@@ -28,7 +28,7 @@ export function UsersTable({ users }: { users: UserRow[] }) {
             <th className="px-4 py-2 text-right">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-900">
+        <tbody className="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-zinc-900">
           {users.map((user) => (
             <UserRow key={user.id} user={user} />
           ))}

@@ -17,74 +17,74 @@
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
 
-  /* Medical teal brand palette */
-  --color-brand-50: #ecfeff;
-  --color-brand-100: #cffafe;
-  --color-brand-200: #a5f3fc;
-  --color-brand-300: #67e8f9;
-  --color-brand-400: #22d3ee;
-  --color-brand-500: #06b6d4;
-  --color-brand-600: #0891b2;
-  --color-brand-700: #0e7490;
-  --color-brand-800: #155e75;
-  --color-brand-900: #164e63;
-  --color-brand-950: #083344;
+  /* Indigo brand palette — modern SaaS accent (Linear/Vercel lineage) */
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+  --color-brand-900: #312e81;
+  --color-brand-950: #1e1b4b;
 }
 
 /*
- * Clinical & precise design tokens.
- * Semantic surfaces/ink/accent that dark-switch in one place. In light mode
- * these intentionally equal the slate/brand values already used across the app,
- * so introducing them changes nothing visually until a component opts in via
+ * Modern SaaS design tokens.
+ * Semantic surfaces/ink/accent that dark-switch in one place. Neutrals are the
+ * cool near-black zinc ramp; the accent is indigo. Components opt in via
  * e.g. border-[var(--hairline)] or bg-[var(--surface)].
  */
 :root {
   color-scheme: light;
 
   --surface: #ffffff;
-  --surface-muted: #f8fafc; /* slate-50 */
-  --page: #f8fafc;
-  --hairline: #e2e8f0; /* slate-200 */
-  --hairline-strong: #cbd5e1; /* slate-300 */
-  --ink: #0f172a; /* slate-900 */
-  --ink-muted: #64748b; /* slate-500 */
-  --ink-subtle: #94a3b8; /* slate-400 */
-  --accent: #0891b2; /* brand-600 */
-  --accent-strong: #0e7490; /* brand-700 */
-  --accent-tint: #ecfeff; /* brand-50 */
+  --surface-muted: #fafafa; /* zinc-50 */
+  --page: #fafafa;
+  --hairline: #e4e4e7; /* zinc-200 */
+  --hairline-strong: #d4d4d8; /* zinc-300 */
+  --ink: #18181b; /* zinc-900 */
+  --ink-muted: #71717a; /* zinc-500 */
+  --ink-subtle: #a1a1aa; /* zinc-400 */
+  --accent: #4f46e5; /* brand-600 (indigo) */
+  --accent-strong: #4338ca; /* brand-700 */
+  --accent-tint: #eef2ff; /* brand-50 */
 
   /*
-   * Phase 2: elevation + motion. Three shadow tiers only —
+   * Elevation + motion. Three shadow tiers only —
    * card (resting), raised (interactive hover), overlay (drawers/dialogs).
+   * Tuned crisp + flat for the modern SaaS feel.
    */
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-card: 0 1px 2px rgba(24, 24, 27, 0.05);
   --shadow-raised:
-    0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.08);
+    0 1px 2px rgba(24, 24, 27, 0.06), 0 6px 16px rgba(24, 24, 27, 0.08);
   --shadow-overlay:
-    0 4px 12px rgba(15, 23, 42, 0.1), 0 16px 48px rgba(15, 23, 42, 0.18);
+    0 4px 12px rgba(24, 24, 27, 0.08), 0 20px 56px rgba(24, 24, 27, 0.16);
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dark {
   color-scheme: dark;
 
-  --surface: #0f172a; /* slate-900 */
-  --surface-muted: #1e293b; /* slate-800 */
-  --page: #020617; /* slate-950 */
-  --hairline: #1e293b; /* slate-800 */
-  --hairline-strong: #334155; /* slate-700 */
-  --ink: #f1f5f9; /* slate-100 */
-  --ink-muted: #94a3b8; /* slate-400 */
-  --ink-subtle: #64748b; /* slate-500 */
-  --accent: #22d3ee; /* brand-400 — brighter on dark */
-  --accent-strong: #67e8f9; /* brand-300 */
-  --accent-tint: rgba(8, 145, 178, 0.12);
+  --surface: #18181b; /* zinc-900 */
+  --surface-muted: #27272a; /* zinc-800 */
+  --page: #09090b; /* zinc-950 */
+  --hairline: #27272a; /* zinc-800 */
+  --hairline-strong: #3f3f46; /* zinc-700 */
+  --ink: #fafafa; /* zinc-50 */
+  --ink-muted: #a1a1aa; /* zinc-400 */
+  --ink-subtle: #71717a; /* zinc-500 */
+  --accent: #818cf8; /* brand-400 — brighter on dark */
+  --accent-strong: #a5b4fc; /* brand-300 */
+  --accent-tint: rgba(99, 102, 241, 0.14);
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-raised:
-    0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.45);
+    0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.45);
   --shadow-overlay:
-    0 4px 12px rgba(0, 0, 0, 0.5), 0 16px 48px rgba(0, 0, 0, 0.6);
+    0 4px 12px rgba(0, 0, 0, 0.5), 0 20px 56px rgba(0, 0, 0, 0.6);
 }
 
 /*
@@ -127,10 +127,10 @@
   line-height: 1;
 }
 
-/* Clinical touch: teal text selection */
+/* Soft indigo text selection */
 ::selection {
-  background: #cffafe; /* brand-100 */
-  color: #155e75; /* brand-800 */
+  background: #e0e7ff; /* brand-100 */
+  color: #3730a3; /* brand-800 */
 }
 
 html,
@@ -141,18 +141,19 @@ body {
 body {
   font-family: var(--font-sans);
   background: white;
-  color: #0f172a;
+  color: #18181b; /* zinc-900 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .dark body {
-  background: #020617;
-  color: #f1f5f9;
+  background: #09090b; /* zinc-950 */
+  color: #fafafa; /* zinc-50 */
 }
 
-/* Teal selection needs a dark-legible pairing too */
+/* Indigo selection needs a dark-legible pairing too */
 .dark ::selection {
-  background: #155e75; /* brand-800 */
-  color: #cffafe; /* brand-100 */
+  background: #3730a3; /* brand-800 */
+  color: #e0e7ff; /* brand-100 */
 }

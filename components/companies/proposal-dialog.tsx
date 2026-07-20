@@ -119,7 +119,7 @@ export function ProposalDialog({
             if (e.target === e.currentTarget) setOpen(false);
           }}
         >
-          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-zinc-900">
             <h3 className="text-base font-semibold tracking-tight">
               {alreadySent ? "Update proposal" : "Mark proposal sent"}
             </h3>

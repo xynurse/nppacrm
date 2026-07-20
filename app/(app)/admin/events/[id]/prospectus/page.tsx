@@ -48,7 +48,7 @@ export default async function ProspectusAdminPage({
         blobConfigured={blobOk}
       />
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900">
+      <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-zinc-900">
         <h2 className="font-semibold">AI configuration status</h2>
         <ul className="mt-2 space-y-1">
           <StatusItem

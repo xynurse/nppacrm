@@ -100,7 +100,7 @@ export function ActivityTab({
             return (
               <li
                 key={i.id}
-                className="flex gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900"
+                className="flex gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-zinc-900"
               >
                 <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${meta.tone}`} />
                 <div className="min-w-0 flex-1">
@@ -125,7 +125,7 @@ export function ActivityTab({
                 {canDelete ? (
                   <button
                     type="button"
-                    className="self-start rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-500 dark:hover:bg-slate-800"
+                    className="self-start rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-500 dark:hover:bg-zinc-800"
                     title="Delete"
                     disabled={pending}
                     onClick={() => {
@@ -171,7 +171,7 @@ function QuickLogForm({
           body: body.trim() || null,
         });
       }}
-      className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900"
+      className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-zinc-900"
     >
       <Input
         className="h-8"
@@ -181,7 +181,7 @@ function QuickLogForm({
         autoFocus
       />
       <textarea
-        className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+        className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-zinc-900 dark:text-slate-100"
         rows={3}
         placeholder="What happened? (Cmd+Enter to log)"
         value={body}

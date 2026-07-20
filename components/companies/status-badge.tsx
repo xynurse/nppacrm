@@ -18,7 +18,7 @@ const STATUS_LABELS: Record<ProspectStatus, string> = {
 // Low saturation reads as trustworthy/exact rather than candy-colored.
 const STATUS_CLASSES: Record<ProspectStatus, string> = {
   prospect:
-    "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-700",
+    "bg-slate-50 text-slate-600 border-slate-200 dark:bg-zinc-800/60 dark:text-slate-300 dark:border-slate-700",
   contacted:
     "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900",
   engaged:
@@ -34,7 +34,7 @@ const STATUS_CLASSES: Record<ProspectStatus, string> = {
   declined:
     "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900",
   past_sponsor:
-    "bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
+    "bg-slate-100 text-slate-600 border-slate-300 dark:bg-zinc-800 dark:text-slate-400 dark:border-slate-700",
 };
 
 export function StatusBadge({ status }: { status: ProspectStatus }) {

@@ -32,7 +32,7 @@ export function ThemeToggle() {
           className={cn(
             "h-7 w-7 rounded-sm",
             theme === value &&
-              "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100",
+              "bg-slate-100 text-slate-900 dark:bg-zinc-800 dark:text-slate-100",
           )}
           onClick={() => setTheme(value)}
         >

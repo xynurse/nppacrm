@@ -165,7 +165,7 @@ function Badge({
       ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
       : color === "amber"
         ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
-        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
+        : "bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-slate-300";
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${cls}`}
@@ -253,7 +253,7 @@ function BenefitRowItem({ benefit }: { benefit: BenefitRow }) {
             <span className="font-medium">{benefit.label}</span>
             {benefit.tierName ? (
               <span
-                className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 dark:bg-zinc-800 dark:text-slate-300"
                 title={`Tier: ${benefit.tierName}`}
               >
                 <span
@@ -304,7 +304,7 @@ function BenefitRowItem({ benefit }: { benefit: BenefitRow }) {
             onChange={(e) => setLocalDue(e.target.value)}
             onBlur={persistDue}
             disabled={pending}
-            className="mt-0.5 block w-full rounded border border-slate-200 bg-white px-1.5 py-0.5 text-xs dark:border-slate-700 dark:bg-slate-900"
+            className="mt-0.5 block w-full rounded border border-slate-200 bg-white px-1.5 py-0.5 text-xs dark:border-slate-700 dark:bg-zinc-900"
           />
           {isOverdue ? (
             <span className="mt-0.5 inline-block text-[10px] text-red-600 dark:text-red-400">
@@ -321,7 +321,7 @@ function BenefitRowItem({ benefit }: { benefit: BenefitRow }) {
             onBlur={persistNote}
             placeholder="(optional)"
             disabled={pending}
-            className="mt-0.5 block w-full rounded border border-slate-200 bg-white px-1.5 py-0.5 text-xs dark:border-slate-700 dark:bg-slate-900"
+            className="mt-0.5 block w-full rounded border border-slate-200 bg-white px-1.5 py-0.5 text-xs dark:border-slate-700 dark:bg-zinc-900"
           />
         </label>
       </div>

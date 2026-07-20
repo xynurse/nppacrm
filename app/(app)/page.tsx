@@ -165,7 +165,7 @@ export default async function DashboardPage() {
 
       {/* Goal progress */}
       {goal ? (
-        <section className="surface-card p-4 dark:bg-slate-900">
+        <section className="surface-card p-4 dark:bg-zinc-900">
           <div className="mb-3 flex items-center justify-between text-sm">
             <Link
               href="/reports"
@@ -182,7 +182,7 @@ export default async function DashboardPage() {
               </span>
             </span>
           </div>
-          <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+          <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800">
             <div
               className="h-full rounded-full bg-emerald-500 transition-all duration-500"
               style={{ width: `${goalProgress}%` }}
@@ -201,7 +201,7 @@ export default async function DashboardPage() {
       ) : null}
 
       {/* Funnel bar chart */}
-      <section className="surface-card p-4 dark:bg-slate-900">
+      <section className="surface-card p-4 dark:bg-zinc-900">
         <h2 className="mb-4 text-sm font-semibold">Pipeline funnel</h2>
         <div className="space-y-2">
           {funnelStages
@@ -219,7 +219,7 @@ export default async function DashboardPage() {
                     <StatusBadge status={f.status} />
                   </Link>
                   <div className="flex flex-1 items-center gap-2">
-                    <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-slate-100 dark:bg-slate-800">
+                    <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-slate-100 dark:bg-zinc-800">
                       <div
                         className="absolute inset-y-0 left-0 rounded-sm bg-brand-500/70 transition-all duration-300"
                         style={{ width: `${pct}%` }}
@@ -245,7 +245,7 @@ export default async function DashboardPage() {
                 <BouncedBadge />
               </Link>
               <div className="flex flex-1 items-center gap-2">
-                <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-slate-100 dark:bg-slate-800">
+                <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-slate-100 dark:bg-zinc-800">
                   <div
                     className="absolute inset-y-0 left-0 rounded-sm bg-red-500/70 transition-all duration-300"
                     style={{
@@ -272,7 +272,7 @@ export default async function DashboardPage() {
                 <DeferredBadge />
               </Link>
               <div className="flex flex-1 items-center gap-2">
-                <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-slate-100 dark:bg-slate-800">
+                <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-slate-100 dark:bg-zinc-800">
                   <div
                     className="absolute inset-y-0 left-0 rounded-sm bg-violet-500/70 transition-all duration-300"
                     style={{
@@ -292,7 +292,7 @@ export default async function DashboardPage() {
       {/* Tier mix + Hot prospects */}
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Tier mix */}
-        <section className="surface-card p-4 dark:bg-slate-900">
+        <section className="surface-card p-4 dark:bg-zinc-900">
           <div className="mb-3 flex items-center gap-2">
             <Zap className="h-4 w-4 text-slate-400" />
             <h2 className="text-sm font-semibold">Confirmed by tier</h2>
@@ -327,7 +327,7 @@ export default async function DashboardPage() {
         </section>
 
         {/* Hot prospects */}
-        <section className="surface-card p-4 dark:bg-slate-900">
+        <section className="surface-card p-4 dark:bg-zinc-900">
           <div className="mb-3 flex items-center gap-2">
             <Flame className="h-4 w-4 text-orange-400" />
             <h2 className="text-sm font-semibold">Hot prospects</h2>
@@ -370,7 +370,7 @@ export default async function DashboardPage() {
 
       {/* Stalled + My tasks */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="surface-card p-4 dark:bg-slate-900">
+        <section className="surface-card p-4 dark:bg-zinc-900">
           <header className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold">Stalled prospects</h2>
             <Link
@@ -405,7 +405,7 @@ export default async function DashboardPage() {
           )}
         </section>
 
-        <section className="surface-card p-4 dark:bg-slate-900">
+        <section className="surface-card p-4 dark:bg-zinc-900">
           <header className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold">My open tasks</h2>
             <Link
@@ -461,7 +461,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent activity */}
-      <section className="surface-card p-4 dark:bg-slate-900">
+      <section className="surface-card p-4 dark:bg-zinc-900">
         <h2 className="mb-3 text-sm font-semibold">Recent activity</h2>
         {recent.length === 0 ? (
           <p className="text-sm text-slate-500">No activity yet.</p>
@@ -478,7 +478,7 @@ export default async function DashboardPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="inline-block rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    <span className="inline-block rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600 dark:bg-zinc-800 dark:text-slate-300">
                       {a.type}
                     </span>
                     <Link
@@ -530,21 +530,25 @@ function Kpi({
   }[accent];
 
   const body = (
-    <div className="surface-card p-4 dark:bg-slate-900">
-      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+    <div
+      className={`surface-card p-4 dark:bg-zinc-900 ${href ? "surface-card-hover" : ""}`}
+    >
+      <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
         <span>{icon}</span>
         <span>{label}</span>
       </div>
-      <p className={`mt-1.5 text-2xl font-bold tabular-nums ${accentCls}`}>
+      <p
+        className={`mt-1.5 text-2xl font-semibold tracking-tight tabular-nums ${accentCls}`}
+      >
         {value}
       </p>
       {sublabel ? (
-        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{sublabel}</p>
+        <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{sublabel}</p>
       ) : null}
     </div>
   );
   return href ? (
-    <Link href={href} className="block hover:opacity-90 transition-opacity">
+    <Link href={href} className="block">
       {body}
     </Link>
   ) : (

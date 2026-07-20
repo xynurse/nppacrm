@@ -24,7 +24,7 @@ export function DensityToggle() {
           className={cn(
             "h-7 w-7 rounded-sm",
             density === value &&
-              "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100",
+              "bg-slate-100 text-slate-900 dark:bg-zinc-800 dark:text-slate-100",
           )}
           onClick={() => setDensity(value)}
         >

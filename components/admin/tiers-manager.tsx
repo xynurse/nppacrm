@@ -56,9 +56,9 @@ export function TiersManager({
 
   return (
     <div className="space-y-3">
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-zinc-900">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+          <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:bg-zinc-900 dark:text-slate-400">
             <tr className="border-b border-slate-200 dark:border-slate-800">
               <th className="px-3 py-2">Order</th>
               <th className="px-3 py-2">Color</th>
@@ -141,7 +141,7 @@ export function TiersManager({
                       onClick={() => handleDelete(t)}
                       disabled={pending}
                       aria-label="Delete tier"
-                      className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-600 dark:hover:bg-slate-800"
+                      className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-600 dark:hover:bg-zinc-800"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -217,7 +217,7 @@ function AddTierForm({
   return (
     <form
       onSubmit={submit}
-      className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+      className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-zinc-900"
     >
       <div className="grid gap-3 sm:grid-cols-3">
         <div>

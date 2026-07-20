@@ -121,7 +121,7 @@ export function AiTab({
                 key={field}
                 className="rounded-lg border border-slate-200 dark:border-slate-800"
               >
-                <header className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                <header className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:border-slate-800 dark:bg-zinc-900 dark:text-slate-300">
                   {ENRICHMENT_FIELD_LABELS[field as EnrichmentField] ?? field}
                 </header>
                 <div className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -208,7 +208,7 @@ function SuggestionRowItem({
       ) : null}
       <div className="mt-2 flex items-center gap-2 text-xs">
         {confidence !== null ? (
-          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600 dark:bg-zinc-800 dark:text-slate-300">
             {confidence}% confidence
           </span>
         ) : null}

@@ -78,7 +78,7 @@ export function CellShell<V>({
       className={cn(
         "group relative w-full cursor-text rounded px-1 py-0.5 transition-colors duration-100 hover:bg-brand-50/60 dark:hover:bg-brand-950/40",
         editing &&
-          "bg-white ring-1 ring-brand-500/50 dark:bg-slate-900 dark:ring-brand-400/50",
+          "bg-white ring-1 ring-brand-500/50 dark:bg-zinc-900 dark:ring-brand-400/50",
         align === "right" && "text-right",
         className,
       )}

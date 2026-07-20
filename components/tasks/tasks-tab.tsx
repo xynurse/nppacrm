@@ -148,7 +148,7 @@ function TaskRowView({
   }
 
   return (
-    <li className="flex items-start gap-2 rounded-md px-2 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800/40">
+    <li className="flex items-start gap-2 rounded-md px-2 py-1.5 hover:bg-slate-50 dark:hover:bg-zinc-800/40">
       <InlineComplete taskId={task.id} completed={!!task.completedAt} />
       <button
         type="button"
@@ -173,7 +173,7 @@ function TaskRowView({
       </button>
       <button
         type="button"
-        className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-500 dark:hover:bg-slate-800"
+        className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-500 dark:hover:bg-zinc-800"
         title="Delete"
         disabled={pending}
         onClick={() => {
@@ -230,7 +230,7 @@ function TaskForm({
         if (!values.title.trim()) return;
         onSubmit(values);
       }}
-      className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900"
+      className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-zinc-900"
     >
       <Input
         autoFocus
@@ -240,7 +240,7 @@ function TaskForm({
         onChange={(e) => setValues((v) => ({ ...v, title: e.target.value }))}
       />
       <textarea
-        className="w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+        className="w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-zinc-900 dark:text-slate-100"
         rows={2}
         placeholder="Description (optional)"
         value={values.description ?? ""}

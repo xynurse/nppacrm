@@ -26,13 +26,13 @@ export function AuditFilters({
     <form
       method="get"
       action="/admin/audit"
-      className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"
+      className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-zinc-900"
     >
       <Field label="User">
         <select
           name="userId"
           defaultValue={current.userId}
-          className="h-9 w-44 rounded-md border border-slate-200 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          className="h-9 w-44 rounded-md border border-slate-200 bg-white px-2 text-sm dark:border-slate-700 dark:bg-zinc-900"
         >
           <option value="">All users</option>
           {users.map((u) => (
@@ -46,7 +46,7 @@ export function AuditFilters({
         <select
           name="eventId"
           defaultValue={current.eventId}
-          className="h-9 w-44 rounded-md border border-slate-200 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          className="h-9 w-44 rounded-md border border-slate-200 bg-white px-2 text-sm dark:border-slate-700 dark:bg-zinc-900"
         >
           <option value="">All events</option>
           {events.map((e) => (
@@ -60,7 +60,7 @@ export function AuditFilters({
         <select
           name="entityType"
           defaultValue={current.entityType}
-          className="h-9 w-44 rounded-md border border-slate-200 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          className="h-9 w-44 rounded-md border border-slate-200 bg-white px-2 text-sm dark:border-slate-700 dark:bg-zinc-900"
         >
           <option value="">All entities</option>
           {entityTypes.map((t) => (
@@ -76,7 +76,7 @@ export function AuditFilters({
           name="action"
           defaultValue={current.action}
           placeholder="eventCompany.update"
-          className="h-9 w-52 rounded-md border border-slate-200 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          className="h-9 w-52 rounded-md border border-slate-200 bg-white px-2 text-sm dark:border-slate-700 dark:bg-zinc-900"
         />
       </Field>
       <div className="flex items-center gap-2">

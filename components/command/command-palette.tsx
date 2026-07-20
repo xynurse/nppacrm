@@ -95,7 +95,7 @@ export function CommandPalette({
         aria-modal="true"
         aria-label="Command palette"
         className={cn(
-          "fixed left-1/2 top-24 z-50 w-[92vw] max-w-xl -translate-x-1/2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-overlay)] transition-[opacity,transform] duration-150 ease-[var(--ease-out-soft)] dark:border-slate-700 dark:bg-slate-900",
+          "fixed left-1/2 top-24 z-50 w-[92vw] max-w-xl -translate-x-1/2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-overlay)] transition-[opacity,transform] duration-150 ease-[var(--ease-out-soft)] dark:border-slate-700 dark:bg-zinc-900",
           open
             ? "scale-100 opacity-100"
             : "pointer-events-none scale-[0.98] opacity-0",

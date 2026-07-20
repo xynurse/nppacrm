@@ -142,7 +142,7 @@ export default async function EventProfilePage() {
       </div>
 
       {/* Fundraising / revenue */}
-      <section className="surface-card p-4 dark:bg-slate-900">
+      <section className="surface-card p-4 dark:bg-zinc-900">
         <div className="mb-3 flex items-center gap-2">
           <Target className="h-4 w-4 text-slate-400" />
           <h2 className="text-sm font-semibold">Fundraising target</h2>
@@ -158,7 +158,7 @@ export default async function EventProfilePage() {
                 {Math.round(pctOfGoal * 100)}%
               </span>
             </div>
-            <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800">
               <div
                 className="h-full rounded-full bg-emerald-500 transition-all duration-500"
                 style={{ width: `${Math.min(100, pctOfGoal * 100)}%` }}
@@ -217,7 +217,7 @@ export default async function EventProfilePage() {
       </section>
 
       {/* Pipeline distribution */}
-      <section className="surface-card p-4 dark:bg-slate-900">
+      <section className="surface-card p-4 dark:bg-zinc-900">
         <div className="mb-3 flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-slate-400" />
           <h2 className="text-sm font-semibold">
@@ -248,7 +248,7 @@ export default async function EventProfilePage() {
                   <StatusBadge status={status} />
                 </Link>
                 <div className="flex flex-1 items-center gap-2">
-                  <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-slate-100 dark:bg-slate-800">
+                  <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-slate-100 dark:bg-zinc-800">
                     <div
                       className="absolute inset-y-0 left-0 rounded-sm bg-brand-500/70 transition-all duration-300"
                       style={{ width: `${pct}%` }}
@@ -266,7 +266,7 @@ export default async function EventProfilePage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Tiers & targets */}
-        <section className="surface-card p-4 dark:bg-slate-900">
+        <section className="surface-card p-4 dark:bg-zinc-900">
           <div className="mb-3 flex items-center gap-2">
             <Gift className="h-4 w-4 text-slate-400" />
             <h2 className="text-sm font-semibold">Sponsorship tiers &amp; targets</h2>
@@ -325,7 +325,7 @@ export default async function EventProfilePage() {
         </section>
 
         {/* Team leaderboard */}
-        <section className="surface-card p-4 dark:bg-slate-900">
+        <section className="surface-card p-4 dark:bg-zinc-900">
           <div className="mb-3 flex items-center gap-2">
             <UsersIcon className="h-4 w-4 text-slate-400" />
             <h2 className="text-sm font-semibold">Team leaderboard</h2>
@@ -365,7 +365,7 @@ export default async function EventProfilePage() {
         </section>
 
         {/* Outreach cadence health */}
-        <section className="surface-card p-4 dark:bg-slate-900">
+        <section className="surface-card p-4 dark:bg-zinc-900">
           <div className="mb-3 flex items-center gap-2">
             <Clock className="h-4 w-4 text-slate-400" />
             <h2 className="text-sm font-semibold">Outreach health</h2>
@@ -377,7 +377,7 @@ export default async function EventProfilePage() {
             <p className="text-sm text-slate-500">No active prospects.</p>
           ) : (
             <>
-              <div className="flex h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+              <div className="flex h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800">
                 <div
                   className="h-full bg-emerald-500"
                   style={{ width: `${(cadence.ok / activeCadenceTotal) * 100}%` }}
@@ -410,7 +410,7 @@ export default async function EventProfilePage() {
         </section>
 
         {/* Avg days in stage */}
-        <section className="surface-card p-4 dark:bg-slate-900">
+        <section className="surface-card p-4 dark:bg-zinc-900">
           <div className="mb-3 flex items-center gap-2">
             <Clock className="h-4 w-4 text-slate-400" />
             <h2 className="text-sm font-semibold">Average days in current stage</h2>
@@ -443,7 +443,7 @@ export default async function EventProfilePage() {
       </div>
 
       {/* Reviewers */}
-      <section className="surface-card p-4 dark:bg-slate-900">
+      <section className="surface-card p-4 dark:bg-zinc-900">
         <div className="mb-3 flex items-center gap-2">
           <UsersIcon className="h-4 w-4 text-slate-400" />
           <h2 className="text-sm font-semibold">Review panel</h2>
@@ -463,7 +463,7 @@ export default async function EventProfilePage() {
             {reviewers.map((r) => (
               <span
                 key={r.userId}
-                className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs dark:bg-slate-800"
+                className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs dark:bg-zinc-800"
               >
                 <span className="font-medium">{r.name}</span>
                 <span className="text-slate-400">{r.email}</span>

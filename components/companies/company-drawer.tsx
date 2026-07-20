@@ -120,7 +120,7 @@ export function CompanyDrawer({
       />
       <aside
         className={cn(
-          "fixed right-0 top-0 z-40 h-screen w-full max-w-2xl overflow-y-auto border-l border-slate-200 bg-white shadow-[var(--shadow-overlay)] transition-transform duration-200 ease-[var(--ease-out-soft)] dark:border-slate-800 dark:bg-slate-900",
+          "fixed right-0 top-0 z-40 h-screen w-full max-w-2xl overflow-y-auto border-l border-slate-200 bg-white shadow-[var(--shadow-overlay)] transition-transform duration-200 ease-[var(--ease-out-soft)] dark:border-slate-800 dark:bg-zinc-900",
           row ? "translate-x-0" : "translate-x-full",
         )}
         aria-hidden={!row}
@@ -227,7 +227,7 @@ function DrawerContent({
           <Link
             href={closeHref}
             scroll={false}
-            className="rounded-md p-1 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="rounded-md p-1 hover:bg-slate-100 dark:hover:bg-zinc-800"
             title="Close"
           >
             <X className="h-4 w-4" />
@@ -241,7 +241,7 @@ function DrawerContent({
         {hasDeferredTag(row.tagsCache) ? <DeferredBadge /> : null}
         <PriorityDot priority={row.priority} />
         {row.targetTierName ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-xs dark:bg-slate-800">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-xs dark:bg-zinc-800">
             <span
               className="h-2 w-2 rounded-full"
               style={{ backgroundColor: row.targetTierColor ?? "#94a3b8" }}

@@ -29,7 +29,7 @@ export function BulkActionBar({
   if (count === 0) return null;
 
   return (
-    <div className="sticky bottom-4 left-0 right-0 z-20 mx-auto flex w-fit max-w-full items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm shadow-md dark:border-slate-700 dark:bg-slate-900">
+    <div className="sticky bottom-4 left-0 right-0 z-20 mx-auto flex w-fit max-w-full items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm shadow-md dark:border-slate-700 dark:bg-zinc-900">
       <span className="font-medium">
         {count} selected
       </span>

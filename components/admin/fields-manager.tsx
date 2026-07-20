@@ -59,9 +59,9 @@ export function FieldsManager({ eventId, definitions }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-zinc-900">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+          <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:bg-zinc-900 dark:text-slate-400">
             <tr className="border-b border-slate-200 dark:border-slate-800">
               <th className="px-3 py-2">Label</th>
               <th className="px-3 py-2">Key</th>
@@ -99,7 +99,7 @@ export function FieldsManager({ eventId, definitions }: Props) {
                       onClick={() => handleDelete(d)}
                       disabled={pending}
                       aria-label="Delete field"
-                      className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-600 dark:hover:bg-slate-800"
+                      className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-600 dark:hover:bg-zinc-800"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -197,7 +197,7 @@ function AddFieldForm({
   return (
     <form
       onSubmit={submit}
-      className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+      className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-zinc-900"
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
@@ -258,7 +258,7 @@ function AddFieldForm({
             value={optionsText}
             onChange={(e) => setOptionsText(e.target.value)}
             rows={4}
-            className="w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-900"
+            className="w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-zinc-900"
             placeholder={"Option A\nOption B"}
           />
         </div>

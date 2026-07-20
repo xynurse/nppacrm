@@ -14,7 +14,7 @@ export function InviteUserForm() {
 
   return (
     <form
-      className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-5 dark:border-slate-800 dark:bg-slate-900"
+      className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-5 dark:border-slate-800 dark:bg-zinc-900"
       action={(formData) => {
         const payload = {
           email: String(formData.get("email") ?? ""),

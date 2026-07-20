@@ -36,7 +36,7 @@ export function ReviewerPanel({
   const [selected, setSelected] = useState<string>(available[0]?.id ?? "");
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-zinc-900">
       <h2 className="text-sm font-semibold">Reviewers</h2>
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
         Reviewers vote Yes/No on each prospect for this event. Voting UI lands

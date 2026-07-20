@@ -34,7 +34,7 @@ export function BottomNav() {
   const pathname = usePathname() ?? "/";
   return (
     <nav
-      className="sticky bottom-0 z-30 grid grid-cols-5 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] dark:border-slate-800 dark:bg-slate-900 lg:hidden"
+      className="sticky bottom-0 z-30 grid grid-cols-5 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] dark:border-slate-800 dark:bg-zinc-900 lg:hidden"
       aria-label="Primary"
     >
       {items.map((item) => {

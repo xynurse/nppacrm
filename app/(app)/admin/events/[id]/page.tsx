@@ -34,7 +34,7 @@ export default async function EventDetailPage({
         candidates={allUsers.filter((u) => u.isActive)}
       />
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-zinc-900">
         <h2 className="text-sm font-semibold">Configuration</h2>
         <ul className="mt-2 space-y-1 text-sm">
           <li>

@@ -37,7 +37,7 @@ export function ShortcutsCheatSheet({
         aria-modal="true"
         aria-label="Keyboard shortcuts"
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-overlay)] transition-opacity dark:border-slate-700 dark:bg-slate-900",
+          "fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-overlay)] transition-opacity dark:border-slate-700 dark:bg-zinc-900",
           open ? "opacity-100" : "pointer-events-none opacity-0",
         )}
       >
@@ -47,7 +47,7 @@ export function ShortcutsCheatSheet({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800"
           >
             <X className="h-4 w-4" />
           </button>

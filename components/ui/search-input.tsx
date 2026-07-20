@@ -65,7 +65,7 @@ export function SearchInput({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        className="h-8 w-full rounded-md border border-slate-200 bg-white pl-8 pr-7 text-sm shadow-[var(--shadow-card)] transition-[border-color,box-shadow] duration-150 placeholder:text-slate-400 hover:border-slate-300 focus-visible:border-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/25 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 [&::-webkit-search-cancel-button]:appearance-none"
+        className="h-8 w-full rounded-md border border-slate-200 bg-white pl-8 pr-7 text-sm shadow-[var(--shadow-card)] transition-[border-color,box-shadow] duration-150 placeholder:text-slate-400 hover:border-slate-300 focus-visible:border-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/25 dark:border-slate-700 dark:bg-zinc-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 [&::-webkit-search-cancel-button]:appearance-none"
       />
       {value ? (
         <button

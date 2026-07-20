@@ -106,7 +106,7 @@ export function FileFieldCell({
             type="button"
             onClick={handleRemove}
             aria-label="Remove file"
-            className="ml-auto rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-red-600 dark:hover:bg-slate-800"
+            className="ml-auto rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-red-600 dark:hover:bg-zinc-800"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -116,7 +116,7 @@ export function FileFieldCell({
           type="button"
           onClick={handlePick}
           disabled={uploading}
-          className="inline-flex items-center gap-1.5 rounded border border-dashed border-slate-300 px-2 py-1 text-xs text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+          className="inline-flex items-center gap-1.5 rounded border border-dashed border-slate-300 px-2 py-1 text-xs text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-zinc-800"
         >
           <Upload className="h-3 w-3" />
           {uploading ? "Uploading…" : "Upload file"}

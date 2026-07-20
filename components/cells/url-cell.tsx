@@ -29,7 +29,7 @@ export function UrlEditor({
       type="url"
       defaultValue={value ?? ""}
       placeholder="https://"
-      className="w-full rounded border border-slate-300 bg-white px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-900"
+      className="w-full rounded border border-slate-300 bg-white px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-zinc-900"
       onBlur={commit}
       onKeyDown={(e) => {
         if (e.key === "Escape") {

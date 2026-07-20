@@ -22,7 +22,7 @@ export function AuditTable({ rows }: { rows: AuditRow[] }) {
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
       <table className="w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
-        <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+        <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:bg-zinc-900 dark:text-slate-400">
           <tr>
             <th className="px-3 py-2">When</th>
             <th className="px-3 py-2">User</th>
@@ -32,7 +32,7 @@ export function AuditTable({ rows }: { rows: AuditRow[] }) {
             <th className="px-3 py-2 text-right">Details</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-900">
+        <tbody className="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-zinc-900">
           {rows.map((row) => (
             <AuditRowItem
               key={row.id}
@@ -92,7 +92,7 @@ function AuditRowItem({
           {row.eventName ?? "—"}
         </td>
         <td className="px-3 py-2">
-          <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+          <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 dark:bg-zinc-800 dark:text-slate-200">
             {row.action}
           </span>
         </td>
@@ -142,10 +142,10 @@ function AuditRowItem({
         </td>
       </tr>
       {open ? (
-        <tr className="bg-slate-50 dark:bg-slate-950">
+        <tr className="bg-slate-50 dark:bg-zinc-950">
           <td className="px-3 py-3" colSpan={6}>
             {hasChanges ? (
-              <pre className="overflow-x-auto rounded border border-slate-200 bg-white p-3 font-mono text-xs leading-relaxed text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
+              <pre className="overflow-x-auto rounded border border-slate-200 bg-white p-3 font-mono text-xs leading-relaxed text-slate-800 dark:border-slate-800 dark:bg-zinc-900 dark:text-slate-200">
                 {JSON.stringify(row.changes, null, 2)}
               </pre>
             ) : (

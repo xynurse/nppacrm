@@ -192,7 +192,7 @@ export function KanbanBoard({ rows: initialRows, tiers }: Props) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Filter cards by company, owner, tier, tag…"
-            className="h-8 w-full rounded-md border border-slate-200 bg-white pl-8 pr-7 text-sm shadow-[var(--shadow-card)] transition-[border-color,box-shadow] duration-150 placeholder:text-slate-400 hover:border-slate-300 focus-visible:border-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/25 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 [&::-webkit-search-cancel-button]:appearance-none"
+            className="h-8 w-full rounded-md border border-slate-200 bg-white pl-8 pr-7 text-sm shadow-[var(--shadow-card)] transition-[border-color,box-shadow] duration-150 placeholder:text-slate-400 hover:border-slate-300 focus-visible:border-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/25 dark:border-slate-700 dark:bg-zinc-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 [&::-webkit-search-cancel-button]:appearance-none"
           />
           {query ? (
             <button
@@ -266,7 +266,7 @@ function Column({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex w-72 shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50/50 transition-[border-color,box-shadow] duration-150 dark:border-slate-800 dark:bg-slate-900/50",
+        "flex w-72 shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50/50 transition-[border-color,box-shadow] duration-150 dark:border-slate-800 dark:bg-zinc-900/50",
         isOver &&
           "border-brand-400 shadow-[0_0_0_3px_var(--accent-tint)] dark:border-brand-500",
       )}
@@ -327,7 +327,7 @@ function Card({
   return (
     <div
       className={cn(
-        "rounded-lg border border-slate-200 bg-white p-2.5 text-xs shadow-[var(--shadow-card)] transition-[box-shadow,border-color,transform] duration-150 ease-[var(--ease-out-soft)] hover:-translate-y-px hover:border-slate-300 hover:shadow-[var(--shadow-raised)] dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600",
+        "rounded-lg border border-slate-200 bg-white p-2.5 text-xs shadow-[var(--shadow-card)] transition-[box-shadow,border-color,transform] duration-150 ease-[var(--ease-out-soft)] hover:-translate-y-px hover:border-slate-300 hover:shadow-[var(--shadow-raised)] dark:border-slate-700 dark:bg-zinc-900 dark:hover:border-slate-600",
         dragging && "rotate-1 shadow-[var(--shadow-overlay)]",
       )}
     >

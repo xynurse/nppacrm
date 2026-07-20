@@ -105,7 +105,7 @@ export function AgentsPanel({
   return (
     <div className="space-y-6">
       {/* Agent controls */}
-      <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-zinc-900">
         <h2 className="text-sm font-semibold">Agents</h2>
         <div className="mt-3 space-y-4">
           {/* Discovery */}
@@ -233,7 +233,7 @@ export function AgentsPanel({
           <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
+                <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-zinc-900">
                   <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">
                     Agent
                   </th>
@@ -253,7 +253,7 @@ export function AgentsPanel({
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {runs.map((r) => (
-                  <tr key={r.id} className="bg-white dark:bg-slate-900">
+                  <tr key={r.id} className="bg-white dark:bg-zinc-900">
                     <td className="px-3 py-2 capitalize text-slate-700 dark:text-slate-200">
                       {r.agentType}
                     </td>
@@ -311,7 +311,7 @@ function AgentRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-zinc-800 dark:text-slate-400">
         {icon}
       </div>
       <div className="min-w-0 flex-1">
@@ -406,7 +406,7 @@ function SuggestionCard({
     : null;
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-zinc-900">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -414,7 +414,7 @@ function SuggestionCard({
               {suggestion.companyName}
             </span>
             {suggestion.industry ? (
-              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600 dark:bg-zinc-800 dark:text-slate-400">
                 {suggestion.industry}
               </span>
             ) : null}
@@ -430,7 +430,7 @@ function SuggestionCard({
                     ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
                     : score >= 60
                       ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
-                      : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                      : "bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-400"
                 }`}
               >
                 {score}% match

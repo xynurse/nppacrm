@@ -22,7 +22,7 @@ export default async function AppLayout({
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
+    <div className="flex h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950">
       <Sidebar
         role={session.user.role}
         user={user}

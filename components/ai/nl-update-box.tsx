@@ -34,7 +34,7 @@ export function NlUpdateBox() {
           }}
           rows={2}
           placeholder="e.g. Met Boston Scientific — want the Gold prospectus; Stryker no reply to 2nd email, follow up next week."
-          className="flex-1 resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-brand-950"
+          className="flex-1 resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 dark:border-slate-700 dark:bg-zinc-900 dark:text-slate-100 dark:focus:ring-brand-950"
         />
         <Button
           className="shrink-0 gap-1.5 self-start"

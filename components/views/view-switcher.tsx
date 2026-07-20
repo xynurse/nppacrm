@@ -159,14 +159,14 @@ export function ViewSwitcher({
       ) : null}
 
       {open ? (
-        <div className="absolute left-0 top-full z-30 mt-1 w-72 space-y-1 rounded-md border border-slate-200 bg-white p-1.5 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <div className="absolute left-0 top-full z-30 mt-1 w-72 space-y-1 rounded-md border border-slate-200 bg-white p-1.5 shadow-lg dark:border-slate-700 dark:bg-zinc-900">
           <button
             type="button"
             onClick={() => {
               onSelectView(null);
               setOpen(false);
             }}
-            className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 ${
+            className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-zinc-800 ${
               !activeViewId ? "font-medium" : ""
             }`}
           >
@@ -180,8 +180,8 @@ export function ViewSwitcher({
             return (
               <div
                 key={v.id}
-                className={`group flex items-center gap-1 rounded px-2 py-1 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 ${
-                  isActive ? "bg-slate-50 dark:bg-slate-800/60" : ""
+                className={`group flex items-center gap-1 rounded px-2 py-1 text-sm hover:bg-slate-100 dark:hover:bg-zinc-800 ${
+                  isActive ? "bg-slate-50 dark:bg-zinc-800/60" : ""
                 }`}
               >
                 <button
@@ -264,7 +264,7 @@ export function ViewSwitcher({
             <button
               type="button"
               onClick={() => setSavingNew(true)}
-              className="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-zinc-800"
             >
               <Save className="h-3.5 w-3.5" />
               Save current as new view

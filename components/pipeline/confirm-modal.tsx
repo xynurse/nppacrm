@@ -55,7 +55,7 @@ export function ConfirmModal({ row, tiers, onCancel, onConfirm }: Props) {
     >
       <div
         ref={ref}
-        className="w-full max-w-md space-y-4 rounded-lg border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+        className="w-full max-w-md space-y-4 rounded-lg border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-zinc-900"
       >
         <div>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">

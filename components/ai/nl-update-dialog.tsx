@@ -150,7 +150,7 @@ export function NlUpdateDialog({
         role="dialog"
         aria-modal="true"
         aria-label="AI quick update"
-        className="fixed left-1/2 top-[8vh] z-50 flex max-h-[84vh] w-[94vw] max-w-2xl -translate-x-1/2 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-overlay)] dark:border-slate-800 dark:bg-slate-900"
+        className="fixed left-1/2 top-[8vh] z-50 flex max-h-[84vh] w-[94vw] max-w-2xl -translate-x-1/2 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-overlay)] dark:border-slate-800 dark:bg-zinc-900"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3.5 dark:border-slate-800">
@@ -189,7 +189,7 @@ export function NlUpdateDialog({
                 }}
                 rows={7}
                 placeholder="e.g. Met with Boston Scientific Tuesday — they want the Gold prospectus, sending it Friday. Stryker no reply to my 2nd email, follow up next week. Medtronic said no this year."
-                className="w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-relaxed outline-none placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:ring-brand-950"
+                className="w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-relaxed outline-none placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 dark:border-slate-700 dark:bg-zinc-800 dark:text-slate-100 dark:focus:ring-brand-950"
               />
               <p className="text-xs text-slate-400">
                 Won&apos;t create companies, delete anything, or set amount/tier.

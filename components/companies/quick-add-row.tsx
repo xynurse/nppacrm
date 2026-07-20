@@ -15,7 +15,7 @@ export function QuickAddRow({ eventId }: { eventId: string }) {
 
   return (
     <form
-      className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900/50"
+      className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/50 px-3 py-2 dark:border-slate-800 dark:bg-zinc-900/50"
       onSubmit={(e) => {
         e.preventDefault();
         if (!name.trim()) return;

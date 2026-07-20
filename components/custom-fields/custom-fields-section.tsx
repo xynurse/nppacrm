@@ -134,7 +134,7 @@ function CustomFieldCell({
   return (
     <div
       className={cn(
-        "group rounded px-1 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800",
+        "group rounded px-1 py-0.5 hover:bg-slate-100 dark:hover:bg-zinc-800",
         !editing && "cursor-text",
       )}
       onClick={() => !editing && setEditing(true)}
@@ -319,7 +319,7 @@ function NumberEditor({
       type="number"
       autoFocus
       defaultValue={value === null || value === undefined ? "" : String(value)}
-      className="w-full rounded border border-slate-300 bg-white px-2 py-0.5 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-900"
+      className="w-full rounded border border-slate-300 bg-white px-2 py-0.5 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-zinc-900"
       onBlur={(e) => {
         const v = e.currentTarget.value.trim();
         onSave(v === "" ? null : v);
