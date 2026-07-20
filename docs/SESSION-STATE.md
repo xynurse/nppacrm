@@ -8,7 +8,40 @@
 ---
 
 ## Last updated
-2026-07-13 — **Mayo Clinic NPPA LPD 2026 outreach batch** applied (data-only):
+2026-07-20 — **UI retheme session.** Re-skinned the app from the clinical
+medical-teal/heartbeat identity to a restrained **indigo-on-zinc "modern SaaS"**
+look (Linear/Vercel lineage), per the user's ask for "more elegant, less
+medical/AI, more startup." User picked the direction (indigo on cool zinc) and
+scope (retheme + polish high-traffic surfaces) via a question prompt.
+
+**Shipped (commit `1229900`, on `origin/main`):**
+- `app/globals.css` — `--color-brand-*` cyan→**indigo** (`#6366f1`/`#4f46e5`);
+  semantic neutral tokens **slate→zinc** (dark `--page` near-black `#09090b`);
+  selection teal→indigo; crisper shadow tiers; comments rewritten.
+- **New `components/app/logo-mark.tsx`** — shared ascending-bars glyph on an
+  indigo tile, replacing the `Activity` heartbeat in the sidebar AND login.
+- Sidebar → near-black zinc rail; auth backdrop → `zinc-950`; top bar blur;
+  `Input`/`Button` neutrals → zinc; dashboard KPI hover + numeral polish.
+- App-wide: dark surface bgs `bg-slate-900/950/800` → zinc across 64 files
+  (pure color swap, no logic). typecheck + lint + build **all green**.
+
+**Verification caveat (for next session):** authenticated pages were NOT
+visually confirmed in-browser. Two dev-env snags: (1) no admin login creds this
+session; (2) a dev-only `AUTH_URL`/`NEXTAUTH_URL` set to `http://localhost:3000`
+makes `/` on the :3001 dev server redirect to `:3000/login` (a *different* app
+runs on :3000). The **login page** WAS verified live (indigo button, new logo,
+zinc backdrop render correctly). Everything else shares the same tokens/brand
+classes, so it cascades — but eyeball the dashboard/companies/pipeline/drawer
+once you can log in. To view locally: hit `http://localhost:3001/login`
+directly, or fix the `AUTH_URL` in `.env.local` to `:3001` for dev.
+
+**⚠️ Machine disk was ~99–100% full** this session (APFS container full from
+other volumes/snapshots — the CRM's own volume only uses 24 GB). `.next` had to
+be cleared twice to make room; the production build ultimately succeeded (disk
+recovered to ~1.6 GB free). If builds start failing with `ENOSPC`, free disk
+space — it's not a code problem.
+
+Prior (2026-07-13) — **Mayo Clinic NPPA LPD 2026 outreach batch** applied (data-only):
 24 companies → `contacted` + email interaction, 7 bounced → `BOUNCED` tag +
 bounce interaction (status untouched), 34 deferred → **new `DEFERRED` tag** +
 note interaction (status untouched). 65 interactions + 89 audit rows. Decided
@@ -41,8 +74,9 @@ archiving no-ops — verified against prod, 42P01 guarded), so deploying
 before migrating is safe. Feature goes fully live once the table exists.
 
 ## Current git HEAD
-`a0cca97` feat: show Bounced count on the dashboard pipeline funnel — plus
-this docs commit on top.
+`1229900` feat: retheme UI — indigo/zinc "modern SaaS" identity, drop medical
+teal — plus this docs commit on top. (Prior notable HEAD:
+`a0cca97` bounced count on the dashboard funnel.)
 (this session, in order: `2c35b90` chunk A inline search · `93bb3d7` chunk B
 pipeline search+edit · `c0c7608` chunk C dashboard drill-downs + is_one_of
 fix · `b1357b5` chunk D event page · `f727d2f` docs · `e353f9c` contact
@@ -363,6 +397,11 @@ column). typecheck + lint + build all green.
 
 | Decision | Why |
 |---|---|
+| Retheme = **indigo on cool zinc** (Linear/Vercel), not blue or warm-neutral | User picked it; indigo+zinc is the furthest from the clinical medical look and reads as modern startup SaaS |
+| Retheme via brand-`*` palette + semantic tokens, not per-component rewrites | Everything routes through `--color-brand-*` and `--accent`/`--surface`/`--ink`, so one palette swap cascades app-wide at low risk |
+| Kept all functional status colors (stage pills, Bounced red, Deferred violet) | Those encode meaning, not brand; recoloring them would break scannability. Only the brand hue + neutrals changed |
+| Swapped only **dark surface bgs** slate→zinc app-wide, left text/border slate | slate vs zinc for text/borders is visually near-identical; the dark card-on-page seam was the only visible mismatch worth a 64-file sweep |
+| New logo = abstract ascending-bars mark, not a lucide icon | A custom geometric mark reads "designed/startup"; the old `Activity` heartbeat was the strongest medical cue |
 | Elevation via 3 shadow tokens + `surface-card` utility, not per-component classes | One place to tune depth; components opt in |
 | CSS-first motion (transitions + easing token), no Framer Motion | It was dropped in chunk 12 for bundle size; CSS covers current needs |
 | Replace (not rename) the broken Stale seed view | Seed is name-keyed/idempotent; renaming lets re-seed deliver the fix without migrations |

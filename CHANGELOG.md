@@ -2,6 +2,30 @@
 
 ## Active build (committed to main)
 
+### UI retheme — indigo/zinc "modern SaaS" identity _(2026-07-20, commit `1229900`)_
+Re-skinned the app away from the clinical medical-teal/heartbeat look toward a
+restrained indigo-on-zinc palette (Linear/Vercel lineage). Token-driven, so the
+recolor cascaded app-wide with no logic changes. Functional status colors
+(pipeline stages, Bounced red, Deferred violet) were deliberately left intact.
+- **`app/globals.css`** — `--color-brand-*` swapped cyan → **indigo**
+  (`#6366f1`/`#4f46e5`); semantic neutral tokens shifted **slate → zinc**
+  (near-black `--page` `#09090b` in dark); text selection teal → soft indigo;
+  shadow tiers retuned crisper/flatter; "Medical/Clinical" comments rewritten.
+- **New `components/app/logo-mark.tsx`** — shared brand mark: an
+  ascending-pipeline glyph on an indigo gradient tile, replacing the `Activity`
+  heartbeat icon in **both** the sidebar and the login screen.
+- **Shell** — sidebar → near-black zinc rail with softer hairlines; auth
+  backdrop → `zinc-950`; top bar gains a translucent blur; `Input`/`Button`
+  neutral variants slate → zinc.
+- **Dashboard** — KPI cards get a raised-shadow hover (replacing an opacity
+  fade) and refined semibold tabular numerals.
+- **App-wide** — dark card/muted surface backgrounds (`bg-slate-900/950/800`)
+  swapped to zinc across 64 files so surfaces sit cleanly on the zinc page
+  (pure color substitution).
+- typecheck + lint + build all green. Not visually verified on authenticated
+  pages this session (no login creds + a dev-only `AUTH_URL`→`:3000` redirect);
+  the login screen was verified live and the rest shares the same tokens.
+
 ### Mayo Clinic NPPA LPD 2026 outreach batch _(2026-07-13, data-only, no code change)_
 Applied via `/sync-outreach` against prod (65 companies, all matched exactly):
 - **24 emails sent** → `email` interaction, status `prospect→contacted`, first +

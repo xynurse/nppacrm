@@ -3,7 +3,16 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped commit: `a0cca97` (bounced count on the dashboard funnel — end of the 2026-07-09 session) — deployed at `nppacrm.vercel.app`.
+Latest shipped commit: `1229900` (UI retheme → indigo/zinc modern-SaaS identity, 2026-07-20) — deployed at `nppacrm.vercel.app`.
+
+## Shipped 2026-07-20 (UI retheme)
+
+- [x] Retheme cyan medical-teal → **indigo** brand + slate → **zinc** neutrals (token-driven cascade) — `1229900`
+- [x] New shared `LogoMark` (ascending-bars glyph) replacing the `Activity` heartbeat in sidebar + login
+- [x] Near-black zinc sidebar/auth backdrop, translucent top bar, KPI hover polish, dark surfaces → zinc app-wide
+- [ ] _(follow-up, not done)_ Visually verify authenticated pages (dashboard/companies/pipeline/drawer) once login is available — recolor is token-cascaded but unverified in-browser this session.
+- [ ] _(optional)_ Deeper hand-polish of tables + company drawer (spacing/typography) beyond the color cascade.
+- [ ] _(optional)_ Consider full `slate-*` → `zinc-*` sweep for text/borders (currently only surfaces swapped; text/border slate left as-is — visually near-identical).
 
 ## Shipped 2026-07-09 (this session)
 
