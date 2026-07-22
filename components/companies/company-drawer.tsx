@@ -2,7 +2,7 @@
 
 import { Gift, Sparkles, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CellShell } from "@/components/cells/cell-shell";
 import { CurrencyEditor } from "@/components/cells/currency-cell";
 import { DateEditor } from "@/components/cells/date-cell";
@@ -20,6 +20,8 @@ import { ContactsTab } from "@/components/contacts/contacts-tab";
 import { CustomFieldsSection } from "@/components/custom-fields/custom-fields-section";
 import { ActivityTab } from "@/components/interactions/activity-tab";
 import { TasksTab } from "@/components/tasks/tasks-tab";
+import { AutosaveRichEditor } from "@/components/tiptap/autosave-rich-editor";
+import { updateCompanyNotes } from "@/lib/actions/notes";
 import type { CustomFieldDefinition } from "@/lib/db/schema";
 import type { JobRow, SuggestionRow } from "@/lib/db/queries/ai";
 import type { BenefitRow } from "@/lib/db/queries/benefits";
@@ -43,6 +45,7 @@ import type {
 import type { EventCompanyRow } from "@/lib/db/queries/companies";
 import type { InteractionRow } from "@/lib/db/queries/interactions";
 import type { TaskRow } from "@/lib/db/queries/tasks";
+import type { RichDoc } from "@/lib/tiptap/types";
 import { formatCurrency, formatRelativeDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -57,6 +60,7 @@ type DrawerTab =
   | "contacts"
   | "activity"
   | "tasks"
+  | "notes"
   | "benefits"
   | "ai";
 
@@ -180,6 +184,7 @@ function DrawerContent({
     { id: "contacts", label: "Contacts" },
     { id: "activity", label: "Activity" },
     { id: "tasks", label: "Tasks" },
+    { id: "notes", label: "Notes" },
     ...(showBenefitsTab ? [{ id: "benefits" as const, label: "Benefits" }] : []),
     { id: "ai", label: "AI" },
   ];
@@ -343,6 +348,12 @@ function DrawerContent({
             tasks={data.tasks}
             owners={owners}
           />
+        ) : tab === "notes" ? (
+          <NotesTab
+            companyId={row.companyId}
+            companyName={row.companyName}
+            notesDoc={row.companyNotesDoc}
+          />
         ) : tab === "benefits" ? (
           <BenefitsTab
             eventCompanyId={row.id}
@@ -361,6 +372,41 @@ function DrawerContent({
           />
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Long-form notes on the company record itself (not the event prospect), so
+ * they persist across events. Autosaves on a debounce — there is no submit
+ * button to hang a save off.
+ */
+function NotesTab({
+  companyId,
+  companyName,
+  notesDoc,
+}: {
+  companyId: string;
+  companyName: string;
+  notesDoc: RichDoc | null;
+}) {
+  const onSave = useCallback(
+    (doc: RichDoc | null) => updateCompanyNotes({ companyId, doc }),
+    [companyId],
+  );
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        Notes about {companyName}. Shared across every event this company
+        appears in.
+      </p>
+      <AutosaveRichEditor
+        value={notesDoc}
+        placeholder="Background, relationship history, who knows whom…"
+        onSave={onSave}
+        minHeightClass="min-h-[18rem]"
+      />
     </div>
   );
 }

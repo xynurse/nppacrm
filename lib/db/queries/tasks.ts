@@ -1,6 +1,8 @@
 import { aliasedTable, and, asc, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { isUndefinedColumnError } from "@/lib/db/errors";
 import { companies, eventCompanies, tasks, users } from "@/lib/db/schema";
+import type { RichDoc } from "@/lib/tiptap/types";
 
 const assignees = aliasedTable(users, "task_assignees");
 
@@ -11,6 +13,7 @@ export type TaskRow = {
   companyName: string | null;
   title: string;
   description: string | null;
+  descriptionDoc: RichDoc | null;
   dueDate: string | null;
   priority: typeof tasks.$inferSelect.priority;
   assignedTo: string | null;
@@ -19,7 +22,7 @@ export type TaskRow = {
   createdAt: Date;
 };
 
-const baseSelect = {
+const legacySelect = {
   id: tasks.id,
   eventId: tasks.eventId,
   eventCompanyId: tasks.eventCompanyId,
@@ -34,21 +37,49 @@ const baseSelect = {
   createdAt: tasks.createdAt,
 } as const;
 
+const baseSelect = {
+  ...legacySelect,
+  descriptionDoc: tasks.descriptionDoc,
+} as const;
+
+type TaskSelect = typeof baseSelect;
+
+/**
+ * Runs a task query, retrying without `description_doc` if migration 0011
+ * hasn't been applied yet. Keeps every task list working in the gap between
+ * deploying this code and running the migration.
+ */
+async function withDocFallback(
+  build: (select: TaskSelect) => Promise<TaskRow[]>,
+): Promise<TaskRow[]> {
+  try {
+    return await build(baseSelect);
+  } catch (err) {
+    if (!isUndefinedColumnError(err)) throw err;
+    // `legacySelect` yields rows without `descriptionDoc`; we add it back as
+    // null, which is exactly what an unmigrated database would have returned.
+    const rows = await build(legacySelect as unknown as TaskSelect);
+    return rows.map((row) => ({ ...row, descriptionDoc: null }));
+  }
+}
+
 export async function listTasksForEventCompany(
   eventCompanyId: string,
 ): Promise<TaskRow[]> {
-  return db
-    .select(baseSelect)
-    .from(tasks)
-    .leftJoin(eventCompanies, eq(eventCompanies.id, tasks.eventCompanyId))
-    .leftJoin(companies, eq(companies.id, eventCompanies.companyId))
-    .leftJoin(assignees, eq(assignees.id, tasks.assignedTo))
-    .where(eq(tasks.eventCompanyId, eventCompanyId))
-    .orderBy(
-      asc(tasks.completedAt),
-      asc(tasks.dueDate),
-      desc(tasks.createdAt),
-    );
+  return withDocFallback((select) =>
+    db
+      .select(select)
+      .from(tasks)
+      .leftJoin(eventCompanies, eq(eventCompanies.id, tasks.eventCompanyId))
+      .leftJoin(companies, eq(companies.id, eventCompanies.companyId))
+      .leftJoin(assignees, eq(assignees.id, tasks.assignedTo))
+      .where(eq(tasks.eventCompanyId, eventCompanyId))
+      .orderBy(
+        asc(tasks.completedAt),
+        asc(tasks.dueDate),
+        desc(tasks.createdAt),
+      ),
+  );
 }
 
 export async function listTasksForEvent(
@@ -59,18 +90,20 @@ export async function listTasksForEvent(
   if (options.onlyOpen) conditions.push(isNull(tasks.completedAt));
   if (options.assigneeId !== undefined && options.assigneeId !== null)
     conditions.push(eq(tasks.assignedTo, options.assigneeId));
-  return db
-    .select(baseSelect)
-    .from(tasks)
-    .leftJoin(eventCompanies, eq(eventCompanies.id, tasks.eventCompanyId))
-    .leftJoin(companies, eq(companies.id, eventCompanies.companyId))
-    .leftJoin(assignees, eq(assignees.id, tasks.assignedTo))
-    .where(and(...conditions))
-    .orderBy(
-      asc(tasks.completedAt),
-      asc(tasks.dueDate),
-      desc(tasks.createdAt),
-    );
+  return withDocFallback((select) =>
+    db
+      .select(select)
+      .from(tasks)
+      .leftJoin(eventCompanies, eq(eventCompanies.id, tasks.eventCompanyId))
+      .leftJoin(companies, eq(companies.id, eventCompanies.companyId))
+      .leftJoin(assignees, eq(assignees.id, tasks.assignedTo))
+      .where(and(...conditions))
+      .orderBy(
+        asc(tasks.completedAt),
+        asc(tasks.dueDate),
+        desc(tasks.createdAt),
+      ),
+  );
 }
 
 export async function countOpenTasksForUser(
@@ -90,13 +123,17 @@ export async function countOpenTasksForUser(
   return rows.length;
 }
 
-export async function listCompletedTasksForEvent(eventId: string) {
-  return db
-    .select(baseSelect)
-    .from(tasks)
-    .leftJoin(eventCompanies, eq(eventCompanies.id, tasks.eventCompanyId))
-    .leftJoin(companies, eq(companies.id, eventCompanies.companyId))
-    .leftJoin(assignees, eq(assignees.id, tasks.assignedTo))
-    .where(and(eq(tasks.eventId, eventId), isNotNull(tasks.completedAt)))
-    .orderBy(desc(tasks.completedAt));
+export async function listCompletedTasksForEvent(
+  eventId: string,
+): Promise<TaskRow[]> {
+  return withDocFallback((select) =>
+    db
+      .select(select)
+      .from(tasks)
+      .leftJoin(eventCompanies, eq(eventCompanies.id, tasks.eventCompanyId))
+      .leftJoin(companies, eq(companies.id, eventCompanies.companyId))
+      .leftJoin(assignees, eq(assignees.id, tasks.assignedTo))
+      .where(and(eq(tasks.eventId, eventId), isNotNull(tasks.completedAt)))
+      .orderBy(desc(tasks.completedAt)),
+  );
 }

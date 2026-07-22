@@ -8,6 +8,8 @@ import {
   deleteTask,
   updateTask,
 } from "@/lib/actions/tasks";
+import { LazyRichEditor } from "@/components/tiptap/rich-editor-lazy";
+import { RichText } from "@/components/tiptap/rich-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -15,6 +17,8 @@ import type { PersonOption } from "@/components/cells/types";
 import { InlineComplete } from "./inline-complete";
 import type { TaskRow } from "@/lib/db/queries/tasks";
 import { PROSPECT_PRIORITY_VALUES } from "@/lib/db/schema";
+import { isEmptyDoc, plainTextToDoc } from "@/lib/tiptap/serialize";
+import type { RichDoc } from "@/lib/tiptap/types";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -150,27 +154,38 @@ function TaskRowView({
   return (
     <li className="flex items-start gap-2 rounded-md px-2 py-1.5 hover:bg-slate-50 dark:hover:bg-zinc-800/40">
       <InlineComplete taskId={task.id} completed={!!task.completedAt} />
-      <button
-        type="button"
-        className="min-w-0 flex-1 text-left"
-        onClick={() => setEditing(true)}
-      >
-        <div
-          className={cn(
-            "text-sm",
-            task.completedAt && "text-slate-400 line-through",
-          )}
+      <div className="min-w-0 flex-1">
+        <button
+          type="button"
+          className="w-full text-left"
+          onClick={() => setEditing(true)}
         >
-          {task.title}
-        </div>
-        <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-slate-500 dark:text-slate-400">
-          {task.dueDate ? <span>Due {formatDate(task.dueDate)}</span> : null}
-          {task.assigneeName ? <span>· {task.assigneeName}</span> : null}
-          {task.priority !== "medium" ? (
-            <span className="capitalize">· {task.priority}</span>
-          ) : null}
-        </div>
-      </button>
+          <div
+            className={cn(
+              "text-sm",
+              task.completedAt && "text-slate-400 line-through",
+            )}
+          >
+            {task.title}
+          </div>
+          <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-slate-500 dark:text-slate-400">
+            {task.dueDate ? <span>Due {formatDate(task.dueDate)}</span> : null}
+            {task.assigneeName ? <span>· {task.assigneeName}</span> : null}
+            {task.priority !== "medium" ? (
+              <span className="capitalize">· {task.priority}</span>
+            ) : null}
+          </div>
+        </button>
+        {/* Outside the button: descriptions can contain links, which must not
+            be nested inside interactive content. */}
+        {task.descriptionDoc || task.description ? (
+          <RichText
+            doc={task.descriptionDoc}
+            fallback={task.description}
+            className="mt-1 text-xs text-slate-600 dark:text-slate-300"
+          />
+        ) : null}
+      </div>
       <button
         type="button"
         className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-500 dark:hover:bg-zinc-800"
@@ -192,7 +207,7 @@ function TaskRowView({
 
 type TaskFormValues = {
   title: string;
-  description: string | null;
+  descriptionDoc: RichDoc | null;
   dueDate: string | null;
   priority: (typeof PROSPECT_PRIORITY_VALUES)[number];
   assignedTo: string | null;
@@ -215,9 +230,15 @@ function TaskForm({
   pending: boolean;
   error: string | null;
 }) {
+  // Tasks written before the rich editor shipped have plain text only — lift
+  // it into a doc so editing one doesn't silently discard the description.
+  const initialDoc =
+    initial?.descriptionDoc ??
+    (initial?.description ? plainTextToDoc(initial.description) : null);
+
   const [values, setValues] = useState<TaskFormValues>({
     title: initial?.title ?? "",
-    description: initial?.description ?? null,
+    descriptionDoc: initialDoc,
     dueDate: initial?.dueDate ?? null,
     priority: initial?.priority ?? "medium",
     assignedTo: initial?.assignedTo ?? null,
@@ -228,7 +249,13 @@ function TaskForm({
       onSubmit={(e) => {
         e.preventDefault();
         if (!values.title.trim()) return;
-        onSubmit(values);
+        onSubmit({
+          ...values,
+          descriptionDoc:
+            values.descriptionDoc && !isEmptyDoc(values.descriptionDoc)
+              ? values.descriptionDoc
+              : null,
+        });
       }}
       className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-zinc-900"
     >
@@ -239,14 +266,11 @@ function TaskForm({
         value={values.title}
         onChange={(e) => setValues((v) => ({ ...v, title: e.target.value }))}
       />
-      <textarea
-        className="w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-zinc-900 dark:text-slate-100"
-        rows={2}
+      <LazyRichEditor
+        value={initialDoc}
         placeholder="Description (optional)"
-        value={values.description ?? ""}
-        onChange={(e) =>
-          setValues((v) => ({ ...v, description: e.target.value || null }))
-        }
+        onChange={(doc) => setValues((v) => ({ ...v, descriptionDoc: doc }))}
+        minHeightClass="min-h-[3.5rem]"
       />
       <div className="grid grid-cols-3 gap-2">
         <Input

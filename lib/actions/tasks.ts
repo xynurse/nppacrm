@@ -6,15 +6,34 @@ import { z } from "zod";
 import { requireSession } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { db } from "@/lib/db";
+import { isUndefinedColumnError } from "@/lib/db/errors";
 import {
   PROSPECT_PRIORITY_VALUES,
   eventCompanies,
   tasks,
 } from "@/lib/db/schema";
+import { prepareDocForStorage, richDocSchema } from "@/lib/tiptap/serialize";
+import type { RichDoc } from "@/lib/tiptap/types";
 
 type ActionResult<T = unknown> =
   | { ok: true; data?: T }
   | { ok: false; error: string };
+
+/**
+ * Mirrors `resolveBody` in the interactions action: a rich doc regenerates the
+ * plain-text column, and description-only callers (the watch agent, the
+ * proposal follow-up) keep working untouched.
+ */
+function resolveDescription(input: {
+  description?: string | null;
+  descriptionDoc?: RichDoc | null;
+}): { description: string | null; descriptionDoc: RichDoc | null } {
+  if (input.descriptionDoc === undefined) {
+    return { description: input.description ?? null, descriptionDoc: null };
+  }
+  const { doc, text } = prepareDocForStorage(input.descriptionDoc);
+  return { description: text, descriptionDoc: doc };
+}
 
 const dateSchema = z
   .union([
@@ -30,6 +49,7 @@ const createSchema = z
     eventCompanyId: z.union([z.uuid(), z.null()]).optional(),
     title: z.string().min(1).max(280),
     description: z.string().max(20000).nullable().optional(),
+    descriptionDoc: richDocSchema.nullable().optional(),
     dueDate: dateSchema,
     priority: z.enum(PROSPECT_PRIORITY_VALUES).optional(),
     assignedTo: z.union([z.uuid(), z.null()]).optional(),
@@ -63,19 +83,29 @@ export async function createTask(
   }
   if (!eventId) return { ok: false, error: "eventId is required" };
 
-  const [row] = await db
-    .insert(tasks)
-    .values({
-      eventId,
-      eventCompanyId: data.eventCompanyId ?? null,
-      title: data.title.trim(),
-      description: data.description ?? null,
-      dueDate: data.dueDate ? data.dueDate : null,
-      priority: data.priority ?? "medium",
-      assignedTo: data.assignedTo ?? session.user.id,
-      createdBy: session.user.id,
-    })
-    .returning({ id: tasks.id });
+  const { description, descriptionDoc } = resolveDescription(data);
+  const values = {
+    eventId,
+    eventCompanyId: data.eventCompanyId ?? null,
+    title: data.title.trim(),
+    description,
+    dueDate: data.dueDate ? data.dueDate : null,
+    priority: data.priority ?? "medium",
+    assignedTo: data.assignedTo ?? session.user.id,
+    createdBy: session.user.id,
+  };
+
+  let row: { id: string } | undefined;
+  try {
+    [row] = await db
+      .insert(tasks)
+      .values({ ...values, descriptionDoc })
+      .returning({ id: tasks.id });
+  } catch (err) {
+    // Pre-0011: keep the task, drop only the rich formatting.
+    if (!isUndefinedColumnError(err)) throw err;
+    [row] = await db.insert(tasks).values(values).returning({ id: tasks.id });
+  }
   if (!row) return { ok: false, error: "Failed to create task" };
 
   await recordAudit({
@@ -100,6 +130,7 @@ const updateSchema = z.object({
   id: z.uuid(),
   title: z.string().min(1).max(280).optional(),
   description: z.string().max(20000).nullable().optional(),
+  descriptionDoc: richDocSchema.nullable().optional(),
   dueDate: dateSchema,
   priority: z.enum(PROSPECT_PRIORITY_VALUES).optional(),
   assignedTo: z.union([z.uuid(), z.null()]).optional(),
@@ -113,12 +144,25 @@ export async function updateTask(raw: unknown): Promise<ActionResult> {
 
   const updates: Record<string, unknown> = { updatedAt: new Date() };
   if ("title" in patch && patch.title) updates.title = patch.title.trim();
-  if ("description" in patch) updates.description = patch.description ?? null;
+  if ("description" in patch || "descriptionDoc" in patch) {
+    const resolved = resolveDescription(patch);
+    updates.description = resolved.description;
+    if ("descriptionDoc" in patch) {
+      updates.descriptionDoc = resolved.descriptionDoc;
+    }
+  }
   if ("dueDate" in patch) updates.dueDate = patch.dueDate ? patch.dueDate : null;
   if ("priority" in patch && patch.priority) updates.priority = patch.priority;
   if ("assignedTo" in patch) updates.assignedTo = patch.assignedTo ?? null;
 
-  await db.update(tasks).set(updates).where(eq(tasks.id, id));
+  try {
+    await db.update(tasks).set(updates).where(eq(tasks.id, id));
+  } catch (err) {
+    if (!isUndefinedColumnError(err)) throw err;
+    const withoutDoc = { ...updates };
+    delete withoutDoc.descriptionDoc;
+    await db.update(tasks).set(withoutDoc).where(eq(tasks.id, id));
+  }
 
   await recordAudit({
     userId: session.user.id,

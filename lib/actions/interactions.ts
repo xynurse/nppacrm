@@ -6,11 +6,14 @@ import { z } from "zod";
 import { requireSession } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { db } from "@/lib/db";
+import { isUndefinedColumnError } from "@/lib/db/errors";
 import {
   INTERACTION_TYPE_VALUES,
   eventCompanies,
   interactions,
 } from "@/lib/db/schema";
+import { prepareDocForStorage, richDocSchema } from "@/lib/tiptap/serialize";
+import type { RichDoc } from "@/lib/tiptap/types";
 
 type ActionResult<T = unknown> =
   | { ok: true; data?: T }
@@ -21,9 +24,28 @@ const logSchema = z.object({
   type: z.enum(INTERACTION_TYPE_VALUES),
   subject: z.string().max(280).nullable().optional(),
   body: z.string().max(20000).nullable().optional(),
+  bodyDoc: richDocSchema.nullable().optional(),
   contactId: z.union([z.uuid(), z.null()]).optional(),
   occurredAt: z.union([z.date(), z.iso.datetime(), z.literal("")]).optional(),
 });
+
+/**
+ * Resolve what actually gets stored in the `body` / `body_doc` pair.
+ *
+ * A rich doc always wins and regenerates the plain-text mirror. Callers that
+ * only pass `body` — the AI quick-update, the watch agent, the proposal flow,
+ * the `/sync-outreach` skill — keep writing plain text exactly as before.
+ */
+function resolveBody(input: {
+  body?: string | null;
+  bodyDoc?: RichDoc | null;
+}): { body: string | null; bodyDoc: RichDoc | null } {
+  if (input.bodyDoc === undefined) {
+    return { body: input.body ?? null, bodyDoc: null };
+  }
+  const { doc, text } = prepareDocForStorage(input.bodyDoc);
+  return { body: text, bodyDoc: doc };
+}
 
 export async function logInteraction(
   raw: unknown,
@@ -52,19 +74,33 @@ export async function logInteraction(
         ? new Date(data.occurredAt)
         : new Date();
 
-  const [row] = await db
-    .insert(interactions)
-    .values({
-      eventId: ec.eventId,
-      eventCompanyId: data.eventCompanyId,
-      contactId: data.contactId ?? null,
-      userId: session.user.id,
-      type: data.type,
-      subject: data.subject ?? null,
-      body: data.body ?? null,
-      occurredAt,
-    })
-    .returning({ id: interactions.id });
+  const { body, bodyDoc } = resolveBody(data);
+  const values = {
+    eventId: ec.eventId,
+    eventCompanyId: data.eventCompanyId,
+    contactId: data.contactId ?? null,
+    userId: session.user.id,
+    type: data.type,
+    subject: data.subject ?? null,
+    body,
+    occurredAt,
+  };
+
+  let row: { id: string } | undefined;
+  try {
+    [row] = await db
+      .insert(interactions)
+      .values({ ...values, bodyDoc })
+      .returning({ id: interactions.id });
+  } catch (err) {
+    // Migration 0011 hasn't run yet — log the plain text so the user doesn't
+    // lose what they wrote. The formatting is dropped, not the content.
+    if (!isUndefinedColumnError(err)) throw err;
+    [row] = await db
+      .insert(interactions)
+      .values(values)
+      .returning({ id: interactions.id });
+  }
   if (!row) return { ok: false, error: "Failed to log interaction" };
 
   await db
@@ -107,6 +143,7 @@ const updateSchema = z.object({
   id: z.uuid(),
   subject: z.string().max(280).nullable().optional(),
   body: z.string().max(20000).nullable().optional(),
+  bodyDoc: richDocSchema.nullable().optional(),
   occurredAt: z.union([z.date(), z.iso.datetime()]).optional(),
 });
 
@@ -120,7 +157,11 @@ export async function updateInteraction(
 
   const updates: Record<string, unknown> = { updatedAt: new Date() };
   if ("subject" in patch) updates.subject = patch.subject ?? null;
-  if ("body" in patch) updates.body = patch.body ?? null;
+  if ("body" in patch || "bodyDoc" in patch) {
+    const resolved = resolveBody(patch);
+    updates.body = resolved.body;
+    if ("bodyDoc" in patch) updates.bodyDoc = resolved.bodyDoc;
+  }
   if (patch.occurredAt) {
     updates.occurredAt =
       patch.occurredAt instanceof Date
@@ -128,7 +169,17 @@ export async function updateInteraction(
         : new Date(patch.occurredAt);
   }
 
-  await db.update(interactions).set(updates).where(eq(interactions.id, id));
+  try {
+    await db.update(interactions).set(updates).where(eq(interactions.id, id));
+  } catch (err) {
+    if (!isUndefinedColumnError(err)) throw err;
+    const withoutDoc = { ...updates };
+    delete withoutDoc.bodyDoc;
+    await db
+      .update(interactions)
+      .set(withoutDoc)
+      .where(eq(interactions.id, id));
+  }
 
   await recordAudit({
     userId: session.user.id,

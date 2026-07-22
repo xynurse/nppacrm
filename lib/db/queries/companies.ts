@@ -17,6 +17,7 @@ import {
   sponsorshipTiers,
   users,
 } from "@/lib/db/schema";
+import type { RichDoc } from "@/lib/tiptap/types";
 import { compileFilter, compileSort } from "@/lib/views/compile";
 import type { FilterAst, SortSpec } from "@/lib/views/types";
 
@@ -70,6 +71,7 @@ export type EventCompanyRow = {
   companyWebsite: string | null;
   companyIndustry: string | null;
   companyHqLocation: string | null;
+  companyNotesDoc: RichDoc | null;
   status: typeof eventCompanies.$inferSelect.status;
   priority: typeof eventCompanies.$inferSelect.priority;
   proposedAmount: string | null;
@@ -125,6 +127,7 @@ export async function listEventCompanies(
       companyWebsite: companies.website,
       companyIndustry: companies.industry,
       companyHqLocation: companies.hqLocation,
+      companyNotesDoc: companies.notesDoc,
       status: eventCompanies.status,
       priority: eventCompanies.priority,
       proposedAmount: eventCompanies.proposedAmount,
@@ -180,6 +183,7 @@ export async function getEventCompany(
       companyWebsite: companies.website,
       companyIndustry: companies.industry,
       companyHqLocation: companies.hqLocation,
+      companyNotesDoc: companies.notesDoc,
       status: eventCompanies.status,
       priority: eventCompanies.priority,
       proposedAmount: eventCompanies.proposedAmount,

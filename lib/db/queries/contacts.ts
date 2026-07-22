@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, ilike, isNull, or, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { isUndefinedTableError } from "@/lib/db/errors";
 import {
   companies,
   contactEmailHistory,
@@ -61,13 +62,9 @@ export type ArchivedEmailRow = {
   changedByName: string | null;
 };
 
-/** Postgres "undefined_table" — the migration for this feature hasn't been
- * applied yet. Lets the drawer degrade gracefully in the deploy→migrate gap. */
-export function isUndefinedTableError(err: unknown): boolean {
-  const code = (err as { code?: string; cause?: { code?: string } })?.code
-    ?? (err as { cause?: { code?: string } })?.cause?.code;
-  return code === "42P01";
-}
+/** Re-exported for the existing importers of this module. The implementation
+ * now lives in `lib/db/errors` alongside the undefined-column guard. */
+export { isUndefinedTableError };
 
 /**
  * Archived (superseded) emails for every contact at a company, newest first.

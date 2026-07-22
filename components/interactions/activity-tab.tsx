@@ -14,10 +14,14 @@ import {
   deleteInteraction,
   logInteraction,
 } from "@/lib/actions/interactions";
+import { LazyRichEditor } from "@/components/tiptap/rich-editor-lazy";
+import { RichText } from "@/components/tiptap/rich-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { InteractionType } from "@/lib/db/schema";
 import type { InteractionRow } from "@/lib/db/queries/interactions";
+import { isEmptyDoc } from "@/lib/tiptap/serialize";
+import type { RichDoc } from "@/lib/tiptap/types";
 import { formatRelativeDate } from "@/lib/format";
 
 const TYPE_META: Record<
@@ -116,10 +120,12 @@ export function ActivityTab({
                     {meta.label} · {i.userName ?? "system"}
                     {i.contactName ? ` · with ${i.contactName}` : ""}
                   </div>
-                  {i.body ? (
-                    <p className="mt-1 whitespace-pre-wrap text-slate-700 dark:text-slate-200">
-                      {i.body}
-                    </p>
+                  {i.bodyDoc || i.body ? (
+                    <RichText
+                      doc={i.bodyDoc}
+                      fallback={i.body}
+                      className="mt-1 text-slate-700 dark:text-slate-200"
+                    />
                   ) : null}
                 </div>
                 {canDelete ? (
@@ -155,21 +161,27 @@ function QuickLogForm({
   pending,
 }: {
   type: InteractionType;
-  onSubmit: (values: { subject: string | null; body: string | null }) => void;
+  onSubmit: (values: {
+    subject: string | null;
+    bodyDoc: RichDoc | null;
+  }) => void;
   onCancel: () => void;
   pending: boolean;
 }) {
   const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
+  const [doc, setDoc] = useState<RichDoc | null>(null);
+
+  const submit = () =>
+    onSubmit({
+      subject: subject.trim() || null,
+      bodyDoc: doc && !isEmptyDoc(doc) ? doc : null,
+    });
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit({
-          subject: subject.trim() || null,
-          body: body.trim() || null,
-        });
+        submit();
       }}
       className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-zinc-900"
     >
@@ -180,21 +192,11 @@ function QuickLogForm({
         onChange={(e) => setSubject(e.target.value)}
         autoFocus
       />
-      <textarea
-        className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-zinc-900 dark:text-slate-100"
-        rows={3}
+      <LazyRichEditor
         placeholder="What happened? (Cmd+Enter to log)"
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-            e.preventDefault();
-            onSubmit({
-              subject: subject.trim() || null,
-              body: body.trim() || null,
-            });
-          }
-        }}
+        onChange={setDoc}
+        onSubmit={submit}
+        minHeightClass="min-h-[4.5rem]"
       />
       <div className="flex justify-end gap-2">
         <Button

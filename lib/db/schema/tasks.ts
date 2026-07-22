@@ -2,11 +2,13 @@ import { sql } from "drizzle-orm";
 import {
   date,
   index,
+  jsonb,
   pgTable,
   text,
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { RichDoc } from "@/lib/tiptap/types";
 import { prospectPriority } from "./enums";
 import { eventCompanies } from "./event-companies";
 import { events } from "./events";
@@ -24,7 +26,9 @@ export const tasks = pgTable(
       { onDelete: "cascade" },
     ),
     title: text("title").notNull(),
+    /** Plain-text mirror of `descriptionDoc`, kept in sync on every write. */
     description: text("description"),
+    descriptionDoc: jsonb("description_doc").$type<RichDoc | null>(),
     dueDate: date("due_date"),
     priority: prospectPriority("priority").notNull().default("medium"),
     assignedTo: uuid("assigned_to").references(() => users.id, {

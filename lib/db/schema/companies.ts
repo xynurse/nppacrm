@@ -7,6 +7,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { RichDoc } from "@/lib/tiptap/types";
 
 export const companies = pgTable(
   "companies",
@@ -19,7 +20,7 @@ export const companies = pgTable(
     hqLocation: text("hq_location"),
     logoUrl: text("logo_url"),
     shortDescription: text("short_description"),
-    notesDoc: jsonb("notes_doc").$type<Record<string, unknown> | null>(),
+    notesDoc: jsonb("notes_doc").$type<RichDoc | null>(),
     tagsCache: text("tags_cache")
       .array()
       .notNull()
