@@ -8,7 +8,46 @@
 ---
 
 ## Last updated
-2026-07-20 — **UI retheme session.** Re-skinned the app from the clinical
+2026-07-22 — **Chunk 15a: TipTap rich notes (editor foundation).** Rich text
+for interaction bodies, task descriptions, and long-form company notes, behind
+one shared lazy-loaded TipTap editor.
+
+**Shipped (commit `81e6811`, on `origin/main`):**
+- New deps: `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`,
+  `@tiptap/extension-placeholder` (v3.28). StarterKit v3 already bundles Link
+  and Underline — no separate packages needed.
+- `lib/tiptap/types.ts` + `serialize.ts` — DOM-free doc ↔ plain-text
+  conversion, `richDocSchema` zod validation (200 kB cap), `safeHref` protocol
+  allowlist.
+- `components/tiptap/` — `rich-editor.tsx` (toolbar, placeholder, Cmd+Enter),
+  `autosave-rich-editor.tsx` (debounced, coalesces in-flight edits),
+  `rich-text.tsx` (recursive read-only renderer, **no client JS**),
+  `rich-editor-lazy.tsx` (`next/dynamic` wrapper).
+- Migration **0011** — `interactions.body_doc`, `tasks.description_doc` jsonb.
+  Pure `ADD COLUMN`, nothing rewritten.
+- Wired into `activity-tab.tsx`, `tasks-tab.tsx`, and a **new Notes tab** in
+  the company drawer (`lib/actions/notes.ts` → `companies.notes_doc`).
+- `lib/db/errors.ts` — shared `42P01`/`42703` guards; `queries/contacts.ts`
+  now re-exports `isUndefinedTableError` from there.
+- typecheck + lint + build all green. `/companies` 204 → **212 kB**.
+
+**⚠️ Verification gap (second session running):** the editor was **never
+rendered in a browser** — every surface it touches is behind auth and there
+were still no admin credentials. The dev server boots clean and the login page
+renders with no console errors, but that proves nothing about the editor. The
+pure serializer logic *was* tested (a throwaway `tsx` script exercising
+round-trips, empty docs, and `safeHref`; all pass) — and it caught a real bug:
+the naive `plainTextToDoc` turned each line into its own paragraph, which would
+have double-spaced the plain-text mirror of every legacy body on first edit.
+Fixed to map single newlines to hard breaks, verified byte-identical
+round-trips. **Those checks are not in the repo** — there is no unit-test
+runner (Playwright only). Adding vitest would need a dep decision.
+
+**To unblock local verification:** `.env.local` has `AUTH_URL=http://localhost:3000`
+but `pnpm dev` serves :3001, so `/` redirects into a *different* app. Either
+change it to `:3001` or hit `http://localhost:3001/login` directly.
+
+Prior — 2026-07-20 — **UI retheme session.** Re-skinned the app from the clinical
 medical-teal/heartbeat identity to a restrained **indigo-on-zinc "modern SaaS"**
 look (Linear/Vercel lineage), per the user's ask for "more elegant, less
 medical/AI, more startup." User picked the direction (indigo on cool zinc) and
@@ -65,15 +104,30 @@ Prior session (2026-07-08): Chunk C (natural-language AI quick update).
 all code is committed + pushed; docs updated. Next session should verify
 0010 once applied, then resume the numbered backlog at Chunk 15 (TipTap).
 
-## ⚠️ ACTION REQUIRED — apply migration 0010
-`lib/db/migrations/0010_opposite_lady_vermin.sql` (contact email history)
-is committed but **NOT yet applied to prod**. Run it manually:
-`pnpm db:migrate` (or paste the SQL into the Neon console). The code is
-written to degrade gracefully until then (email history shows empty,
-archiving no-ops — verified against prod, 42P01 guarded), so deploying
-before migrating is safe. Feature goes fully live once the table exists.
+## ⚠️ ACTION REQUIRED — apply migrations 0010 + 0011
+Both are committed but **NOT yet applied to prod**. One command does both:
+
+```bash
+pnpm db:migrate
+```
+
+Claude cannot run this — `.env.local`'s `DATABASE_URL` points at the prod Neon
+branch and CLAUDE.md forbids migrating prod from inside Claude Code.
+
+- `0010_opposite_lady_vermin.sql` — `contact_email_history` (contact email
+  archive). Guarded on `42P01`: history shows empty, archiving no-ops.
+- `0011_aromatic_firebird.sql` — `interactions.body_doc` +
+  `tasks.description_doc` jsonb. Guarded on `42703`: rich text saves as plain
+  text, formatting dropped but **content never lost**.
+
+Both are additive and safe to apply at any time; deploying ahead of them is
+safe by design. Verify after applying: log an interaction with **bold text and
+a bullet list**, reload the drawer, confirm the formatting survives (that
+proves `body_doc` is being written and read, not just the mirror).
 
 ## Current git HEAD
+`81e6811` chunk 15a: TipTap rich notes (editor foundation) — plus this docs
+commit on top. (Prior HEAD: `1229900` retheme.) Prior notable:
 `1229900` feat: retheme UI — indigo/zinc "modern SaaS" identity, drop medical
 teal — plus this docs commit on top. (Prior notable HEAD:
 `a0cca97` bounced count on the dashboard funnel.)
@@ -397,6 +451,14 @@ column). typecheck + lint + build all green.
 
 | Decision | Why |
 |---|---|
+| Rich text = **additive `*_doc` jsonb + plain-text mirror**, NOT `text`→`jsonb` conversion | Five callers write `body`/`description` as plain strings (AI quick-update, watch agent, proposal flow, `/sync-outreach`, batch scripts) and AI prompts + CSV export read them. Converting would force every one of them to emit ProseMirror JSON. The mirror keeps them all untouched, avoids rewriting 65+ prod rows, and reverts by dropping one column. |
+| Plain-text mirror is derived **server-side** on every write | The client can't be trusted to keep them consistent, and it means a caller passing only `body` still works verbatim |
+| `plainTextToDoc` maps single newlines → **hard breaks**, blank lines → paragraphs | Makes it the exact inverse of `docToPlainText`. The obvious one-line-per-paragraph mapping double-spaced the mirror of every legacy body the first time someone edited it — caught by a round-trip check |
+| Read-only rendering = hand-written recursive renderer, not TipTap in `editable:false` | Activity feeds render many docs at once; the renderer costs zero client JS while a TipTap instance would load ProseMirror on every read |
+| Editor loaded via `next/dynamic`, never imported directly | `/companies` was already 44 kB over budget; this kept the ~90 kB runtime off first load (204 → 212 kB) |
+| Company notes → the **existing** `companies.notes_doc`, no new column | It has been in the schema unused since migration 0001; notes on the company (not the event prospect) also persist across events |
+| Guard reads AND writes on `42703` | Vercel auto-deploys from `main` but migrations are manual, so code always lands before schema. A write guard means a task logged in that gap keeps its content and loses only formatting |
+| Chunk 15 split into 15a (editor) / 15b (`@` mentions, `/` commands) | Mentions need a suggestion plugin, user-search endpoint, node attrs, and renderer support — its own session, and the real prerequisite for chunk 20 |
 | Retheme = **indigo on cool zinc** (Linear/Vercel), not blue or warm-neutral | User picked it; indigo+zinc is the furthest from the clinical medical look and reads as modern startup SaaS |
 | Retheme via brand-`*` palette + semantic tokens, not per-component rewrites | Everything routes through `--color-brand-*` and `--accent`/`--surface`/`--ink`, so one palette swap cascades app-wide at low risk |
 | Kept all functional status colors (stage pills, Bounced red, Deferred violet) | Those encode meaning, not brand; recoloring them would break scannability. Only the brand hue + neutrals changed |
@@ -427,21 +489,33 @@ column). typecheck + lint + build all green.
 
 Work through these in order. One chunk per session.
 
-> **Chunk C is DONE (commit `fdddf09`).** Next up is Chunk 15.
+> **Chunk 15a is DONE (commit `81e6811`).** Next up is 15b.
 
-### 1. Chunk 15 — TipTap rich notes ← START HERE
-Replaces `interactions.body` and `tasks.description` (plain text) with TipTap
-jsonb block editor. Needs DB migration.
+### 0. First, apply + verify migrations 0010/0011 ← DO THIS BEFORE CODING
+See ACTION REQUIRED at the top. Until 0011 lands, rich text silently saves as
+plain text, so any 15b work would be verified against a degraded path.
+
+### 1. Chunk 15b — slash commands + `@` mentions ← START HERE
+The editor foundation is in place (`components/tiptap/`); this adds the two
+interactive extensions.
 
 **What it involves:**
-- `pnpm add @tiptap/react @tiptap/starter-kit @tiptap/extension-placeholder`
-- Migration: change `interactions.body` and `tasks.description` from `text` to `jsonb`
-- `components/tiptap/rich-editor.tsx` — shared editor component with autosave on debounce
-- Wire into `ActivityTab` (interaction logging) and `TasksTab` (task description)
-- Add `companies.notesDoc` jsonb column for long-form company notes (new column, separate migration or same)
-- Slash commands (`/`) + `@` mention extension (needed for chunk 20 notifications)
+- `pnpm add @tiptap/extension-mention @tiptap/suggestion`
+- `/` slash-command menu — block insert (heading, list, quote, rule). Renders
+  through TipTap's suggestion plugin; reuse the existing `cmdk` styling so it
+  matches the ⌘K palette.
+- `@` mention extension — needs a user-search source (there is no users
+  endpoint yet; `lib/db/queries/users.ts` has the list query). Store `userId`
+  in the node attrs, not just the display name, or chunk 20 can't resolve who
+  was mentioned when a name changes.
+- **Add a `mention` case to `components/tiptap/rich-text.tsx`** — the read-only
+  renderer falls through to rendering child content for unknown node types, so
+  an unhandled mention would render as bare text with no styling.
+- `docToPlainText` in `lib/tiptap/serialize.ts` needs a mention case too
+  (should emit `@Name`), or mentions vanish from the plain-text mirror that
+  AI prompts and CSV export read.
 
-**Prerequisite for:** Chunk 20 (notifications needs `@` mentions)
+**Prerequisite for:** Chunk 20 (notification triggers on `@` mentions)
 
 ### 2. Chunk 20 — Notification center
 Bell icon in top bar, `notifications` table, in-app alerts for:
@@ -507,5 +581,8 @@ git log --oneline -8
 | 0008 | ✅ | proposal fields on event_companies |
 | 0009 | ✅ | agent_schedules, agent_runs, company_suggestions (⚠️ its snapshot was never committed; `0010_snapshot.json` re-baselines the full schema) |
 | 0010 | ❌ **apply manually** | `contact_email_history` (contact email archive). SQL trimmed to only this table; safe to apply — see ACTION REQUIRED at top. |
+| 0011 | ❌ **apply manually** | `interactions.body_doc` + `tasks.description_doc` jsonb (TipTap). Two `ADD COLUMN`s, no data conversion. |
 
-**Next migration:** Chunk 15 (TipTap) will be 0011 — `interactions.body` + `tasks.description` → jsonb, `companies.notes_doc` jsonb column. (0010 is taken by contact email history.)
+**Next migration:** 0012. Chunk 15b (`@` mentions) needs **no** migration —
+mention nodes live inside the existing `*_doc` jsonb. Chunk 20 (notifications)
+will be the next one that does.

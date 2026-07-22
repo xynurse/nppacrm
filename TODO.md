@@ -3,7 +3,22 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped commit: `1229900` (UI retheme → indigo/zinc modern-SaaS identity, 2026-07-20) — deployed at `nppacrm.vercel.app`.
+Latest shipped commit: `81e6811` (chunk 15a — TipTap rich notes, 2026-07-22) — deployed at `nppacrm.vercel.app`.
+
+## Shipped 2026-07-22 (chunk 15a — TipTap rich notes)
+
+- [x] Shared lazy-loaded TipTap editor + zero-JS read-only renderer (`components/tiptap/`) — `81e6811`
+- [x] Rich interaction bodies + task descriptions via additive `body_doc` / `description_doc` jsonb (migration 0011), plain-text mirror retained in the existing columns
+- [x] Company **Notes** tab in the drawer, autosaving to the long-dormant `companies.notes_doc` (no migration needed)
+- [x] `42703` guards so the deploy→migrate gap degrades to plain text instead of 500ing
+  - [ ] **Apply migration 0011** — `pnpm db:migrate` (also applies the still-pending 0010). **Next session: verify.**
+- [ ] _(follow-up)_ Visually verify the editor once a login is available — never rendered in a browser this session.
+- [ ] _(follow-up)_ No unit-test runner in the repo, so the serializer round-trip checks live only in a scratchpad script. Worth adding vitest (needs dep approval) and committing them — `plainTextToDoc`/`docToPlainText` must stay exact inverses.
+
+### Chunk 15b — slash commands + `@` mentions (next)
+- [ ] `/` slash-command menu in the editor
+- [ ] `@` mention extension + user-search endpoint + mention rendering in `rich-text.tsx`
+- [ ] **Prerequisite for chunk 20** (notification triggers)
 
 ## Shipped 2026-07-20 (UI retheme)
 
@@ -227,12 +242,13 @@ Listed in approximate decreasing-leverage order.
   - Watch monitors existing prospects for news / leadership / fundraising
     signals via Valyu, surfaces as enrichment suggestions
 
-- [ ] **Chunk 15 — TipTap rich notes**
-  - Replace `interactions.body`, `tasks.description` text columns with
-    jsonb TipTap docs
-  - Add `companies.notesDoc` for long-form notes
-  - Slash commands, `@` mentions (powers chunk 20), `#` linked records,
-    autosave on debounce
+- [x] **Chunk 15a — TipTap rich notes (editor foundation)** _(2026-07-22, `81e6811`)_
+  - Shipped as **additive** `body_doc`/`description_doc` jsonb + plain-text
+    mirror rather than converting the text columns — see CHANGELOG for why.
+  - `companies.notes_doc` wired up (it already existed since 0001).
+  - Autosave on debounce for notes; Cmd+Enter submit for interaction logs.
+- [ ] **Chunk 15b — slash commands + `@` mentions**
+  - `/` command menu, `@` mention extension (powers chunk 20), `#` linked records
 
 - [ ] **Chunk 16 — Calendar + Gallery views**
   - New view kinds in the existing saved-views machinery

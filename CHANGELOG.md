@@ -2,6 +2,48 @@
 
 ## Active build (committed to main)
 
+### Chunk 15a — TipTap rich notes (editor foundation) _(2026-07-22, commit `81e6811`)_
+Rich text for interaction bodies, task descriptions, and long-form company
+notes, behind one shared lazy-loaded TipTap editor.
+
+**Storage — additive, not a conversion.** The original chunk-15 sketch called
+for changing `interactions.body` and `tasks.description` from `text` to `jsonb`.
+Shipped instead: new `body_doc` / `description_doc` **jsonb** columns
+(migration **0011**) holding the rich document, with the existing text columns
+kept as a **server-derived plain-text mirror**. Rationale: five callers write
+those columns as plain strings (AI quick-update, watch agent, proposal flow,
+plus the `/sync-outreach` skill and the throwaway batch scripts run against
+prod), and AI prompts + CSV export read them. The mirror leaves all of that
+untouched, avoids rewriting 65+ existing prod interactions, and makes the whole
+feature revertible by dropping one column.
+
+- **`lib/tiptap/types.ts` + `serialize.ts`** — DOM-free doc ↔ plain-text
+  conversion shared by client and server, zod validation (`richDocSchema`,
+  200 kB cap), and a link-protocol allowlist. `plainTextToDoc` maps single
+  newlines to **hard breaks** (not new paragraphs) so lifting a legacy row into
+  the editor and saving it back leaves the mirror byte-identical — the naive
+  mapping silently double-spaced every legacy body on first edit.
+- **`components/tiptap/`** — `rich-editor.tsx` (StarterKit + placeholder,
+  formatting toolbar, Cmd+Enter submit), `autosave-rich-editor.tsx` (debounced
+  save with in-flight coalescing, for notes), `rich-text.tsx` (plain recursive
+  read-only renderer — reading costs **no client JS**), and `rich-editor-lazy.tsx`.
+- **Bundle** — the editor is behind `next/dynamic`, so `/companies` went
+  204 → **212 kB** rather than absorbing the ~90 kB ProseMirror runtime.
+- **Company Notes tab** in the drawer, autosaving to `companies.notes_doc` —
+  which has existed unused since migration 0001, so this needed **no migration**.
+  Notes live on the company, so they persist across events.
+- **Deploy→migrate gap** — reads and writes guard on Postgres `42703`
+  (new `lib/db/errors.ts`), degrading to plain text instead of 500ing. Mirrors
+  the existing `42P01` guard from contact email history. A task or interaction
+  logged before 0011 keeps its content and loses only formatting.
+- Task rows now render their description; it moved out of the row `<button>`
+  because descriptions can contain links.
+- typecheck + lint + build all green. **Not visually verified** — the editor is
+  behind auth and no login was available this session.
+
+**Deferred to chunk 15b:** `/` slash commands and `@` mentions (the actual
+prerequisite for chunk 20's notification triggers).
+
 ### UI retheme — indigo/zinc "modern SaaS" identity _(2026-07-20, commit `1229900`)_
 Re-skinned the app away from the clinical medical-teal/heartbeat look toward a
 restrained indigo-on-zinc palette (Linear/Vercel lineage). Token-driven, so the
