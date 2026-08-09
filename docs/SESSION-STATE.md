@@ -8,7 +8,22 @@
 ---
 
 ## Last updated
-2026-07-22 — **Chunk 15a: TipTap rich notes (editor foundation).** Rich text
+2026-08-09 — **Migrations 0010 + 0011 verified already applied to prod.** No
+migration was run this session. A read-only schema check against the prod Neon
+branch found `contact_email_history` present and `interactions.body_doc` +
+`tasks.description_doc` both `jsonb` — and both migrations are recorded in
+drizzle's `__drizzle_migrations` log, so `pnpm db:migrate` is now a clean
+no-op. (The log holds 11 rows for 12 journal entries; a hash match showed the
+single unlogged entry is **0009**, a harmless leftover from its re-baseline —
+it will never re-run because 0010/0011 carry later timestamps and are logged.)
+The serializer round-trip that reads/writes those columns was re-checked with a
+throwaway pure-logic script (rich→text mirror, legacy plain-text byte-identical
+inverse, empty-doc nulling, `safeHref` allowlist) — 12/12 pass. **Still not done:**
+the editor has never been exercised in a real browser (needs an admin login and
+would write a test interaction to prod). `interactions_with_doc = 0` /
+`tasks_with_doc = 0` — no rich doc has been written in prod yet.
+
+Prior — 2026-07-22 — **Chunk 15a: TipTap rich notes (editor foundation).** Rich text
 for interaction bodies, task descriptions, and long-form company notes, behind
 one shared lazy-loaded TipTap editor.
 
@@ -104,26 +119,24 @@ Prior session (2026-07-08): Chunk C (natural-language AI quick update).
 all code is committed + pushed; docs updated. Next session should verify
 0010 once applied, then resume the numbered backlog at Chunk 15 (TipTap).
 
-## ⚠️ ACTION REQUIRED — apply migrations 0010 + 0011
-Both are committed but **NOT yet applied to prod**. One command does both:
-
-```bash
-pnpm db:migrate
-```
-
-Claude cannot run this — `.env.local`'s `DATABASE_URL` points at the prod Neon
-branch and CLAUDE.md forbids migrating prod from inside Claude Code.
-
-- `0010_opposite_lady_vermin.sql` — `contact_email_history` (contact email
-  archive). Guarded on `42P01`: history shows empty, archiving no-ops.
+## ✅ RESOLVED — migrations 0010 + 0011 are applied (verified 2026-08-09)
+Both are live in prod and logged in drizzle; `pnpm db:migrate` is a clean no-op.
+Confirmed read-only against the prod Neon branch:
+- `0010_opposite_lady_vermin.sql` — `contact_email_history` table present
+  (`id, contact_id, email, changed_by, archived_at, created_at`).
 - `0011_aromatic_firebird.sql` — `interactions.body_doc` +
-  `tasks.description_doc` jsonb. Guarded on `42703`: rich text saves as plain
-  text, formatting dropped but **content never lost**.
+  `tasks.description_doc` both present, type `jsonb`.
 
-Both are additive and safe to apply at any time; deploying ahead of them is
-safe by design. Verify after applying: log an interaction with **bold text and
-a bullet list**, reload the drawer, confirm the formatting survives (that
-proves `body_doc` is being written and read, not just the mirror).
+The `42P01`/`42703` guards therefore never fire now — but they stay in the code
+as insurance for the deploy→migrate gap on any *future* migration.
+
+**Remaining verification (not blocking, needs a login):** the editor still has
+not been exercised in a browser. To close it: log in, log an interaction with
+**bold text and a bullet list**, reload the drawer, confirm the formatting
+survives — that proves `body_doc` is written *and* read, not just the mirror.
+Note this writes a real (test) interaction to the prod DB, since `.env.local`
+points at prod. No rich doc has been written in prod yet
+(`interactions_with_doc = 0`, `tasks_with_doc = 0`).
 
 ## Current git HEAD
 `81e6811` chunk 15a: TipTap rich notes (editor foundation) — plus this docs
@@ -491,9 +504,11 @@ Work through these in order. One chunk per session.
 
 > **Chunk 15a is DONE (commit `81e6811`).** Next up is 15b.
 
-### 0. First, apply + verify migrations 0010/0011 ← DO THIS BEFORE CODING
-See ACTION REQUIRED at the top. Until 0011 lands, rich text silently saves as
-plain text, so any 15b work would be verified against a degraded path.
+### 0. Migrations 0010/0011 — DONE (verified applied 2026-08-09)
+Both are live in prod and logged; `pnpm db:migrate` is a no-op. Rich text is
+written and read as jsonb, so 15b can be built against the real path. The only
+open item is the in-browser round-trip (needs a login) — see RESOLVED note up
+top; it's optional, not a prerequisite for 15b.
 
 ### 1. Chunk 15b — slash commands + `@` mentions ← START HERE
 The editor foundation is in place (`components/tiptap/`); this adds the two
@@ -580,8 +595,8 @@ git log --oneline -8
 | 0007 | ✅ | company_benefits |
 | 0008 | ✅ | proposal fields on event_companies |
 | 0009 | ✅ | agent_schedules, agent_runs, company_suggestions (⚠️ its snapshot was never committed; `0010_snapshot.json` re-baselines the full schema) |
-| 0010 | ❌ **apply manually** | `contact_email_history` (contact email archive). SQL trimmed to only this table; safe to apply — see ACTION REQUIRED at top. |
-| 0011 | ❌ **apply manually** | `interactions.body_doc` + `tasks.description_doc` jsonb (TipTap). Two `ADD COLUMN`s, no data conversion. |
+| 0010 | ✅ (verified 2026-08-09) | `contact_email_history` (contact email archive). Table present in prod + logged in drizzle. |
+| 0011 | ✅ (verified 2026-08-09) | `interactions.body_doc` + `tasks.description_doc` jsonb (TipTap). Both columns present in prod + logged. |
 
 **Next migration:** 0012. Chunk 15b (`@` mentions) needs **no** migration —
 mention nodes live inside the existing `*_doc` jsonb. Chunk 20 (notifications)

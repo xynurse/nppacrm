@@ -11,7 +11,7 @@ Latest shipped commit: `81e6811` (chunk 15a — TipTap rich notes, 2026-07-22) �
 - [x] Rich interaction bodies + task descriptions via additive `body_doc` / `description_doc` jsonb (migration 0011), plain-text mirror retained in the existing columns
 - [x] Company **Notes** tab in the drawer, autosaving to the long-dormant `companies.notes_doc` (no migration needed)
 - [x] `42703` guards so the deploy→migrate gap degrades to plain text instead of 500ing
-  - [ ] **Apply migration 0011** — `pnpm db:migrate` (also applies the still-pending 0010). **Next session: verify.**
+  - [x] **Migration 0011 applied + verified** (2026-08-09) — already live in prod & logged in drizzle; `db:migrate` is a no-op. Serializer round-trip re-checked (12/12 pass).
 - [ ] _(follow-up)_ Visually verify the editor once a login is available — never rendered in a browser this session.
 - [ ] _(follow-up)_ No unit-test runner in the repo, so the serializer round-trip checks live only in a scratchpad script. Worth adding vitest (needs dep approval) and committing them — `plainTextToDoc`/`docToPlainText` must stay exact inverses.
 
@@ -39,9 +39,8 @@ Platform UX pass:
 
 Contact email history:
 - [x] Contact email-history capture + archive (drawer "Previous emails") — `e353f9c`
-  - [ ] **Apply migration 0010** (`contact_email_history`) to prod — `pnpm db:migrate`
-    (blocked: user couldn't run it this session). Code degrades gracefully
-    until applied; feature is live once the table exists. **Next session: verify.**
+  - [x] **Migration 0010 applied + verified** (2026-08-09) — `contact_email_history`
+    table present in prod & logged in drizzle. Feature is live.
 
 Bounced-email tracking:
 - [x] `BOUNCED` tag convention + red **Bounced** badge (table / pipeline / drawer) — `cdfc16e`
