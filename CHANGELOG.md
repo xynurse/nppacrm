@@ -2,6 +2,37 @@
 
 ## Active build (committed to main)
 
+### Chunk 15b — TipTap slash commands + `@` mentions _(2026-08-09, commit `9bf136e`)_
+The two interactive extensions on top of the 15a editor foundation, both driven
+by TipTap's Suggestion plugin and rendered through **one shared caret-positioned
+popup** — no `tippy.js`, positioned via `view.coordsAtPos`, so no extra runtime
+dep and nothing added to the initial bundle.
+
+- **New deps:** `@tiptap/extension-mention` + `@tiptap/suggestion` (v3.29,
+  matching the existing TipTap v3).
+- **`components/tiptap/suggestion-popup.tsx`** — shared keyboard-navigable list
+  (↑/↓/Enter/Esc), styled like the ⌘K palette, plus a lifecycle bridge that
+  mounts a React root at the caret and maps raw suggestion items to rows. Reused
+  by both extensions.
+- **`components/tiptap/slash-command.ts`** — `/` menu inserting **existing**
+  StarterKit blocks (Heading 1–3, bullet/numbered list, quote, code block,
+  divider), so the read-only renderer needed no new block cases. Fires only at
+  the start of a paragraph, so a stray `/` mid-word (URLs, "and/or") is ignored.
+- **`components/tiptap/mention.ts`** — `@` mentions storing `{ id, label }`
+  where `id` is the user id (Chunk 20 resolves notifications from it, so it must
+  survive a name change). Users are fetched once and filtered client-side.
+- **`lib/actions/mentions.ts`** — `listMentionUsers()` server action (active
+  users, read-only, no audit).
+- **Read + mirror paths:** `rich-text.tsx` gains a `mention` case (styled
+  `@Name` chip — the renderer previously fell through to bare text); `docToPlainText`
+  emits `@label` so mentions survive into the plain-text mirror that AI prompts
+  and CSV export read.
+- **No migration** — mention nodes live inside the existing `*_doc` jsonb.
+- typecheck + lint + build green; serializer round-trip re-verified. `/companies`
+  first load **unchanged at 212 kB** (extensions stayed in the dynamic chunk).
+  **Not yet browser-verified** — the editor is behind auth and no login was
+  available this session.
+
 ### Chunk 15a — TipTap rich notes (editor foundation) _(2026-07-22, commit `81e6811`)_
 Rich text for interaction bodies, task descriptions, and long-form company
 notes, behind one shared lazy-loaded TipTap editor.

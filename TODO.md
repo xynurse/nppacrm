@@ -3,7 +3,7 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped commit: `81e6811` (chunk 15a — TipTap rich notes, 2026-07-22) — deployed at `nppacrm.vercel.app`.
+Latest shipped commit: `9bf136e` (chunk 15b — TipTap slash commands + `@` mentions, 2026-08-09) — deployed at `nppacrm.vercel.app`.
 
 ## Shipped 2026-07-22 (chunk 15a — TipTap rich notes)
 
@@ -15,10 +15,13 @@ Latest shipped commit: `81e6811` (chunk 15a — TipTap rich notes, 2026-07-22) �
 - [ ] _(follow-up)_ Visually verify the editor once a login is available — never rendered in a browser this session.
 - [ ] _(follow-up)_ No unit-test runner in the repo, so the serializer round-trip checks live only in a scratchpad script. Worth adding vitest (needs dep approval) and committing them — `plainTextToDoc`/`docToPlainText` must stay exact inverses.
 
-### Chunk 15b — slash commands + `@` mentions (next)
-- [ ] `/` slash-command menu in the editor
-- [ ] `@` mention extension + user-search endpoint + mention rendering in `rich-text.tsx`
-- [ ] **Prerequisite for chunk 20** (notification triggers)
+### Chunk 15b — slash commands + `@` mentions — SHIPPED 2026-08-09 (`9bf136e`)
+- [x] `/` slash-command menu in the editor (existing StarterKit blocks; start-of-paragraph guard)
+- [x] `@` mention extension storing `{ id, label }` + `listMentionUsers()` server action + `mention` case in `rich-text.tsx`
+- [x] Plain-text mirror emits `@label` (`docToPlainText`) so mentions reach AI/CSV paths
+- [x] Shared caret-positioned suggestion popup (no tippy.js); `/companies` first load unchanged (212 kB)
+- [ ] _(follow-up)_ Visually verify `/` + `@` in a browser once a login is available — never rendered this session.
+- [x] **Unblocks chunk 20** (notification triggers on `@` mentions)
 
 ## Shipped 2026-07-20 (UI retheme)
 

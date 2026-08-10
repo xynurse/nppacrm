@@ -8,7 +8,46 @@
 ---
 
 ## Last updated
-2026-08-09 — **Migrations 0010 + 0011 verified already applied to prod.** No
+2026-08-09 — **Chunk 15b: TipTap slash commands + `@` mentions (SHIPPED, commit
+`9bf136e`).** The two interactive extensions on top of the 15a editor, both on
+TipTap's Suggestion plugin and rendered through **one shared caret-positioned
+popup** — no `tippy.js` (positioned via `view.coordsAtPos`), so nothing added to
+the initial bundle.
+
+**Shipped (on `origin/main`):**
+- Deps: `@tiptap/extension-mention` + `@tiptap/suggestion` (v3.29). **User
+  approved the dep add.**
+- `components/tiptap/suggestion-popup.tsx` — shared keyboard-nav list
+  (↑/↓/Enter/Esc, ⌘K-palette styling) + a lifecycle bridge mounting a React root
+  at the caret. Reused by `/` and `@`.
+- `components/tiptap/slash-command.ts` — `/` menu inserting existing StarterKit
+  blocks (H1–3, bullet/numbered list, quote, code block, divider). `allow`
+  guard: fires only when `parentOffset <= 1` in a paragraph, so a stray `/`
+  mid-word never pops the menu — **no renderer changes needed** (all blocks
+  already handled).
+- `components/tiptap/mention.ts` — `@` mentions storing `{ id, label }`; `id` is
+  the user id. Users fetched once via `listMentionUsers()` and filtered
+  client-side (small team, no per-keystroke round trip).
+- `lib/actions/mentions.ts` — `listMentionUsers()` (active users, read-only).
+- `rich-text.tsx` gained a `mention` case (styled `@Name` chip); `serialize.ts`
+  `docToPlainText` emits `@label` so mentions survive the plain-text mirror.
+- **No migration** (mention nodes live in the existing `*_doc` jsonb).
+- typecheck + lint + build green; serializer round-trip re-verified (mentions →
+  `@label`, id fallback, non-empty). `/companies` first load **unchanged at
+  212 kB** — extensions rode into the dynamic chunk.
+
+**⚠️ Verification gap (same as 15a):** the `/` and `@` menus were **never
+exercised in a browser** — the editor is behind auth and no login was available.
+The serializer + build are proven; the interactive popups (caret positioning,
+keyboard nav, the mention user fetch) are not. To close it: log in, open a
+drawer note, type `/` (expect the block menu) and `@` (expect the user list),
+insert one of each, save + reload, confirm both survive. Writes a test row to
+prod (`.env.local` points at prod).
+
+**Chunk 20 (notification center) is now unblocked** — `@` mentions store the
+user id in node attrs, which is exactly what notification triggers resolve.
+
+Prior — 2026-08-09 — **Migrations 0010 + 0011 verified already applied to prod.** No
 migration was run this session. A read-only schema check against the prod Neon
 branch found `contact_email_history` present and `interactions.body_doc` +
 `tasks.description_doc` both `jsonb` — and both migrations are recorded in
@@ -139,8 +178,9 @@ points at prod. No rich doc has been written in prod yet
 (`interactions_with_doc = 0`, `tasks_with_doc = 0`).
 
 ## Current git HEAD
-`81e6811` chunk 15a: TipTap rich notes (editor foundation) — plus this docs
-commit on top. (Prior HEAD: `1229900` retheme.) Prior notable:
+`9bf136e` chunk 15b: TipTap slash commands + `@` mentions — plus this docs
+commit on top. (Prior: `750677c` docs: verify migrations 0010/0011; `81e6811`
+chunk 15a.) Prior notable:
 `1229900` feat: retheme UI — indigo/zinc "modern SaaS" identity, drop medical
 teal — plus this docs commit on top. (Prior notable HEAD:
 `a0cca97` bounced count on the dashboard funnel.)
@@ -495,6 +535,12 @@ column). typecheck + lint + build all green.
 | `CompanyDrawer` reused on /pipeline via a `closeHref` prop, not a second drawer | One drawer component, one set of editors; only the close/backdrop target differs per host page |
 | Dashboard drill-downs build the `f` filter param via `encodeToParam` + `sanitizeFilter` | Lands on a real filtered companies table (verified counts match dashboard); the old ad-hoc `?v=`/`?filter=` params were silently ignored |
 | Fixed `is_one_of` → `IN (...)` instead of switching to drizzle `inArray` | `compileCondition` works on a `sql` column fragment, not a column object; `IN` with `sql.join` is the minimal correct fix and repairs the existing filter UI |
+| **(15b)** Suggestion popup positioned via `view.coordsAtPos`, **no `tippy.js`** | The reference TipTap mention example pulls in tippy; the CRM avoids extra runtime deps and the editor is already lazy-loaded. A hand-rolled caret-positioned React root is ~130 lines and adds nothing to first load |
+| **(15b)** One shared popup + renderer for both `/` and `@` | Identical UI/keyboard model; a single `createSuggestionRenderer(toDisplay)` maps raw items → rows and closes `command(raw)` over each. Avoids two near-duplicate popups |
+| **(15b)** `@` mention node stores `{ id, label }`, `id` = user id | Chunk 20 resolves notifications from the id, so it must survive a display-name change. `label` is only for display + the plain-text mirror |
+| **(15b)** Mention users fetched once via a server action, filtered client-side — **not** prop-threaded, **not** per-keystroke | `LazyRichEditor` is used in 3 places with no user list; threading a prop through the lazy wrapper + all consumers is churn. The team is tiny, so one cached fetch beats a per-keystroke round trip. Zero consumer changes |
+| **(15b)** `/` inserts existing StarterKit blocks only; **no renderer changes** | Every block the slash menu inserts (headings, lists, quote, code, rule) already has a `rich-text.tsx` case. Only the new `mention` inline node needed a renderer + mirror case |
+| **(15b)** Slash menu guarded to start-of-paragraph (`parentOffset <= 1`) | Prevents a stray `/` in a URL or "and/or" from popping the menu; matches how Notion/Linear gate their slash menus |
 
 ---
 
@@ -502,47 +548,31 @@ column). typecheck + lint + build all green.
 
 Work through these in order. One chunk per session.
 
-> **Chunk 15a is DONE (commit `81e6811`).** Next up is 15b.
+> **Chunks 15a (`81e6811`) and 15b (`9bf136e`) are DONE, and migrations
+> 0010/0011 are verified applied.** Next up is Chunk 20.
 
-### 0. Migrations 0010/0011 — DONE (verified applied 2026-08-09)
-Both are live in prod and logged; `pnpm db:migrate` is a no-op. Rich text is
-written and read as jsonb, so 15b can be built against the real path. The only
-open item is the in-browser round-trip (needs a login) — see RESOLVED note up
-top; it's optional, not a prerequisite for 15b.
+### 0. (Optional, needs a login) Browser-verify the TipTap editor
+Not a prerequisite for Chunk 20 — but the whole 15a/15b editor has never been
+run in a browser. When a login is available: open a drawer note, exercise the
+toolbar (bold + bullet list), the `/` block menu, and an `@` mention; save +
+reload; confirm all survive. Note this writes a test row to prod
+(`.env.local` → prod). See the "Verification gap" note up top.
 
-### 1. Chunk 15b — slash commands + `@` mentions ← START HERE
-The editor foundation is in place (`components/tiptap/`); this adds the two
-interactive extensions.
-
-**What it involves:**
-- `pnpm add @tiptap/extension-mention @tiptap/suggestion`
-- `/` slash-command menu — block insert (heading, list, quote, rule). Renders
-  through TipTap's suggestion plugin; reuse the existing `cmdk` styling so it
-  matches the ⌘K palette.
-- `@` mention extension — needs a user-search source (there is no users
-  endpoint yet; `lib/db/queries/users.ts` has the list query). Store `userId`
-  in the node attrs, not just the display name, or chunk 20 can't resolve who
-  was mentioned when a name changes.
-- **Add a `mention` case to `components/tiptap/rich-text.tsx`** — the read-only
-  renderer falls through to rendering child content for unknown node types, so
-  an unhandled mention would render as bare text with no styling.
-- `docToPlainText` in `lib/tiptap/serialize.ts` needs a mention case too
-  (should emit `@Name`), or mentions vanish from the plain-text mirror that
-  AI prompts and CSV export read.
-
-**Prerequisite for:** Chunk 20 (notification triggers on `@` mentions)
-
-### 2. Chunk 20 — Notification center
+### 1. Chunk 20 — Notification center ← START HERE
 Bell icon in top bar, `notifications` table, in-app alerts for:
 - Task assignments (`assignedTo` changes)
-- `@` mentions in notes (needs TipTap first)
+- `@` mentions in notes (**TipTap is now done** — mention nodes store the user
+  id in `attrs.id`; walk the saved `*_doc` jsonb for `type: "mention"` nodes to
+  find who to notify)
 - Status changes on companies you own
 
 **What it involves:**
-- DB migration: `notifications` table (`id`, `userId`, `type`, `title`, `body`, `entityType`, `entityId`, `readAt`, `createdAt`)
+- DB migration: `notifications` table (`id`, `userId`, `type`, `title`, `body`, `entityType`, `entityId`, `readAt`, `createdAt`). This is migration **0012** (next free number).
 - Bell icon in `TopBar` with unread count badge
 - Dropdown list of recent notifications
-- Hook into existing server actions to write notification rows on trigger events
+- Hook into existing server actions to write notification rows on trigger events.
+  For mentions: on `logInteraction` / `updateCompanyNotes` / task save, scan the
+  incoming doc for mention nodes and fan out a notification per mentioned `id`.
 - Mark-as-read action
 
 ---
