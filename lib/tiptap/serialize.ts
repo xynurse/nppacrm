@@ -56,6 +56,15 @@ function inlineToText(nodes: RichNode[] | null | undefined): string {
   for (const node of nodes) {
     if (node.type === "hardBreak") {
       out += "\n";
+    } else if (node.type === "mention") {
+      // Keep mentions legible in the plain-text mirror that AI prompts and CSV
+      // export read — `label` first, falling back to the stored user id.
+      const attrs = node.attrs ?? {};
+      const label =
+        typeof attrs.label === "string" && attrs.label
+          ? attrs.label
+          : String(attrs.id ?? "");
+      out += `@${label}`;
     } else if (typeof node.text === "string") {
       out += node.text;
     } else if (node.content) {

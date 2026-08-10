@@ -106,6 +106,17 @@ function renderNode(node: RichNode): React.ReactNode {
       return <hr className="border-slate-200 dark:border-slate-700" />;
     case "hardBreak":
       return <br />;
+    case "mention": {
+      const label =
+        typeof node.attrs?.label === "string" && node.attrs.label
+          ? node.attrs.label
+          : String(node.attrs?.id ?? "");
+      return (
+        <span className="rounded bg-brand-50 px-1 font-medium text-brand-700 dark:bg-brand-950 dark:text-brand-300">
+          @{label}
+        </span>
+      );
+    }
     default:
       return renderNodes(node.content);
   }

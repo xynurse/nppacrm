@@ -23,6 +23,8 @@ import { useEffect, useRef } from "react";
 import { safeHref } from "@/lib/tiptap/serialize";
 import type { RichDoc } from "@/lib/tiptap/types";
 import { cn } from "@/lib/cn";
+import { MentionExtension } from "./mention";
+import { SlashCommand } from "./slash-command";
 
 /**
  * Shared TipTap editor. Always reach for this through `rich-editor-lazy` so the
@@ -81,6 +83,8 @@ export function RichEditor({
       Placeholder.configure({
         placeholder: placeholder ?? "Write something…",
       }),
+      MentionExtension,
+      SlashCommand,
     ],
     // `RichDoc` is deliberately looser than TipTap's `JSONContent` (it tolerates
     // the nulls that come back out of jsonb), so the shapes need reconciling.
