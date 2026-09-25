@@ -7,7 +7,7 @@ export default async function AdminEventsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">Events</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">Events</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           Conferences and the prospecting cycles that go with them.
         </p>

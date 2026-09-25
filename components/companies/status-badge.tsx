@@ -14,37 +14,34 @@ const STATUS_LABELS: Record<ProspectStatus, string> = {
   past_sponsor: "Past sponsor",
 };
 
-// Clinical & precise: desaturated, hairline-bordered micro-pills.
-// Low saturation reads as trustworthy/exact rather than candy-colored.
+/** Soft tinted pills — sentence case, no uppercase shout. */
 const STATUS_CLASSES: Record<ProspectStatus, string> = {
   prospect:
-    "bg-slate-50 text-slate-600 border-slate-200 dark:bg-zinc-800/60 dark:text-slate-300 dark:border-slate-700",
+    "bg-zinc-100 text-zinc-600 ring-zinc-200/80 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700",
   contacted:
-    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900",
+    "bg-sky-50 text-sky-700 ring-sky-200/80 dark:bg-sky-950/50 dark:text-sky-300 dark:ring-sky-900",
   engaged:
-    "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-900",
+    "bg-cyan-50 text-cyan-700 ring-cyan-200/80 dark:bg-cyan-950/50 dark:text-cyan-300 dark:ring-cyan-900",
   proposal_sent:
-    "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900",
+    "bg-amber-50 text-amber-800 ring-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-900",
   negotiating:
-    "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-900",
+    "bg-orange-50 text-orange-700 ring-orange-200/80 dark:bg-orange-950/50 dark:text-orange-300 dark:ring-orange-900",
   committed:
-    "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900",
+    "bg-emerald-50 text-emerald-700 ring-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-900",
   confirmed:
-    "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/50 dark:text-emerald-200 dark:border-emerald-800",
+    "bg-emerald-100 text-emerald-800 ring-emerald-300/80 dark:bg-emerald-900/60 dark:text-emerald-200 dark:ring-emerald-800",
   declined:
-    "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900",
+    "bg-red-50 text-red-700 ring-red-200/80 dark:bg-red-950/50 dark:text-red-300 dark:ring-red-900",
   past_sponsor:
-    "bg-slate-100 text-slate-600 border-slate-300 dark:bg-zinc-800 dark:text-slate-400 dark:border-slate-700",
+    "bg-zinc-100 text-zinc-500 ring-zinc-200/80 dark:bg-zinc-800 dark:text-zinc-400 dark:ring-zinc-700",
 };
+
+const badgeBase =
+  "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-tight ring-1 ring-inset";
 
 export function StatusBadge({ status }: { status: ProspectStatus }) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider",
-        STATUS_CLASSES[status],
-      )}
-    >
+    <span className={cn(badgeBase, STATUS_CLASSES[status])}>
       {STATUS_LABELS[status]}
     </span>
   );
@@ -59,17 +56,17 @@ export function hasBouncedTag(tags: string[] | null | undefined): boolean {
   return Array.isArray(tags) && tags.includes(BOUNCED_TAG);
 }
 
-/** Red micro-pill flagging that the email address on file bounced. */
+/** Red flag — email on file bounced. */
 export function BouncedBadge() {
   return (
     <span
       title="Last outreach email bounced — the address on file needs replacing"
       className={cn(
-        "inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider",
-        "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300",
+        badgeBase,
+        "bg-red-50 text-red-700 ring-red-200/80 dark:bg-red-950/50 dark:text-red-300 dark:ring-red-900",
       )}
     >
-      <MailX className="h-2.5 w-2.5" />
+      <MailX className="h-3 w-3" />
       Bounced
     </span>
   );
@@ -83,17 +80,17 @@ export function hasDeferredTag(tags: string[] | null | undefined): boolean {
   return Array.isArray(tags) && tags.includes(DEFERRED_TAG);
 }
 
-/** Violet micro-pill flagging that outreach is deferred — future prospect. */
+/** Violet flag — outreach deferred, future prospect. */
 export function DeferredBadge() {
   return (
     <span
       title="Deferred — no outreach this batch; kept as a future sponsorship prospect"
       className={cn(
-        "inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider",
-        "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-300",
+        badgeBase,
+        "bg-violet-50 text-violet-700 ring-violet-200/80 dark:bg-violet-950/50 dark:text-violet-300 dark:ring-violet-900",
       )}
     >
-      <Clock className="h-2.5 w-2.5" />
+      <Clock className="h-3 w-3" />
       Deferred
     </span>
   );

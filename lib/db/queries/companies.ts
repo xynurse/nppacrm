@@ -69,6 +69,7 @@ export type EventCompanyRow = {
   companyId: string;
   companyName: string;
   companyWebsite: string | null;
+  companyLogoUrl: string | null;
   companyIndustry: string | null;
   companyHqLocation: string | null;
   companyNotesDoc: RichDoc | null;
@@ -125,6 +126,7 @@ export async function listEventCompanies(
       companyId: eventCompanies.companyId,
       companyName: companies.name,
       companyWebsite: companies.website,
+      companyLogoUrl: companies.logoUrl,
       companyIndustry: companies.industry,
       companyHqLocation: companies.hqLocation,
       companyNotesDoc: companies.notesDoc,
@@ -181,6 +183,7 @@ export async function getEventCompany(
       companyId: eventCompanies.companyId,
       companyName: companies.name,
       companyWebsite: companies.website,
+      companyLogoUrl: companies.logoUrl,
       companyIndustry: companies.industry,
       companyHqLocation: companies.hqLocation,
       companyNotesDoc: companies.notesDoc,

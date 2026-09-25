@@ -22,7 +22,7 @@ export default async function EventDetailPage({
     <div className="space-y-6">
       <div>
         <div className="text-xs text-slate-500 dark:text-slate-400">Event</div>
-        <h1 className="text-xl font-semibold tracking-tight">{event.name}</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">{event.name}</h1>
         <p className="font-mono text-xs text-slate-500 dark:text-slate-400">
           {event.slug}
         </p>

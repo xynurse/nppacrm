@@ -23,7 +23,7 @@ export default async function ImportPage({
         >
           ← {event.name}
         </Link>
-        <h1 className="mt-1 text-xl font-semibold tracking-tight">
+        <h1 className="mt-1 font-display text-xl font-semibold tracking-tight">
           Import prospects (CSV)
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">

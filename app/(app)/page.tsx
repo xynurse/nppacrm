@@ -74,7 +74,7 @@ export default async function DashboardPage() {
   if (!activeEvent) {
     return (
       <div className="space-y-3">
-        <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           No event yet. Create one to start tracking sponsors.
         </p>
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">
           {activeEvent.name}
           {activeEvent.startDate ? ` · starts ${activeEvent.startDate}` : ""}

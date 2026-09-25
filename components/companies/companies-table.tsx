@@ -25,6 +25,7 @@ import {
   useDensity,
 } from "@/components/providers/density-provider";
 import { BulkActionBar } from "./bulk-action-bar";
+import { CompanyAvatar } from "./company-avatar";
 import { ReviewerCell } from "./reviewer-cell";
 import {
   BOUNCED_TAG,
@@ -219,17 +220,27 @@ export function CompaniesTable({
         accessorKey: "companyName",
         header: () => sortHeader("companyName", "Company"),
         cell: ({ row }) => (
-          <span className="flex items-center gap-1.5">
-            <Link
-              href={`/companies?record=${row.original.id}`}
-              scroll={false}
-              className="font-medium text-slate-900 hover:underline dark:text-slate-100"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {row.original.companyName}
-            </Link>
-            {hasBouncedTag(row.original.tagsCache) ? <BouncedBadge /> : null}
-            {hasDeferredTag(row.original.tagsCache) ? <DeferredBadge /> : null}
+          <span className="flex min-w-0 items-center gap-2">
+            <CompanyAvatar
+              name={row.original.companyName}
+              website={row.original.companyWebsite}
+              logoUrl={row.original.companyLogoUrl}
+              size="sm"
+            />
+            <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+              <Link
+                href={`/companies?record=${row.original.id}`}
+                scroll={false}
+                className="truncate font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {row.original.companyName}
+              </Link>
+              {hasBouncedTag(row.original.tagsCache) ? <BouncedBadge /> : null}
+              {hasDeferredTag(row.original.tagsCache) ? (
+                <DeferredBadge />
+              ) : null}
+            </span>
           </span>
         ),
       },
@@ -539,13 +550,13 @@ export function CompaniesTable({
     return (
       <div className="surface-card flex flex-col items-center gap-2 p-12 text-center">
         <Building2
-          className="h-8 w-8 text-slate-300 dark:text-slate-600"
+          className="h-8 w-8 text-zinc-300 dark:text-zinc-600"
           aria-hidden
         />
-        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+        <p className="font-display text-sm font-semibold text-zinc-800 dark:text-zinc-100">
           No prospects in this view
         </p>
-        <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
+        <p className="max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
           Use the quick-add row above to create one, or adjust the filters if
           you expected results here.
         </p>
@@ -555,23 +566,23 @@ export function CompaniesTable({
 
   return (
     <>
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-card)] dark:border-slate-800 dark:bg-zinc-900">
+      <div className="overflow-x-auto rounded-xl border border-zinc-200/90 bg-white shadow-[var(--shadow-card)] dark:border-zinc-800 dark:bg-zinc-900">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:bg-zinc-900 dark:text-slate-400">
+          <thead className="bg-zinc-50/90 text-left text-[11px] font-semibold tracking-wide text-zinc-500 dark:bg-zinc-900/80 dark:text-zinc-400">
             {table.getHeaderGroups().map((hg) => (
               <tr
                 key={hg.id}
-                className="border-b border-slate-200 dark:border-slate-800"
+                className="border-b border-zinc-200 dark:border-zinc-800"
               >
                 {hg.headers.map((h) => (
-                  <th key={h.id} className="group px-3 py-2 font-medium">
+                  <th key={h.id} className="group px-3 py-2.5 font-medium">
                     {flexRender(h.column.columnDef.header, h.getContext())}
                   </th>
                 ))}
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
             {table.getRowModel().rows.map((row) => (
               <tr
                 key={row.id}
@@ -580,7 +591,7 @@ export function CompaniesTable({
                   "transition-[background-color,box-shadow] duration-100",
                   activeRecordId === row.original.id
                     ? "bg-[var(--accent-tint)] shadow-[inset_2px_0_0_0_var(--accent)]"
-                    : "hover:bg-slate-50 hover:shadow-[inset_2px_0_0_0_var(--hairline-strong)] dark:hover:bg-zinc-800/40",
+                    : "hover:bg-zinc-50 hover:shadow-[inset_2px_0_0_0_var(--hairline-strong)] dark:hover:bg-zinc-800/40",
                 )}
               >
                 {row.getVisibleCells().map((cell) => (

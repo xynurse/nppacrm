@@ -53,7 +53,7 @@ export default async function EventProfilePage() {
   if (!activeEvent) {
     return (
       <div className="space-y-3">
-        <h1 className="text-xl font-semibold tracking-tight">Event</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">Event</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           No active event. Create one to start tracking sponsors.
         </p>

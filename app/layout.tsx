@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { DensityProvider } from "@/components/providers/density-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "LPD Sponsor CRM",
@@ -18,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
-      <body className="min-h-screen antialiased">
+    <html lang="en" className={jakarta.variable} suppressHydrationWarning>
+      <body className="min-h-screen font-sans antialiased">
         <ThemeProvider>
           <DensityProvider>{children}</DensityProvider>
         </ThemeProvider>

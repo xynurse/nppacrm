@@ -52,7 +52,7 @@ export default async function AuditPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">Audit log</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">Audit log</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           Every mutation across the CRM. Showing the most recent 200 events
           matching your filters. Restore soft-deleted records inline.

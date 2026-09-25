@@ -41,7 +41,7 @@ export default async function PipelinePage({
   if (!activeEvent) {
     return (
       <div className="space-y-3">
-        <h1 className="text-xl font-semibold tracking-tight">Pipeline</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">Pipeline</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           No event yet. Create one to start tracking sponsors.
         </p>
@@ -114,7 +114,7 @@ export default async function PipelinePage({
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">Pipeline</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">Pipeline</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           {activeEvent.name} · {rows.length} prospects · drag a card to change
           its stage

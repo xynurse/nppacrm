@@ -35,6 +35,7 @@ import {
   PROSPECT_STATUS_LABELS,
   StatusBadge,
 } from "@/components/companies/status-badge";
+import { CompanyAvatar } from "@/components/companies/company-avatar";
 import { PriorityDot } from "@/components/companies/priority-dot";
 import type { TierOption } from "@/components/cells/types";
 import { ConfirmModal } from "./confirm-modal";
@@ -266,25 +267,25 @@ function Column({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex w-72 shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50/50 transition-[border-color,box-shadow] duration-150 dark:border-slate-800 dark:bg-zinc-900/50",
+        "flex w-72 shrink-0 flex-col rounded-xl border border-zinc-200 bg-zinc-50/60 transition-[border-color,box-shadow] duration-150 dark:border-zinc-800 dark:bg-zinc-900/50",
         isOver &&
           "border-brand-400 shadow-[0_0_0_3px_var(--accent-tint)] dark:border-brand-500",
       )}
     >
-      <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2 dark:border-slate-800">
+      <div className="flex items-center justify-between border-b border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
         <div className="flex items-center gap-2">
           <StatusBadge status={status} />
-          <span className="text-xs text-slate-500 dark:text-slate-400">
+          <span className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
             {count}
           </span>
         </div>
-        <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
+        <span className="text-xs tabular-nums font-medium text-zinc-600 dark:text-zinc-300">
           {amount > 0 ? formatCurrency(amount) : ""}
         </span>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-2">
         {cards.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-200 px-2 py-4 text-center text-xs text-slate-400 dark:border-slate-700">
+          <p className="rounded-lg border border-dashed border-zinc-200 px-2 py-4 text-center text-xs text-zinc-400 dark:border-zinc-700">
             Drop a card here
           </p>
         ) : (
@@ -327,26 +328,38 @@ function Card({
   return (
     <div
       className={cn(
-        "rounded-lg border border-slate-200 bg-white p-2.5 text-xs shadow-[var(--shadow-card)] transition-[box-shadow,border-color,transform] duration-150 ease-[var(--ease-out-soft)] hover:-translate-y-px hover:border-slate-300 hover:shadow-[var(--shadow-raised)] dark:border-slate-700 dark:bg-zinc-900 dark:hover:border-slate-600",
+        "rounded-lg border border-zinc-200 bg-white p-2.5 text-xs shadow-[var(--shadow-card)] transition-[box-shadow,border-color,transform] duration-150 ease-[var(--ease-out-soft)] hover:-translate-y-px hover:border-zinc-300 hover:shadow-[var(--shadow-raised)] dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600",
         dragging && "rotate-1 shadow-[var(--shadow-overlay)]",
       )}
     >
-      <div className="flex items-start gap-1.5">
-        <PriorityDot priority={row.priority} />
-        <Link
-          href={`/pipeline?record=${row.id}`}
-          scroll={false}
-          className="flex-1 font-medium text-slate-900 hover:underline dark:text-slate-100"
-          onClick={(e) => e.stopPropagation()}
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          {row.companyName}
-        </Link>
-        {hasBouncedTag(row.tagsCache) ? <BouncedBadge /> : null}
-        {hasDeferredTag(row.tagsCache) ? <DeferredBadge /> : null}
+      <div className="flex items-start gap-2">
+        <CompanyAvatar
+          name={row.companyName}
+          website={row.companyWebsite}
+          logoUrl={row.companyLogoUrl}
+          size="sm"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-1.5">
+            <PriorityDot priority={row.priority} />
+            <Link
+              href={`/pipeline?record=${row.id}`}
+              scroll={false}
+              className="flex-1 font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              {row.companyName}
+            </Link>
+          </div>
+          <div className="mt-0.5 flex flex-wrap gap-1">
+            {hasBouncedTag(row.tagsCache) ? <BouncedBadge /> : null}
+            {hasDeferredTag(row.tagsCache) ? <DeferredBadge /> : null}
+          </div>
+        </div>
       </div>
-      <div className="mt-1 space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-        {row.companyIndustry ? <p>{row.companyIndustry}</p> : null}
+      <div className="mt-1.5 space-y-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+        {row.companyIndustry ? <p className="truncate">{row.companyIndustry}</p> : null}
         <div className="flex items-center justify-between gap-1.5">
           {tierName ? (
             <span className="inline-flex items-center gap-1">
@@ -360,14 +373,14 @@ function Card({
             <span />
           )}
           {amount ? (
-            <span className="tabular-nums text-slate-700 dark:text-slate-300">
+            <span className="tabular-nums font-medium text-zinc-700 dark:text-zinc-300">
               {formatCurrency(amount, row.currency)}
             </span>
           ) : null}
         </div>
         <div className="flex items-center justify-between gap-1">
           {row.ownerName ? (
-            <span className="text-slate-500 dark:text-slate-400 truncate">
+            <span className="truncate text-zinc-500 dark:text-zinc-400">
               {row.ownerName}
             </span>
           ) : (
@@ -383,7 +396,7 @@ function Card({
                     86_400_000;
                   if (days >= 30) return "text-red-500 dark:text-red-400";
                   if (days >= 14) return "text-amber-500 dark:text-amber-400";
-                  return "text-slate-400 dark:text-slate-500";
+                  return "text-zinc-400 dark:text-zinc-500";
                 })(),
               )}
               title={`Last contact: ${formatRelativeDate(row.lastContactedAt)}`}

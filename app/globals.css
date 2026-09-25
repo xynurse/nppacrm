@@ -10,9 +10,11 @@
 
 @theme {
   --font-sans:
-    var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    var(--font-jakarta), ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-display:
+    var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
@@ -41,8 +43,8 @@
   color-scheme: light;
 
   --surface: #ffffff;
-  --surface-muted: #fafafa; /* zinc-50 */
-  --page: #fafafa;
+  --surface-muted: #f4f4f5; /* zinc-100 — slightly more structure than zinc-50 */
+  --page: #f4f4f5;
   --hairline: #e4e4e7; /* zinc-200 */
   --hairline-strong: #d4d4d8; /* zinc-300 */
   --ink: #18181b; /* zinc-900 */
@@ -57,11 +59,11 @@
    * card (resting), raised (interactive hover), overlay (drawers/dialogs).
    * Tuned crisp + flat for the modern SaaS feel.
    */
-  --shadow-card: 0 1px 2px rgba(24, 24, 27, 0.05);
+  --shadow-card: 0 1px 2px rgba(24, 24, 27, 0.04);
   --shadow-raised:
-    0 1px 2px rgba(24, 24, 27, 0.06), 0 6px 16px rgba(24, 24, 27, 0.08);
+    0 1px 2px rgba(24, 24, 27, 0.05), 0 8px 20px rgba(24, 24, 27, 0.07);
   --shadow-overlay:
-    0 4px 12px rgba(24, 24, 27, 0.08), 0 20px 56px rgba(24, 24, 27, 0.16);
+    0 4px 12px rgba(24, 24, 27, 0.08), 0 24px 64px rgba(24, 24, 27, 0.14);
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -110,6 +112,11 @@
   }
 }
 
+@utility font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
 /* Consistent keyboard-hint chips (⌘K, Esc, ?) */
 @utility kbd-chip {
   display: inline-flex;
@@ -140,20 +147,41 @@ body {
 
 body {
   font-family: var(--font-sans);
-  background: white;
-  color: #18181b; /* zinc-900 */
+  background: var(--page);
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
 .dark body {
-  background: #09090b; /* zinc-950 */
-  color: #fafafa; /* zinc-50 */
+  background: var(--page);
+  color: var(--ink);
 }
 
 /* Indigo selection needs a dark-legible pairing too */
 .dark ::selection {
   background: #3730a3; /* brand-800 */
   color: #e0e7ff; /* brand-100 */
+}
+
+/* Subtle page atmosphere — soft radial wash, not flat gray */
+.app-canvas {
+  background:
+    radial-gradient(
+      1200px 600px at 0% -10%,
+      color-mix(in srgb, var(--accent) 6%, transparent),
+      transparent 55%
+    ),
+    var(--page);
+}
+
+.dark .app-canvas {
+  background:
+    radial-gradient(
+      1000px 500px at 0% -10%,
+      color-mix(in srgb, var(--accent) 10%, transparent),
+      transparent 50%
+    ),
+    var(--page);
 }
