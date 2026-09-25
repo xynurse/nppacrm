@@ -1,5 +1,9 @@
 import { requireSession } from "@/lib/auth";
 import { listActiveEvents } from "@/lib/db/queries/events";
+import {
+  countUnreadNotifications,
+  listNotificationsForUser,
+} from "@/lib/db/queries/notifications";
 import { BottomNav } from "@/components/app/bottom-nav";
 import { Sidebar } from "@/components/app/sidebar";
 import { TopBar } from "@/components/app/top-bar";
@@ -21,6 +25,17 @@ export default async function AppLayout({
     role: session.user.role,
   };
 
+  let notifications: Awaited<ReturnType<typeof listNotificationsForUser>> = [];
+  let unreadCount = 0;
+  try {
+    [notifications, unreadCount] = await Promise.all([
+      listNotificationsForUser(session.user.id),
+      countUnreadNotifications(session.user.id),
+    ]);
+  } catch {
+    // notifications table may not exist until migration 0012
+  }
+
   return (
     <div className="app-canvas flex h-screen overflow-hidden">
       <Sidebar
@@ -30,7 +45,7 @@ export default async function AppLayout({
         activeEventId={activeEvent?.id ?? null}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar />
+        <TopBar notifications={notifications} unreadCount={unreadCount} />
         <main className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
           {children}
         </main>

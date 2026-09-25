@@ -32,6 +32,8 @@ export async function moveEventCompanyStatus(
     .select({
       status: eventCompanies.status,
       eventId: eventCompanies.eventId,
+      ownerId: eventCompanies.ownerId,
+      companyId: eventCompanies.companyId,
       confirmedAmount: eventCompanies.confirmedAmount,
       confirmedTierId: eventCompanies.confirmedTierId,
     })
@@ -66,6 +68,30 @@ export async function moveEventCompanyStatus(
     entityId: parsed.data.id,
     changes: { from: existing.status, to: parsed.data.status },
   });
+
+  if (
+    existing.ownerId &&
+    existing.ownerId !== session.user.id &&
+    existing.status !== parsed.data.status
+  ) {
+    const [co] = await db
+      .select({ name: companies.name })
+      .from(companies)
+      .where(eq(companies.id, existing.companyId))
+      .limit(1);
+    const { createNotification } = await import("@/lib/notifications");
+    await createNotification({
+      userId: existing.ownerId,
+      type: "status_change",
+      title: `${co?.name ?? "A prospect"} → ${parsed.data.status.replace(/_/g, " ")}`,
+      body: session.user.name
+        ? `Updated by ${session.user.name}`
+        : "Status changed on a company you own",
+      entityType: "eventCompany",
+      entityId: parsed.data.id,
+      href: `/companies?record=${parsed.data.id}`,
+    });
+  }
 
   // Auto-instantiate benefits when we just moved into confirmed.
   if (parsed.data.status === "confirmed" && existing.status !== "confirmed") {

@@ -8,6 +8,8 @@ const TITLES: { match: (path: string) => boolean; title: string }[] = [
   { match: (p) => p.startsWith("/companies"), title: "Companies" },
   { match: (p) => p.startsWith("/contacts"), title: "Contacts" },
   { match: (p) => p.startsWith("/tasks"), title: "Tasks" },
+  { match: (p) => p.startsWith("/calendar"), title: "Calendar" },
+  { match: (p) => p.startsWith("/playbooks"), title: "Playbooks" },
   { match: (p) => p.startsWith("/pipeline"), title: "Pipeline" },
   { match: (p) => p.startsWith("/reports"), title: "Reports" },
   { match: (p) => p.startsWith("/admin/users"), title: "Users" },

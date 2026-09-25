@@ -61,6 +61,18 @@ export const FIELD_REGISTRY = {
     label: "Industry",
     type: "text",
   } satisfies FieldDef,
+  "company.category": {
+    entity: "company",
+    column: "category",
+    label: "Category",
+    type: "text",
+  } satisfies FieldDef,
+  "company.subcategory": {
+    entity: "company",
+    column: "subcategory",
+    label: "Subcategory",
+    type: "text",
+  } satisfies FieldDef,
   "company.hqLocation": {
     entity: "company",
     column: "hq_location",
@@ -168,6 +180,36 @@ export const FIELD_REGISTRY = {
     column: "relationship_notes",
     label: "Relationship notes",
     type: "longText",
+  } satisfies FieldDef,
+  "eventCompany.agreementSignedAt": {
+    entity: "eventCompany",
+    column: "agreement_signed_at",
+    label: "Agreement signed",
+    type: "date",
+  } satisfies FieldDef,
+  "eventCompany.invoiceSentAt": {
+    entity: "eventCompany",
+    column: "invoice_sent_at",
+    label: "Invoice sent",
+    type: "date",
+  } satisfies FieldDef,
+  "eventCompany.paidAt": {
+    entity: "eventCompany",
+    column: "paid_at",
+    label: "Paid",
+    type: "date",
+  } satisfies FieldDef,
+  "eventCompany.boothNumber": {
+    entity: "eventCompany",
+    column: "booth_number",
+    label: "Booth #",
+    type: "text",
+  } satisfies FieldDef,
+  "eventCompany.repNames": {
+    entity: "eventCompany",
+    column: "rep_names",
+    label: "Rep names",
+    type: "text",
   } satisfies FieldDef,
 } as const;
 

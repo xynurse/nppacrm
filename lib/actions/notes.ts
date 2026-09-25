@@ -51,6 +51,33 @@ export async function updateCompanyNotes(
     changes: { notesLength: docToPlainText(doc).length },
   });
 
+  if (doc) {
+    const { createNotifications, mentionUserIdsFromDoc } = await import(
+      "@/lib/notifications"
+    );
+    const mentioned = mentionUserIdsFromDoc(doc).filter(
+      (id) => id !== session.user.id,
+    );
+    if (mentioned.length > 0) {
+      const [co] = await db
+        .select({ name: companies.name })
+        .from(companies)
+        .where(eq(companies.id, companyId))
+        .limit(1);
+      await createNotifications(
+        mentioned.map((userId) => ({
+          userId,
+          type: "mention",
+          title: `${session.user.name ?? "Someone"} mentioned you in notes`,
+          body: co?.name ?? "Company notes",
+          entityType: "company",
+          entityId: companyId,
+          href: "/companies",
+        })),
+      );
+    }
+  }
+
   revalidatePath("/companies");
   revalidatePath("/pipeline");
   return { ok: true };

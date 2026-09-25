@@ -121,6 +121,24 @@ export async function createTask(
     },
   });
 
+  const assignee = data.assignedTo ?? session.user.id;
+  if (assignee !== session.user.id) {
+    const { createNotification } = await import("@/lib/notifications");
+    await createNotification({
+      userId: assignee,
+      type: "task_assigned",
+      title: `Task assigned: ${data.title.trim()}`,
+      body: session.user.name
+        ? `Assigned by ${session.user.name}`
+        : "You were assigned a task",
+      entityType: "task",
+      entityId: row.id,
+      href: data.eventCompanyId
+        ? `/companies?record=${data.eventCompanyId}`
+        : "/tasks",
+    });
+  }
+
   revalidatePath("/companies");
   revalidatePath("/tasks");
   return { ok: true, data: { id: row.id } };

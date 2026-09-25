@@ -16,6 +16,9 @@ export const companies = pgTable(
     name: text("name").notNull(),
     website: text("website"),
     industry: text("industry"),
+    /** Structured category (workbook had 24). Prefer this over free-text industry when set. */
+    category: text("category"),
+    subcategory: text("subcategory"),
     sizeBand: text("size_band"),
     hqLocation: text("hq_location"),
     logoUrl: text("logo_url"),
@@ -35,6 +38,7 @@ export const companies = pgTable(
   },
   (table) => [
     index("companies_name_idx").on(table.name),
+    index("companies_category_idx").on(table.category),
     index("companies_deleted_at_idx").on(table.deletedAt),
   ],
 );

@@ -131,6 +131,7 @@ export default async function PipelinePage({
         isAdmin={session.user.role === "admin"}
         fieldDefinitions={fieldDefinitions}
         closeHref="/pipeline"
+        recordIds={rows.map((r) => r.id)}
       />
     </div>
   );

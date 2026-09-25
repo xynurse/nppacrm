@@ -125,6 +125,86 @@ export default async function DashboardPage() {
         </p>
       </div>
 
+      {/* Today — primary work queue */}
+      <section className="surface-card p-4 dark:bg-zinc-900">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-sm font-semibold">Today</h2>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <Link
+              href={STALLED_HREF}
+              className="rounded-md bg-amber-50 px-2 py-1 font-medium text-amber-800 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300"
+            >
+              {stalled.length} stalled
+            </Link>
+            {metrics.bouncedCount > 0 ? (
+              <Link
+                href={companiesHref([
+                  { field: "tags", op: "contains", value: BOUNCED_TAG },
+                ])}
+                className="rounded-md bg-red-50 px-2 py-1 font-medium text-red-700 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300"
+              >
+                {metrics.bouncedCount} bounced
+              </Link>
+            ) : null}
+            {metrics.deferredCount > 0 ? (
+              <Link
+                href={companiesHref([
+                  { field: "tags", op: "contains", value: DEFERRED_TAG },
+                ])}
+                className="rounded-md bg-violet-50 px-2 py-1 font-medium text-violet-700 hover:bg-violet-100 dark:bg-violet-950/40 dark:text-violet-300"
+              >
+                {metrics.deferredCount} deferred
+              </Link>
+            ) : null}
+            <Link href="/calendar" className="rounded-md bg-zinc-100 px-2 py-1 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300">
+              Calendar
+            </Link>
+          </div>
+        </div>
+        {myTasks.length === 0 ? (
+          <p className="text-sm text-zinc-500">No open tasks assigned to you. You’re clear.</p>
+        ) : (
+          <ul className="space-y-1.5 text-sm">
+            {myTasks.slice(0, 8).map((t) => {
+              const inner = (
+                <>
+                  <CheckSquare className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                  <span className="truncate">{t.title}</span>
+                  {t.companyName ? (
+                    <span className="shrink-0 text-xs text-zinc-500">
+                      · {t.companyName}
+                    </span>
+                  ) : null}
+                </>
+              );
+              return (
+                <li key={t.id} className="flex items-center justify-between gap-2">
+                  {t.eventCompanyId ? (
+                    <Link
+                      href={`/companies?record=${t.eventCompanyId}`}
+                      scroll={false}
+                      className="flex min-w-0 items-center gap-2 hover:underline"
+                    >
+                      {inner}
+                    </Link>
+                  ) : (
+                    <span className="flex min-w-0 items-center gap-2">{inner}</span>
+                  )}
+                  <span className="shrink-0 text-xs text-zinc-500">
+                    {t.dueDate ?? "—"}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {myTasks.length > 8 ? (
+          <Link href="/tasks" className="mt-2 inline-block text-xs text-brand-600 hover:underline dark:text-brand-400">
+            +{myTasks.length - 8} more tasks →
+          </Link>
+        ) : null}
+      </section>
+
       {/* AI quick update */}
       <NlUpdateBox />
 

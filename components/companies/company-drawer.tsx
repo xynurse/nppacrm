@@ -1,6 +1,6 @@
 "use client";
 
-import { Gift, Sparkles, X } from "lucide-react";
+import { Gift, Sparkles, ChevronLeft, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { CellShell } from "@/components/cells/cell-shell";
@@ -88,6 +88,7 @@ export function CompanyDrawer({
   isAdmin,
   fieldDefinitions,
   closeHref = "/companies",
+  recordIds,
 }: {
   row: EventCompanyRow | null;
   owners: PersonOption[];
@@ -99,6 +100,8 @@ export function CompanyDrawer({
   /** Where the backdrop/close control navigates. Lets the drawer close
    * in-place on whatever page it is rendered on (e.g. /pipeline). */
   closeHref?: string;
+  /** Ordered IDs of the current filtered list — enables prev/next. */
+  recordIds?: string[];
 }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -110,6 +113,26 @@ export function CompanyDrawer({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [row]);
+
+  const idx = row && recordIds ? recordIds.indexOf(row.id) : -1;
+  const prevId = idx > 0 ? recordIds![idx - 1]! : null;
+  const nextId =
+    idx >= 0 && recordIds && idx < recordIds.length - 1
+      ? recordIds[idx + 1]!
+      : null;
+
+  function withRecord(id: string) {
+    const path = closeHref.split("?")[0] ?? closeHref;
+    const qs = new URLSearchParams(
+      closeHref.includes("?") ? closeHref.slice(closeHref.indexOf("?") + 1) : "",
+    );
+    qs.delete("record");
+    qs.set("record", id);
+    return `${path}?${qs.toString()}`;
+  }
+
+  const prevHref = prevId ? withRecord(prevId) : null;
+  const nextHref = nextId ? withRecord(nextId) : null;
 
   return (
     <>
@@ -140,6 +163,13 @@ export function CompanyDrawer({
             isAdmin={isAdmin}
             fieldDefinitions={fieldDefinitions}
             closeHref={closeHref}
+            prevHref={prevHref}
+            nextHref={nextHref}
+            positionLabel={
+              idx >= 0 && recordIds
+                ? `${idx + 1} / ${recordIds.length}`
+                : null
+            }
           />
         ) : null}
       </aside>
@@ -156,6 +186,9 @@ function DrawerContent({
   isAdmin,
   fieldDefinitions,
   closeHref,
+  prevHref,
+  nextHref,
+  positionLabel,
 }: {
   row: EventCompanyRow;
   owners: PersonOption[];
@@ -165,6 +198,9 @@ function DrawerContent({
   isAdmin: boolean;
   fieldDefinitions: CustomFieldDefinition[];
   closeHref: string;
+  prevHref: string | null;
+  nextHref: string | null;
+  positionLabel: string | null;
 }) {
   const [row, setRow] = useState(initial);
   const [tab, setTab] = useState<DrawerTab>("overview");
@@ -227,7 +263,44 @@ function DrawerContent({
               />
             </div>
           </div>
-          <div className="flex shrink-0 items-start gap-2">
+          <div className="flex shrink-0 items-start gap-1.5">
+            {(prevHref || nextHref) && (
+              <div className="mr-1 flex items-center gap-0.5 rounded-lg border border-zinc-200 p-0.5 dark:border-zinc-700">
+                {prevHref ? (
+                  <Link
+                    href={prevHref}
+                    scroll={false}
+                    className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                    title="Previous"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <span className="p-1.5 text-zinc-300 dark:text-zinc-700">
+                    <ChevronLeft className="h-4 w-4" />
+                  </span>
+                )}
+                {positionLabel ? (
+                  <span className="px-1 text-[10px] tabular-nums text-zinc-400">
+                    {positionLabel}
+                  </span>
+                ) : null}
+                {nextHref ? (
+                  <Link
+                    href={nextHref}
+                    scroll={false}
+                    className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                    title="Next"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <span className="p-1.5 text-zinc-300 dark:text-zinc-700">
+                    <ChevronRight className="h-4 w-4" />
+                  </span>
+                )}
+              </div>
+            )}
             <EmailDraftButton
               eventCompanyId={row.id}
               companyName={row.companyName}
@@ -617,7 +690,120 @@ function OverviewTab({
             />
           }
         />
+        <KV
+          label="Category"
+          value={
+            <CellShell
+              fieldKey="company.category"
+              entityId={row.companyId}
+              value={row.companyCategory}
+              display={row.companyCategory ?? "—"}
+              onLocalChange={(v) => update("companyCategory", v)}
+              Editor={TextEditor}
+            />
+          }
+        />
+        <KV
+          label="Subcategory"
+          value={
+            <CellShell
+              fieldKey="company.subcategory"
+              entityId={row.companyId}
+              value={
+                row.companySubcategory ??
+                (typeof row.customFields?.subcategory === "string"
+                  ? row.customFields.subcategory
+                  : null)
+              }
+              display={
+                row.companySubcategory ??
+                (typeof row.customFields?.subcategory === "string"
+                  ? row.customFields.subcategory
+                  : null) ??
+                "—"
+              }
+              onLocalChange={(v) => update("companySubcategory", v)}
+              Editor={TextEditor}
+            />
+          }
+        />
       </Section>
+
+      {(row.status === "confirmed" ||
+        row.status === "committed" ||
+        row.agreementSignedAt ||
+        row.invoiceSentAt ||
+        row.paidAt ||
+        row.boothNumber ||
+        row.repNames) && (
+        <Section title="Fulfillment">
+          <KV
+            label="Agreement signed"
+            value={
+              <CellShell
+                fieldKey="eventCompany.agreementSignedAt"
+                entityId={row.id}
+                value={row.agreementSignedAt}
+                display={formatRelativeDate(row.agreementSignedAt)}
+                onLocalChange={(v) => update("agreementSignedAt", v)}
+                Editor={DateEditor}
+              />
+            }
+          />
+          <KV
+            label="Invoice sent"
+            value={
+              <CellShell
+                fieldKey="eventCompany.invoiceSentAt"
+                entityId={row.id}
+                value={row.invoiceSentAt}
+                display={formatRelativeDate(row.invoiceSentAt)}
+                onLocalChange={(v) => update("invoiceSentAt", v)}
+                Editor={DateEditor}
+              />
+            }
+          />
+          <KV
+            label="Paid"
+            value={
+              <CellShell
+                fieldKey="eventCompany.paidAt"
+                entityId={row.id}
+                value={row.paidAt}
+                display={formatRelativeDate(row.paidAt)}
+                onLocalChange={(v) => update("paidAt", v)}
+                Editor={DateEditor}
+              />
+            }
+          />
+          <KV
+            label="Booth #"
+            value={
+              <CellShell
+                fieldKey="eventCompany.boothNumber"
+                entityId={row.id}
+                value={row.boothNumber}
+                display={row.boothNumber ?? "—"}
+                onLocalChange={(v) => update("boothNumber", v)}
+                Editor={TextEditor}
+              />
+            }
+          />
+          <KV
+            label="Rep names"
+            value={
+              <CellShell
+                fieldKey="eventCompany.repNames"
+                entityId={row.id}
+                value={row.repNames}
+                display={row.repNames ?? "—"}
+                onLocalChange={(v) => update("repNames", v)}
+                Editor={TextEditor}
+              />
+            }
+          />
+        </Section>
+      )}
 
       <Section title="Outreach strategy" accent>
         <Para

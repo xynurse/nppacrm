@@ -237,6 +237,7 @@ export default async function CompaniesPage({
         currentUserId={session.user.id}
         isAdmin={session.user.role === "admin"}
         fieldDefinitions={fieldDefinitions}
+        recordIds={rows.map((r) => r.id)}
       />
     </div>
   );
