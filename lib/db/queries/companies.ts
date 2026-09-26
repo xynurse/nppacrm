@@ -69,7 +69,10 @@ export type EventCompanyRow = {
   companyId: string;
   companyName: string;
   companyWebsite: string | null;
+  companyLogoUrl: string | null;
   companyIndustry: string | null;
+  companyCategory: string | null;
+  companySubcategory: string | null;
   companyHqLocation: string | null;
   companyNotesDoc: RichDoc | null;
   status: typeof eventCompanies.$inferSelect.status;
@@ -95,6 +98,11 @@ export type EventCompanyRow = {
   sponsorshipHook: string | null;
   companyContext: string | null;
   relationshipNotes: string | null;
+  agreementSignedAt: Date | null;
+  invoiceSentAt: Date | null;
+  paidAt: Date | null;
+  boothNumber: string | null;
+  repNames: string | null;
   tagsCache: string[];
   customFields: Record<string, unknown>;
 };
@@ -125,7 +133,10 @@ export async function listEventCompanies(
       companyId: eventCompanies.companyId,
       companyName: companies.name,
       companyWebsite: companies.website,
+      companyLogoUrl: companies.logoUrl,
       companyIndustry: companies.industry,
+      companyCategory: companies.category,
+      companySubcategory: companies.subcategory,
       companyHqLocation: companies.hqLocation,
       companyNotesDoc: companies.notesDoc,
       status: eventCompanies.status,
@@ -151,6 +162,11 @@ export async function listEventCompanies(
       sponsorshipHook: eventCompanies.sponsorshipHook,
       companyContext: eventCompanies.companyContext,
       relationshipNotes: eventCompanies.relationshipNotes,
+      agreementSignedAt: eventCompanies.agreementSignedAt,
+      invoiceSentAt: eventCompanies.invoiceSentAt,
+      paidAt: eventCompanies.paidAt,
+      boothNumber: eventCompanies.boothNumber,
+      repNames: eventCompanies.repNames,
       tagsCache: eventCompanies.tagsCache,
       customFields: eventCompanies.customFields,
     })
@@ -181,7 +197,10 @@ export async function getEventCompany(
       companyId: eventCompanies.companyId,
       companyName: companies.name,
       companyWebsite: companies.website,
+      companyLogoUrl: companies.logoUrl,
       companyIndustry: companies.industry,
+      companyCategory: companies.category,
+      companySubcategory: companies.subcategory,
       companyHqLocation: companies.hqLocation,
       companyNotesDoc: companies.notesDoc,
       status: eventCompanies.status,
@@ -207,6 +226,11 @@ export async function getEventCompany(
       sponsorshipHook: eventCompanies.sponsorshipHook,
       companyContext: eventCompanies.companyContext,
       relationshipNotes: eventCompanies.relationshipNotes,
+      agreementSignedAt: eventCompanies.agreementSignedAt,
+      invoiceSentAt: eventCompanies.invoiceSentAt,
+      paidAt: eventCompanies.paidAt,
+      boothNumber: eventCompanies.boothNumber,
+      repNames: eventCompanies.repNames,
       tagsCache: eventCompanies.tagsCache,
       customFields: eventCompanies.customFields,
     })

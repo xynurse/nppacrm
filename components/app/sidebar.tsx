@@ -12,7 +12,9 @@ import {
   History,
   KanbanSquare,
   LayoutDashboard,
+  ListTodo,
   LogOut,
+  BookOpen,
   Search,
   Settings,
   Users,
@@ -35,7 +37,9 @@ const mainNav: NavItem[] = [
   { href: "/companies", label: "Companies", Icon: Building2 },
   { href: "/contacts", label: "Contacts", Icon: Users },
   { href: "/tasks", label: "Tasks", Icon: CheckSquare },
+  { href: "/calendar", label: "Calendar", Icon: ListTodo },
   { href: "/pipeline", label: "Pipeline", Icon: KanbanSquare },
+  { href: "/playbooks", label: "Playbooks", Icon: BookOpen },
   { href: "/reports", label: "Reports", Icon: BarChart3 },
 ];
 

@@ -6,10 +6,11 @@ Design philosophy: spreadsheet-first, inline-editable, drawer detail, ⌘K palet
 References: Attio, Twenty, Linear, Notion.
 
 **Primary reference files (read in this order at session start):**
-1. `docs/SESSION-STATE.md` — current state, in-progress work, next tasks. **Read this first.**
-2. `TODO.md` — full backlog with completion status.
-3. `CHANGELOG.md` — history of what was built and when.
-4. `docs/sponsorship-crm-build-prompt.md` — original product spec (read only if working on a new feature area).
+1. `docs/AGENT-MEMORY.md` — **short token-efficient handoff. Read this first.** Prefer it over the longer docs below.
+2. `docs/SESSION-STATE.md` — full current state / in-progress / next tasks (only if AGENT-MEMORY is insufficient).
+3. `TODO.md` — full backlog with completion status.
+4. `CHANGELOG.md` — history of what was built and when.
+5. `docs/sponsorship-crm-build-prompt.md` — original product spec (read only if working on a new feature area).
 
 ## Stack — do not deviate without asking
 - Next.js 15 App Router, TypeScript strict, Server Actions for mutations

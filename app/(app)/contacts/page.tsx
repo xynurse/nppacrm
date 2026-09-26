@@ -23,7 +23,7 @@ export default async function ContactsPage({
   if (!activeEvent) {
     return (
       <div className="space-y-3">
-        <h1 className="text-xl font-semibold tracking-tight">Contacts</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">Contacts</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           No event yet. Create one to start tracking contacts.
         </p>
@@ -53,7 +53,7 @@ export default async function ContactsPage({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Contacts</h1>
+          <h1 className="font-display text-xl font-semibold tracking-tight">Contacts</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             {activeEvent.name} · {contacts.length} contacts
             {keyword ? ` matching “${keyword}”` : ""}

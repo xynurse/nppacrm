@@ -15,7 +15,7 @@ export default async function LoginPage() {
           className="mx-auto mb-4 h-14 w-14 rounded-2xl shadow-lg shadow-brand-950/40"
           glyphClassName="h-8 w-8"
         />
-        <h1 className="text-xl font-bold tracking-tight text-white">
+        <h1 className="font-display text-xl font-bold tracking-tight text-white">
           LPD Sponsor CRM
         </h1>
         <p className="mt-1 text-sm text-zinc-400">

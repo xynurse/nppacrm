@@ -3,13 +3,18 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import {
+  bulkRemoveTag,
   bulkUpdateEventCompanies,
   softDeleteEventCompanies,
 } from "@/lib/actions/cells";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { PROSPECT_PRIORITY_VALUES, PROSPECT_STATUS_VALUES } from "@/lib/db/schema";
-import { PROSPECT_STATUS_LABELS } from "./status-badge";
+import {
+  BOUNCED_TAG,
+  DEFERRED_TAG,
+  PROSPECT_STATUS_LABELS,
+} from "./status-badge";
 import type { PersonOption } from "@/components/cells/types";
 
 export function BulkActionBar({
@@ -28,12 +33,17 @@ export function BulkActionBar({
   const count = selectedIds.length;
   if (count === 0) return null;
 
+  const clearTag = (tag: string) => {
+    startTransition(async () => {
+      await bulkRemoveTag({ ids: selectedIds, tag });
+      router.refresh();
+    });
+  };
+
   return (
-    <div className="sticky bottom-4 left-0 right-0 z-20 mx-auto flex w-fit max-w-full items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm shadow-md dark:border-slate-700 dark:bg-zinc-900">
-      <span className="font-medium">
-        {count} selected
-      </span>
-      <span className="text-slate-300">·</span>
+    <div className="sticky bottom-4 left-0 right-0 z-20 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 py-2 text-sm shadow-md dark:border-zinc-700 dark:bg-zinc-900">
+      <span className="font-medium">{count} selected</span>
+      <span className="text-zinc-300">·</span>
       <Select
         className="h-8 w-40 text-xs"
         defaultValue=""
@@ -107,6 +117,24 @@ export function BulkActionBar({
           </option>
         ))}
       </Select>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={pending}
+        onClick={() => clearTag(BOUNCED_TAG)}
+        title="Remove BOUNCED tag from selection"
+      >
+        Clear Bounced
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={pending}
+        onClick={() => clearTag(DEFERRED_TAG)}
+        title="Remove DEFERRED tag from selection"
+      >
+        Clear Deferred
+      </Button>
       {isAdmin ? (
         <Button
           variant="destructive"

@@ -54,6 +54,12 @@ export const eventCompanies = pgTable(
     companyContext: text("company_context"),
     relationshipNotes: text("relationship_notes"),
     contactSourceNotes: text("contact_source_notes"),
+    /** Confirmed-sponsor fulfillment (workbook Confirmed Sponsors sheet). */
+    agreementSignedAt: timestamp("agreement_signed_at", { withTimezone: true }),
+    invoiceSentAt: timestamp("invoice_sent_at", { withTimezone: true }),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    boothNumber: text("booth_number"),
+    repNames: text("rep_names"),
     customFields: jsonb("custom_fields")
       .$type<Record<string, unknown>>()
       .notNull()
@@ -92,6 +98,7 @@ export const eventCompanies = pgTable(
       table.eventId,
       table.lastContactedAt,
     ),
+    index("event_companies_paid_at_idx").on(table.eventId, table.paidAt),
   ],
 );
 

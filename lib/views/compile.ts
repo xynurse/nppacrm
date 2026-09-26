@@ -41,8 +41,16 @@ function eventCompanyColumn(key: string): SQL | null {
       return sql`${companies.name}`;
     case "industry":
       return sql`${companies.industry}`;
+    case "category":
+      return sql`${companies.category}`;
+    case "subcategory":
+      return sql`${companies.subcategory}`;
     case "hqLocation":
       return sql`${companies.hqLocation}`;
+    case "boothNumber":
+      return sql`${eventCompanies.boothNumber}`;
+    case "paidAt":
+      return sql`${eventCompanies.paidAt}`;
     default:
       return null;
   }

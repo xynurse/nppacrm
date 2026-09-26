@@ -63,7 +63,7 @@ export default async function CompaniesPage({
   if (!activeEvent) {
     return (
       <div className="space-y-3">
-        <h1 className="text-xl font-semibold tracking-tight">Companies</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">Companies</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           No event yet. Create one to start tracking sponsors.
         </p>
@@ -191,7 +191,7 @@ export default async function CompaniesPage({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Companies</h1>
+          <h1 className="font-display text-xl font-semibold tracking-tight">Companies</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             {activeEvent.name} · {rows.length} prospects
             {keyword ? ` matching “${keyword}”` : ""}
@@ -237,6 +237,7 @@ export default async function CompaniesPage({
         currentUserId={session.user.id}
         isAdmin={session.user.role === "admin"}
         fieldDefinitions={fieldDefinitions}
+        recordIds={rows.map((r) => r.id)}
       />
     </div>
   );

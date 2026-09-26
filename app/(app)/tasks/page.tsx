@@ -28,7 +28,7 @@ export default async function TasksPage({
   if (!activeEvent) {
     return (
       <div className="space-y-3">
-        <h1 className="text-xl font-semibold tracking-tight">Tasks</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">Tasks</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           No event yet.
         </p>
@@ -63,7 +63,7 @@ export default async function TasksPage({
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">Tasks</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">Tasks</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           {activeEvent.name} · {filtered.length} task{filtered.length !== 1 ? "s" : ""}
         </p>

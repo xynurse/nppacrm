@@ -127,6 +127,48 @@ const bulkUpdateSchema = z.object({
   }),
 });
 
+export async function bulkRemoveTag(raw: unknown): Promise<ActionResult> {
+  const session = await requireSession();
+  const parsed = z
+    .object({
+      ids: z.array(z.uuid()).min(1).max(500),
+      tag: z.string().min(1).max(64),
+    })
+    .safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid input" };
+
+  const rows = await db
+    .select({ id: eventCompanies.id, tagsCache: eventCompanies.tagsCache })
+    .from(eventCompanies)
+    .where(inArray(eventCompanies.id, parsed.data.ids));
+
+  const tag = parsed.data.tag;
+  for (const row of rows) {
+    const next = (row.tagsCache ?? []).filter((t) => t !== tag);
+    if (next.length === (row.tagsCache ?? []).length) continue;
+    await db
+      .update(eventCompanies)
+      .set({
+        tagsCache: next,
+        updatedAt: new Date(),
+        updatedBy: session.user.id,
+      })
+      .where(eq(eventCompanies.id, row.id));
+  }
+
+  await recordAudit({
+    userId: session.user.id,
+    action: "eventCompany.bulk_remove_tag",
+    entityType: "eventCompany",
+    entityId: parsed.data.ids[0]!,
+    changes: { ids: parsed.data.ids, tag },
+  });
+
+  revalidatePath("/companies");
+  revalidatePath("/pipeline");
+  return { ok: true };
+}
+
 export async function bulkUpdateEventCompanies(
   raw: unknown,
 ): Promise<ActionResult> {

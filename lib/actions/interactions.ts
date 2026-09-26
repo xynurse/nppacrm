@@ -135,6 +135,28 @@ export async function logInteraction(
     },
   });
 
+  if (bodyDoc) {
+    const { createNotifications, mentionUserIdsFromDoc } = await import(
+      "@/lib/notifications"
+    );
+    const mentioned = mentionUserIdsFromDoc(bodyDoc).filter(
+      (id) => id !== session.user.id,
+    );
+    if (mentioned.length > 0) {
+      await createNotifications(
+        mentioned.map((userId) => ({
+          userId,
+          type: "mention",
+          title: `${session.user.name ?? "Someone"} mentioned you`,
+          body: data.subject ?? body?.slice(0, 140) ?? "In an interaction note",
+          entityType: "interaction",
+          entityId: row.id,
+          href: `/companies?record=${data.eventCompanyId}`,
+        })),
+      );
+    }
+  }
+
   revalidatePath("/companies");
   return { ok: true, data: { id: row.id } };
 }

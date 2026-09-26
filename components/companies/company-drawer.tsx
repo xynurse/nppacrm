@@ -1,6 +1,6 @@
 "use client";
 
-import { Gift, Sparkles, X } from "lucide-react";
+import { Gift, Sparkles, ChevronLeft, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { CellShell } from "@/components/cells/cell-shell";
@@ -14,6 +14,7 @@ import { UrlDisplay, UrlEditor } from "@/components/cells/url-cell";
 import type { PersonOption, TierOption } from "@/components/cells/types";
 import { AiTab } from "@/components/companies/ai-tab";
 import { BenefitsTab } from "@/components/companies/benefits-tab";
+import { CompanyAvatar } from "@/components/companies/company-avatar";
 import { EmailDraftButton } from "@/components/companies/email-draft-dialog";
 import { ProposalDialog } from "@/components/companies/proposal-dialog";
 import { ContactsTab } from "@/components/contacts/contacts-tab";
@@ -87,6 +88,7 @@ export function CompanyDrawer({
   isAdmin,
   fieldDefinitions,
   closeHref = "/companies",
+  recordIds,
 }: {
   row: EventCompanyRow | null;
   owners: PersonOption[];
@@ -98,6 +100,8 @@ export function CompanyDrawer({
   /** Where the backdrop/close control navigates. Lets the drawer close
    * in-place on whatever page it is rendered on (e.g. /pipeline). */
   closeHref?: string;
+  /** Ordered IDs of the current filtered list — enables prev/next. */
+  recordIds?: string[];
 }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -109,6 +113,26 @@ export function CompanyDrawer({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [row]);
+
+  const idx = row && recordIds ? recordIds.indexOf(row.id) : -1;
+  const prevId = idx > 0 ? recordIds![idx - 1]! : null;
+  const nextId =
+    idx >= 0 && recordIds && idx < recordIds.length - 1
+      ? recordIds[idx + 1]!
+      : null;
+
+  function withRecord(id: string) {
+    const path = closeHref.split("?")[0] ?? closeHref;
+    const qs = new URLSearchParams(
+      closeHref.includes("?") ? closeHref.slice(closeHref.indexOf("?") + 1) : "",
+    );
+    qs.delete("record");
+    qs.set("record", id);
+    return `${path}?${qs.toString()}`;
+  }
+
+  const prevHref = prevId ? withRecord(prevId) : null;
+  const nextHref = nextId ? withRecord(nextId) : null;
 
   return (
     <>
@@ -124,7 +148,7 @@ export function CompanyDrawer({
       />
       <aside
         className={cn(
-          "fixed right-0 top-0 z-40 h-screen w-full max-w-2xl overflow-y-auto border-l border-slate-200 bg-white shadow-[var(--shadow-overlay)] transition-transform duration-200 ease-[var(--ease-out-soft)] dark:border-slate-800 dark:bg-zinc-900",
+          "fixed right-0 top-0 z-40 h-screen w-full max-w-2xl overflow-y-auto border-l border-zinc-200 bg-white shadow-[var(--shadow-overlay)] transition-transform duration-200 ease-[var(--ease-out-soft)] dark:border-zinc-800 dark:bg-zinc-900",
           row ? "translate-x-0" : "translate-x-full",
         )}
         aria-hidden={!row}
@@ -139,6 +163,13 @@ export function CompanyDrawer({
             isAdmin={isAdmin}
             fieldDefinitions={fieldDefinitions}
             closeHref={closeHref}
+            prevHref={prevHref}
+            nextHref={nextHref}
+            positionLabel={
+              idx >= 0 && recordIds
+                ? `${idx + 1} / ${recordIds.length}`
+                : null
+            }
           />
         ) : null}
       </aside>
@@ -155,6 +186,9 @@ function DrawerContent({
   isAdmin,
   fieldDefinitions,
   closeHref,
+  prevHref,
+  nextHref,
+  positionLabel,
 }: {
   row: EventCompanyRow;
   owners: PersonOption[];
@@ -164,6 +198,9 @@ function DrawerContent({
   isAdmin: boolean;
   fieldDefinitions: CustomFieldDefinition[];
   closeHref: string;
+  prevHref: string | null;
+  nextHref: string | null;
+  positionLabel: string | null;
 }) {
   const [row, setRow] = useState(initial);
   const [tab, setTab] = useState<DrawerTab>("overview");
@@ -190,137 +227,185 @@ function DrawerContent({
   ];
 
   return (
-    <div className="p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            {row.companyIndustry ?? "Prospect"}
+    <div className="flex min-h-full flex-col">
+      <div className="sticky top-0 z-10 border-b border-zinc-200/90 bg-white/90 px-6 pb-4 pt-5 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/90">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-1 gap-3">
+            <CompanyAvatar
+              name={row.companyName}
+              website={row.companyWebsite}
+              logoUrl={row.companyLogoUrl}
+              size="lg"
+              className="mt-0.5"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                {row.companyIndustry ?? "Prospect"}
+              </div>
+              <h2 className="mt-0.5 font-display text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                <CellShell
+                  fieldKey="company.name"
+                  entityId={row.companyId}
+                  value={row.companyName}
+                  display={row.companyName}
+                  onLocalChange={(v) => update("companyName", v ?? "")}
+                  Editor={TextEditor}
+                />
+              </h2>
+              <CellShell
+                fieldKey="company.website"
+                entityId={row.companyId}
+                value={row.companyWebsite}
+                display={<UrlDisplay value={row.companyWebsite} />}
+                onLocalChange={(v) => update("companyWebsite", v)}
+                Editor={UrlEditor}
+                className="text-xs"
+              />
+            </div>
           </div>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight">
-            <CellShell
-              fieldKey="company.name"
-              entityId={row.companyId}
-              value={row.companyName}
-              display={row.companyName}
-              onLocalChange={(v) => update("companyName", v ?? "")}
-              Editor={TextEditor}
-            />
-          </h2>
-          <CellShell
-            fieldKey="company.website"
-            entityId={row.companyId}
-            value={row.companyWebsite}
-            display={<UrlDisplay value={row.companyWebsite} />}
-            onLocalChange={(v) => update("companyWebsite", v)}
-            Editor={UrlEditor}
-            className="text-xs"
-          />
-        </div>
-        <div className="flex shrink-0 items-start gap-2">
-          <EmailDraftButton
-            eventCompanyId={row.id}
-            companyName={row.companyName}
-          />
-          <ProposalDialog
-            eventCompanyId={row.id}
-            companyName={row.companyName}
-            status={row.status}
-            existingProposalUrl={row.proposalUrl}
-            existingProposalSentAt={row.proposalSentAt}
-            existingProposalValidUntil={row.proposalValidUntil}
-          />
-          <Link
-            href={closeHref}
-            scroll={false}
-            className="rounded-md p-1 hover:bg-slate-100 dark:hover:bg-zinc-800"
-            title="Close"
-          >
-            <X className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <StatusBadge status={row.status} />
-        {hasBouncedTag(row.tagsCache) ? <BouncedBadge /> : null}
-        {hasDeferredTag(row.tagsCache) ? <DeferredBadge /> : null}
-        <PriorityDot priority={row.priority} />
-        {row.targetTierName ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-xs dark:bg-zinc-800">
-            <span
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: row.targetTierColor ?? "#94a3b8" }}
-            />
-            Target: {row.targetTierName}
-          </span>
-        ) : null}
-        {row.confirmedTierName ? (
-          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
-            Confirmed: {row.confirmedTierName}
-          </span>
-        ) : null}
-      </div>
-
-      <nav className="mt-5 flex gap-1 border-b border-slate-200 dark:border-slate-800">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={cn(
-              "-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors duration-150",
-              tab === t.id
-                ? "border-brand-600 text-slate-900 dark:border-brand-400 dark:text-slate-100"
-                : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-200",
+          <div className="flex shrink-0 items-start gap-1.5">
+            {(prevHref || nextHref) && (
+              <div className="mr-1 flex items-center gap-0.5 rounded-lg border border-zinc-200 p-0.5 dark:border-zinc-700">
+                {prevHref ? (
+                  <Link
+                    href={prevHref}
+                    scroll={false}
+                    className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                    title="Previous"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <span className="p-1.5 text-zinc-300 dark:text-zinc-700">
+                    <ChevronLeft className="h-4 w-4" />
+                  </span>
+                )}
+                {positionLabel ? (
+                  <span className="px-1 text-[10px] tabular-nums text-zinc-400">
+                    {positionLabel}
+                  </span>
+                ) : null}
+                {nextHref ? (
+                  <Link
+                    href={nextHref}
+                    scroll={false}
+                    className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                    title="Next"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <span className="p-1.5 text-zinc-300 dark:text-zinc-700">
+                    <ChevronRight className="h-4 w-4" />
+                  </span>
+                )}
+              </div>
             )}
-          >
-            <span className="inline-flex items-center gap-1">
-              {t.id === "ai" ? (
-                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-              ) : null}
-              {t.id === "benefits" ? (
-                <Gift className="h-3.5 w-3.5 text-emerald-500" />
-              ) : null}
-              {t.label}
-            </span>
-            {t.id === "contacts" && data.contacts.length > 0 ? (
-              <span className="ml-1 text-xs text-slate-400">
-                {data.contacts.length}
-              </span>
-            ) : null}
-            {t.id === "activity" && data.interactions.length > 0 ? (
-              <span className="ml-1 text-xs text-slate-400">
-                {data.interactions.length}
-              </span>
-            ) : null}
-            {t.id === "tasks" && data.tasks.length > 0 ? (
-              <span className="ml-1 text-xs text-slate-400">
-                {data.tasks.filter((x) => !x.completedAt).length}
-              </span>
-            ) : null}
-            {t.id === "ai" &&
-            data.ai.suggestions.filter((s) => s.status === "pending").length >
-              0 ? (
-              <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900 dark:bg-amber-900 dark:text-amber-100">
-                {
-                  data.ai.suggestions.filter((s) => s.status === "pending")
-                    .length
-                }
-              </span>
-            ) : null}
-            {t.id === "benefits" && data.benefits.length > 0 ? (
-              <span className="ml-1 text-xs text-slate-400">
-                {
-                  data.benefits.filter((b) => b.status !== "delivered" && b.status !== "skipped").length
-                }
-                /{data.benefits.length}
-              </span>
-            ) : null}
-          </button>
-        ))}
-      </nav>
+            <EmailDraftButton
+              eventCompanyId={row.id}
+              companyName={row.companyName}
+            />
+            <ProposalDialog
+              eventCompanyId={row.id}
+              companyName={row.companyName}
+              status={row.status}
+              existingProposalUrl={row.proposalUrl}
+              existingProposalSentAt={row.proposalSentAt}
+              existingProposalValidUntil={row.proposalValidUntil}
+            />
+            <Link
+              href={closeHref}
+              scroll={false}
+              className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              title="Close"
+            >
+              <X className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
 
-      <div className="mt-5">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <StatusBadge status={row.status} />
+          {hasBouncedTag(row.tagsCache) ? <BouncedBadge /> : null}
+          {hasDeferredTag(row.tagsCache) ? <DeferredBadge /> : null}
+          <PriorityDot priority={row.priority} />
+          {row.targetTierName ? (
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: row.targetTierColor ?? "#94a3b8" }}
+              />
+              Target: {row.targetTierName}
+            </span>
+          ) : null}
+          {row.confirmedTierName ? (
+            <span className="inline-flex items-center rounded-md bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+              Confirmed: {row.confirmedTierName}
+            </span>
+          ) : null}
+        </div>
+
+        <nav className="mt-4 -mb-px flex gap-0.5 overflow-x-auto">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition-colors duration-150",
+                tab === t.id
+                  ? "border-brand-600 text-zinc-900 dark:border-brand-400 dark:text-zinc-50"
+                  : "border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-200",
+              )}
+            >
+              <span className="inline-flex items-center gap-1">
+                {t.id === "ai" ? (
+                  <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                ) : null}
+                {t.id === "benefits" ? (
+                  <Gift className="h-3.5 w-3.5 text-emerald-500" />
+                ) : null}
+                {t.label}
+              </span>
+              {t.id === "contacts" && data.contacts.length > 0 ? (
+                <span className="ml-1 text-xs text-zinc-400">
+                  {data.contacts.length}
+                </span>
+              ) : null}
+              {t.id === "activity" && data.interactions.length > 0 ? (
+                <span className="ml-1 text-xs text-zinc-400">
+                  {data.interactions.length}
+                </span>
+              ) : null}
+              {t.id === "tasks" && data.tasks.length > 0 ? (
+                <span className="ml-1 text-xs text-zinc-400">
+                  {data.tasks.filter((x) => !x.completedAt).length}
+                </span>
+              ) : null}
+              {t.id === "ai" &&
+              data.ai.suggestions.filter((s) => s.status === "pending").length >
+                0 ? (
+                <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900 dark:bg-amber-900 dark:text-amber-100">
+                  {
+                    data.ai.suggestions.filter((s) => s.status === "pending")
+                      .length
+                  }
+                </span>
+              ) : null}
+              {t.id === "benefits" && data.benefits.length > 0 ? (
+                <span className="ml-1 text-xs text-zinc-400">
+                  {
+                    data.benefits.filter((b) => b.status !== "delivered" && b.status !== "skipped").length
+                  }
+                  /{data.benefits.length}
+                </span>
+              ) : null}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      <div className="flex-1 px-6 py-5">
         {tab === "overview" ? (
           <OverviewTab
             row={row}
@@ -605,7 +690,120 @@ function OverviewTab({
             />
           }
         />
+        <KV
+          label="Category"
+          value={
+            <CellShell
+              fieldKey="company.category"
+              entityId={row.companyId}
+              value={row.companyCategory}
+              display={row.companyCategory ?? "—"}
+              onLocalChange={(v) => update("companyCategory", v)}
+              Editor={TextEditor}
+            />
+          }
+        />
+        <KV
+          label="Subcategory"
+          value={
+            <CellShell
+              fieldKey="company.subcategory"
+              entityId={row.companyId}
+              value={
+                row.companySubcategory ??
+                (typeof row.customFields?.subcategory === "string"
+                  ? row.customFields.subcategory
+                  : null)
+              }
+              display={
+                row.companySubcategory ??
+                (typeof row.customFields?.subcategory === "string"
+                  ? row.customFields.subcategory
+                  : null) ??
+                "—"
+              }
+              onLocalChange={(v) => update("companySubcategory", v)}
+              Editor={TextEditor}
+            />
+          }
+        />
       </Section>
+
+      {(row.status === "confirmed" ||
+        row.status === "committed" ||
+        row.agreementSignedAt ||
+        row.invoiceSentAt ||
+        row.paidAt ||
+        row.boothNumber ||
+        row.repNames) && (
+        <Section title="Fulfillment">
+          <KV
+            label="Agreement signed"
+            value={
+              <CellShell
+                fieldKey="eventCompany.agreementSignedAt"
+                entityId={row.id}
+                value={row.agreementSignedAt}
+                display={formatRelativeDate(row.agreementSignedAt)}
+                onLocalChange={(v) => update("agreementSignedAt", v)}
+                Editor={DateEditor}
+              />
+            }
+          />
+          <KV
+            label="Invoice sent"
+            value={
+              <CellShell
+                fieldKey="eventCompany.invoiceSentAt"
+                entityId={row.id}
+                value={row.invoiceSentAt}
+                display={formatRelativeDate(row.invoiceSentAt)}
+                onLocalChange={(v) => update("invoiceSentAt", v)}
+                Editor={DateEditor}
+              />
+            }
+          />
+          <KV
+            label="Paid"
+            value={
+              <CellShell
+                fieldKey="eventCompany.paidAt"
+                entityId={row.id}
+                value={row.paidAt}
+                display={formatRelativeDate(row.paidAt)}
+                onLocalChange={(v) => update("paidAt", v)}
+                Editor={DateEditor}
+              />
+            }
+          />
+          <KV
+            label="Booth #"
+            value={
+              <CellShell
+                fieldKey="eventCompany.boothNumber"
+                entityId={row.id}
+                value={row.boothNumber}
+                display={row.boothNumber ?? "—"}
+                onLocalChange={(v) => update("boothNumber", v)}
+                Editor={TextEditor}
+              />
+            }
+          />
+          <KV
+            label="Rep names"
+            value={
+              <CellShell
+                fieldKey="eventCompany.repNames"
+                entityId={row.id}
+                value={row.repNames}
+                display={row.repNames ?? "—"}
+                onLocalChange={(v) => update("repNames", v)}
+                Editor={TextEditor}
+              />
+            }
+          />
+        </Section>
+      )}
 
       <Section title="Outreach strategy" accent>
         <Para

@@ -175,6 +175,64 @@ export function ViewsToolbar({
           placeholder="Search companies, contacts, notes…"
           className="w-full sm:w-64"
         />
+        <div className="flex items-center gap-1">
+          {(
+            [
+              { label: "Bounced", value: "BOUNCED" },
+              { label: "Deferred", value: "DEFERRED" },
+            ] as const
+          ).map((chip) => {
+            const active = filter.conditions.some(
+              (c) =>
+                c.field === "tags" &&
+                c.op === "contains" &&
+                c.value === chip.value,
+            );
+            return (
+              <button
+                key={chip.value}
+                type="button"
+                onClick={() => {
+                  const nextConditions = active
+                    ? filter.conditions.filter(
+                        (c) =>
+                          !(
+                            c.field === "tags" &&
+                            c.op === "contains" &&
+                            c.value === chip.value
+                          ),
+                      )
+                    : [
+                        ...filter.conditions.filter(
+                          (c) =>
+                            !(
+                              c.field === "tags" &&
+                              c.op === "contains" &&
+                              (c.value === "BOUNCED" || c.value === "DEFERRED")
+                            ),
+                        ),
+                        {
+                          field: "tags",
+                          op: "contains" as const,
+                          value: chip.value,
+                        },
+                      ];
+                  const next = { ...filter, conditions: nextConditions };
+                  setFilter(next);
+                  setViewId(null);
+                  pushUrl({ filter: next, sort, viewId: null });
+                }}
+                className={
+                  active
+                    ? "h-8 rounded-md bg-zinc-900 px-2.5 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+                    : "h-8 rounded-md border border-zinc-200 px-2.5 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                }
+              >
+                {chip.label}
+              </button>
+            );
+          })}
+        </div>
         <ViewSwitcher
           eventId={eventId}
           views={views}
