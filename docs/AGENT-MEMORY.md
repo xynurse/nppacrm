@@ -6,7 +6,7 @@
 
 **Last updated:** 2026-09-26  
 **main:** PR #1 merged (`8d64103`) + CI build env (`a630150`)  
-**Open work:** Phase 5 spreadsheet columns on `cursor/phase5-spreadsheet-75b2`  
+**Open PR:** https://github.com/xynurse/nppacrm/pull/2 (`cursor/phase5-spreadsheet-75b2`)  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
