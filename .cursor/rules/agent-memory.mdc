@@ -1,0 +1,14 @@
+---
+description: Token-efficient context — read AGENT-MEMORY before deep docs
+alwaysApply: true
+---
+
+# Token-efficient session start
+
+Before exploring this repo:
+
+1. Read **`docs/AGENT-MEMORY.md`** first (short handoff).
+2. Do **not** auto-load `docs/SESSION-STATE.md`, `TODO.md`, `CHANGELOG.md`, or `docs/sponsorship-crm-build-prompt.md` unless AGENT-MEMORY lacks the fact you need.
+3. Prefer Grep/Glob with tight paths over reading large files.
+4. After meaningful work, update the “Last updated / Shipped / Deferred” sections of `docs/AGENT-MEMORY.md` — keep it under ~120 lines.
+5. One focused chunk per session; avoid re-analyzing the whole product.
