@@ -12,6 +12,10 @@ jobs:
     env:
       SKIP_ENV_VALIDATION: "true"
       CI: "true"
+      # Build imports the Neon client while collecting routes. These values
+      # are never used to connect; production supplies the real secrets.
+      DATABASE_URL: postgresql://build:build@127.0.0.1:5432/build
+      AUTH_SECRET: build-secret-not-used-at-runtime-00
     steps:
       - uses: actions/checkout@v4
 
