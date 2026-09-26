@@ -336,6 +336,7 @@ async function main() {
     isDefault?: boolean;
     filter: schema.SavedView["filter"];
     sort: schema.SavedView["sort"];
+    columns?: string[];
     displayOrder: number;
   }> = [
     {
@@ -371,8 +372,8 @@ async function main() {
     },
     {
       // Replaces "Stale (no contact 14+ days)", whose last_n_days op matched
-      // recently-contacted companies — the opposite of stale. Existing DBs
-      // keep the old view (seed is name-keyed); delete it manually.
+      // recently-contacted companies. Migration 0013 rewrites that view in
+      // databases that already have it.
       name: "Needs follow-up (14+ days)",
       filter: {
         op: "and",
@@ -404,6 +405,42 @@ async function main() {
       sort: [{ field: "proposalValidUntil", dir: "asc" }],
       displayOrder: 40,
     },
+    {
+      name: "Unassigned",
+      filter: {
+        op: "and",
+        conditions: [{ field: "ownerId", op: "is_empty" }],
+      },
+      sort: [{ field: "companyName", dir: "asc" }],
+      displayOrder: 50,
+    },
+    {
+      name: "Bounced",
+      filter: {
+        op: "and",
+        conditions: [{ field: "tags", op: "equals", value: "BOUNCED" }],
+      },
+      sort: [{ field: "companyName", dir: "asc" }],
+      displayOrder: 60,
+    },
+    {
+      name: "By category",
+      filter: { op: "and", conditions: [] },
+      sort: [
+        { field: "category", dir: "asc" },
+        { field: "companyName", dir: "asc" },
+      ],
+      columns: [
+        "companyName",
+        "category",
+        "subcategory",
+        "status",
+        "ownerId",
+        "priority",
+        "lastContactedAt",
+      ],
+      displayOrder: 70,
+    },
   ];
 
   const viewsToInsert = DEFAULT_VIEWS.filter((v) => !existingViewNames.has(v.name));
@@ -419,6 +456,7 @@ async function main() {
         displayOrder: v.displayOrder,
         filter: v.filter,
         sort: v.sort,
+        columns: v.columns ?? [],
       })),
     );
     console.log(`Inserted ${viewsToInsert.length} default saved views.`);

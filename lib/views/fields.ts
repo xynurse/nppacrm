@@ -2,6 +2,7 @@ import type { FilterFieldType, FilterOperator } from "./types";
 import {
   PROSPECT_PRIORITY_VALUES,
   PROSPECT_STATUS_VALUES,
+  type CustomFieldType,
 } from "@/lib/db/schema";
 import { PROSPECT_STATUS_LABELS } from "@/components/companies/status-badge";
 
@@ -189,6 +190,27 @@ export const COMPANY_FIELDS: FieldMeta[] = [
     sortable: false,
   },
   {
+    key: "agreementSignedAt",
+    label: "Agreement signed",
+    type: "date",
+    operators: DATE_OPS,
+    sortable: true,
+  },
+  {
+    key: "invoiceSentAt",
+    label: "Invoice sent",
+    type: "date",
+    operators: DATE_OPS,
+    sortable: true,
+  },
+  {
+    key: "repNames",
+    label: "Rep names",
+    type: "text",
+    operators: TEXT_OPS,
+    sortable: true,
+  },
+  {
     key: "tags",
     label: "Tags",
     type: "text",
@@ -204,6 +226,82 @@ export const COMPANY_FIELDS_BY_KEY: Record<string, FieldMeta> =
 
 export function getCompanyField(key: string): FieldMeta | null {
   return COMPANY_FIELDS_BY_KEY[key] ?? null;
+}
+
+export const CUSTOM_FIELD_PREFIX = "custom:";
+const CUSTOM_KEY_RE = /^[a-z][a-z0-9_]*$/;
+
+export function customFieldFilterKey(key: string): string {
+  return `${CUSTOM_FIELD_PREFIX}${key}`;
+}
+
+export function parseCustomFieldKey(field: string): string | null {
+  if (!field.startsWith(CUSTOM_FIELD_PREFIX)) return null;
+  const key = field.slice(CUSTOM_FIELD_PREFIX.length);
+  return CUSTOM_KEY_RE.test(key) ? key : null;
+}
+
+export function fieldMetaForCustom(def: {
+  key: string;
+  label: string;
+  fieldType: CustomFieldType;
+  config: { options?: Array<{ value: string; label: string }> };
+}): FieldMeta | null {
+  const key = customFieldFilterKey(def.key);
+  switch (def.fieldType) {
+    case "file":
+      return null;
+    case "checkbox":
+      return {
+        key,
+        label: def.label,
+        type: "boolean",
+        operators: BOOLEAN_OPS,
+        sortable: false,
+      };
+    case "number":
+    case "currency":
+      return {
+        key,
+        label: def.label,
+        type: "currency",
+        operators: NUMBER_OPS,
+        sortable: true,
+      };
+    case "date":
+      return {
+        key,
+        label: def.label,
+        type: "date",
+        operators: DATE_OPS,
+        sortable: true,
+      };
+    case "singleSelect":
+      return {
+        key,
+        label: def.label,
+        type: "select",
+        operators: SELECT_OPS,
+        options: def.config.options ?? [],
+        sortable: true,
+      };
+    case "longText":
+      return {
+        key,
+        label: def.label,
+        type: "text",
+        operators: TEXT_OPS,
+        sortable: false,
+      };
+    default:
+      return {
+        key,
+        label: def.label,
+        type: "text",
+        operators: TEXT_OPS,
+        sortable: true,
+      };
+  }
 }
 
 export const OPERATOR_LABELS: Record<FilterOperator, string> = {

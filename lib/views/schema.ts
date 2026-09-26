@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { COMPANY_FIELDS_BY_KEY } from "./fields";
+import {
+  COMPANY_FIELDS_BY_KEY,
+  parseCustomFieldKey,
+  type FieldMeta,
+} from "./fields";
 import type { FilterAst, FilterCondition, SortSpec } from "./types";
 import { EMPTY_FILTER } from "./types";
 
@@ -64,27 +68,41 @@ export const viewStateSchema = z.object({
   columns: z.array(z.string()).optional(),
 });
 
-const validFields = new Set(Object.keys(COMPANY_FIELDS_BY_KEY));
+function fieldLookup(extra: FieldMeta[]): Map<string, FieldMeta> {
+  const map = new Map<string, FieldMeta>(
+    Object.entries(COMPANY_FIELDS_BY_KEY),
+  );
+  for (const field of extra) map.set(field.key, field);
+  return map;
+}
 
-export function sanitizeFilter(ast: unknown): FilterAst {
+export function sanitizeFilter(ast: unknown, extra: FieldMeta[] = []): FilterAst {
   const parsed = filterAstSchema.safeParse(ast);
   if (!parsed.success) return { ...EMPTY_FILTER };
+  const fields = fieldLookup(extra);
   const conditions: FilterCondition[] = [];
   for (const c of parsed.data.conditions) {
-    if (!validFields.has(c.field)) continue;
-    const meta = COMPANY_FIELDS_BY_KEY[c.field]!;
-    if (!meta.operators.includes(c.op)) continue;
-    conditions.push(c as FilterCondition);
+    const meta = fields.get(c.field);
+    if (meta) {
+      if (!meta.operators.includes(c.op)) continue;
+      conditions.push(c as FilterCondition);
+      continue;
+    }
+    if (parseCustomFieldKey(c.field)) {
+      conditions.push(c as FilterCondition);
+    }
   }
   return { op: parsed.data.op, conditions };
 }
 
-export function sanitizeSort(spec: unknown): SortSpec {
+export function sanitizeSort(spec: unknown, extra: FieldMeta[] = []): SortSpec {
   const parsed = sortSpecSchema.safeParse(spec);
   if (!parsed.success) return [];
+  const fields = fieldLookup(extra);
   return parsed.data.filter((s) => {
-    const meta = COMPANY_FIELDS_BY_KEY[s.field];
-    return meta?.sortable === true;
+    const meta = fields.get(s.field);
+    if (meta) return meta.sortable === true;
+    return parseCustomFieldKey(s.field) != null;
   });
 }
 
