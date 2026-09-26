@@ -5,12 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
-import type { FieldOption } from "@/lib/views/fields";
+import type { FieldMeta, FieldOption } from "@/lib/views/fields";
 import { encodeToParam } from "@/lib/views/schema";
 import type { FilterAst, SortSpec } from "@/lib/views/types";
 import { EMPTY_FILTER } from "@/lib/views/types";
 import type { SavedView } from "@/lib/db/schema";
-import { COMPANY_COLUMNS, DEFAULT_COLUMNS } from "@/lib/views/columns";
+import {
+  COMPANY_COLUMNS,
+  DEFAULT_COLUMNS,
+  type ColumnDef,
+} from "@/lib/views/columns";
 import { ExportButton } from "./export-button";
 import { FilterBar } from "./filter-bar";
 import { ViewSwitcher } from "./view-switcher";
@@ -26,6 +30,8 @@ type Props = {
   tierOptions: FieldOption[];
   resultCount: number;
   isAdmin: boolean;
+  extraColumns?: ColumnDef[];
+  extraFields?: FieldMeta[];
 };
 
 function jsonEqual(a: unknown, b: unknown): boolean {
@@ -43,6 +49,8 @@ export function ViewsToolbar({
   tierOptions,
   resultCount,
   isAdmin,
+  extraColumns = [],
+  extraFields = [],
 }: Props) {
   const router = useRouter();
   const params = useSearchParams();
@@ -86,10 +94,15 @@ export function ViewsToolbar({
 
   const isDirty = useMemo(() => {
     if (!activeView) return false;
+    const viewColumns = activeView.columns?.length
+      ? activeView.columns
+      : DEFAULT_COLUMNS;
     return (
-      !jsonEqual(activeView.filter, filter) || !jsonEqual(activeView.sort, sort)
+      !jsonEqual(activeView.filter, filter) ||
+      !jsonEqual(activeView.sort, sort) ||
+      !jsonEqual([...viewColumns].sort(), [...columns].sort())
     );
-  }, [activeView, filter, sort]);
+  }, [activeView, filter, sort, columns]);
 
   const pushUrl = useCallback(
     (next: {
@@ -145,10 +158,17 @@ export function ViewsToolbar({
       pushUrl({ filter: EMPTY_FILTER, sort: [], viewId: null });
       return;
     }
+    const nextColumns = view.columns?.length ? view.columns : DEFAULT_COLUMNS;
     setFilter(view.filter);
     setSort(view.sort);
+    setColumns(nextColumns);
     setViewId(view.id);
-    pushUrl({ filter: view.filter, sort: view.sort, viewId: view.id });
+    pushUrl({
+      filter: view.filter,
+      sort: view.sort,
+      viewId: view.id,
+      columns: nextColumns,
+    });
   };
 
   const handleSavedNew = (id: string) => {
@@ -167,6 +187,30 @@ export function ViewsToolbar({
   };
 
   const hiddenCount = DEFAULT_COLUMNS.filter((k) => !columns.includes(k)).length;
+
+  const columnToggle = (col: ColumnDef) => {
+    const visible = columns.includes(col.key);
+    return (
+      <label
+        key={col.key}
+        className={`flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-slate-100 dark:hover:bg-zinc-800 ${
+          col.pinned ? "opacity-50" : ""
+        }`}
+      >
+        <input
+          type="checkbox"
+          className="h-3.5 w-3.5"
+          checked={visible}
+          disabled={col.pinned}
+          onChange={() => handleColumnToggle(col.key, col.pinned ?? false)}
+        />
+        <span className="text-slate-700 dark:text-slate-200">{col.label}</span>
+        {col.pinned ? (
+          <span className="ml-auto text-[9px] text-slate-400">always</span>
+        ) : null}
+      </label>
+    );
+  };
 
   return (
     <div className="space-y-2">
@@ -241,6 +285,7 @@ export function ViewsToolbar({
           sort={sort}
           isAdmin={isAdmin}
           isDirty={isDirty}
+          columns={columns}
           onSelectView={handleSelectView}
           onSavedNew={handleSavedNew}
         />
@@ -264,32 +309,24 @@ export function ViewsToolbar({
           </Button>
 
           {colPickerOpen ? (
-            <div className="absolute left-0 top-full z-30 mt-1 w-48 space-y-0.5 rounded-md border border-slate-200 bg-white p-1.5 shadow-lg dark:border-slate-700 dark:bg-zinc-900">
-              {COMPANY_COLUMNS.map((col) => {
-                const visible = columns.includes(col.key);
-                return (
-                  <label
-                    key={col.key}
-                    className={`flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-slate-100 dark:hover:bg-zinc-800 ${
-                      col.pinned ? "opacity-50" : ""
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      className="h-3.5 w-3.5"
-                      checked={visible}
-                      disabled={col.pinned}
-                      onChange={() => handleColumnToggle(col.key, col.pinned ?? false)}
-                    />
-                    <span className="text-slate-700 dark:text-slate-200">
-                      {col.label}
-                    </span>
-                    {col.pinned ? (
-                      <span className="ml-auto text-[9px] text-slate-400">always</span>
-                    ) : null}
-                  </label>
-                );
-              })}
+            <div className="absolute left-0 top-full z-30 mt-1 max-h-80 w-56 space-y-0.5 overflow-y-auto rounded-md border border-slate-200 bg-white p-1.5 shadow-lg dark:border-slate-700 dark:bg-zinc-900">
+              {COMPANY_COLUMNS.filter((col) => !col.optional).map((col) =>
+                columnToggle(col),
+              )}
+              <p className="px-2 pb-0.5 pt-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+                More fields
+              </p>
+              {COMPANY_COLUMNS.filter((col) => col.optional).map((col) =>
+                columnToggle(col),
+              )}
+              {extraColumns.length > 0 ? (
+                <>
+                  <p className="px-2 pb-0.5 pt-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+                    Custom
+                  </p>
+                  {extraColumns.map((col) => columnToggle(col))}
+                </>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -305,6 +342,7 @@ export function ViewsToolbar({
         ownerOptions={ownerOptions}
         tierOptions={tierOptions}
         resultCount={resultCount}
+        extraFields={extraFields}
       />
     </div>
   );

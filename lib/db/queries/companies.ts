@@ -13,12 +13,17 @@ import {
 import { db } from "@/lib/db";
 import {
   companies,
+  customFieldDefinitions,
   eventCompanies,
   sponsorshipTiers,
   users,
 } from "@/lib/db/schema";
 import type { RichDoc } from "@/lib/tiptap/types";
-import { compileFilter, compileSort } from "@/lib/views/compile";
+import {
+  compileFilter,
+  compileSort,
+  type CustomFieldTypes,
+} from "@/lib/views/compile";
 import type { FilterAst, SortSpec } from "@/lib/views/types";
 
 const owners = aliasedTable(users, "owners");
@@ -107,16 +112,30 @@ export type EventCompanyRow = {
   customFields: Record<string, unknown>;
 };
 
+async function loadCustomFieldTypes(eventId: string): Promise<CustomFieldTypes> {
+  const defs = await db
+    .select({
+      key: customFieldDefinitions.key,
+      fieldType: customFieldDefinitions.fieldType,
+    })
+    .from(customFieldDefinitions)
+    .where(eq(customFieldDefinitions.eventId, eventId));
+  return new Map(defs.map((d) => [d.key, d.fieldType]));
+}
+
 export async function listEventCompanies(
   eventId: string,
   opts: {
     filter?: FilterAst | null;
     sort?: SortSpec | null;
     keyword?: string | null;
+    customFieldTypes?: CustomFieldTypes;
   } = {},
 ): Promise<EventCompanyRow[]> {
-  const filterSql = compileFilter(opts.filter ?? null);
-  const sortSql = compileSort(opts.sort ?? null);
+  const customFieldTypes =
+    opts.customFieldTypes ?? (await loadCustomFieldTypes(eventId));
+  const filterSql = compileFilter(opts.filter ?? null, customFieldTypes);
+  const sortSql = compileSort(opts.sort ?? null, customFieldTypes);
   const keywordSql = buildCompanyKeywordCondition(opts.keyword ?? null);
   const whereClause: SQL = and(
     eq(eventCompanies.eventId, eventId),

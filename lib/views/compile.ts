@@ -12,7 +12,10 @@ import type {
   SortDirection,
   SortSpec,
 } from "./types";
-import { getCompanyField } from "./fields";
+import { getCompanyField, parseCustomFieldKey } from "./fields";
+import type { FilterOperator } from "./types";
+
+export type CustomFieldTypes = ReadonlyMap<string, string>;
 
 type Column = ReturnType<typeof sql.raw> extends SQL<unknown> ? unknown : never;
 void 0 as Column;
@@ -51,6 +54,78 @@ function eventCompanyColumn(key: string): SQL | null {
       return sql`${eventCompanies.boothNumber}`;
     case "paidAt":
       return sql`${eventCompanies.paidAt}`;
+    case "agreementSignedAt":
+      return sql`${eventCompanies.agreementSignedAt}`;
+    case "invoiceSentAt":
+      return sql`${eventCompanies.invoiceSentAt}`;
+    case "repNames":
+      return sql`${eventCompanies.repNames}`;
+    default:
+      return null;
+  }
+}
+
+function customRaw(key: string): SQL {
+  return sql`nullif(${eventCompanies.customFields} ->> ${key}, '')`;
+}
+
+function customValueKind(
+  fieldType: string | undefined,
+  op: FilterOperator,
+): "text" | "number" | "date" {
+  if (fieldType === "date") return "date";
+  if (fieldType === "number" || fieldType === "currency") return "number";
+  if (
+    op === "before" ||
+    op === "after" ||
+    op === "on" ||
+    op === "last_n_days" ||
+    op === "next_n_days" ||
+    op === "older_than_n_days"
+  ) {
+    return "date";
+  }
+  if (
+    op === "eq" ||
+    op === "neq" ||
+    op === "gt" ||
+    op === "gte" ||
+    op === "lt" ||
+    op === "lte" ||
+    op === "between"
+  ) {
+    return "number";
+  }
+  return "text";
+}
+
+function customValueSql(
+  key: string,
+  fieldType: string | undefined,
+  op: FilterOperator,
+): SQL {
+  const raw = customRaw(key);
+  const kind = customValueKind(fieldType, op);
+  if (kind === "number") {
+    return sql`(CASE WHEN ${raw} ~ '^-?[0-9]+([.][0-9]+)?$' THEN (${raw})::numeric ELSE NULL END)`;
+  }
+  if (kind === "date") {
+    return sql`(CASE WHEN ${raw} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN (${raw})::timestamptz ELSE NULL END)`;
+  }
+  return raw;
+}
+
+function compileCustomBoolean(key: string, op: FilterOperator): SQL | null {
+  const raw = sql`${eventCompanies.customFields} ->> ${key}`;
+  switch (op) {
+    case "is_true":
+      return sql`${raw} = 'true'`;
+    case "is_false":
+      return sql`coalesce(${raw}, '') <> 'true'`;
+    case "is_empty":
+      return sql`${raw} IS NULL`;
+    case "is_not_empty":
+      return sql`${raw} IS NOT NULL`;
     default:
       return null;
   }
@@ -88,7 +163,28 @@ function startOfUtcDay(d: Date): Date {
   return x;
 }
 
-function compileCondition(c: FilterCondition): SQL | null {
+function compileCondition(
+  c: FilterCondition,
+  types?: CustomFieldTypes,
+): SQL | null {
+  const customKey = parseCustomFieldKey(c.field);
+  if (customKey) {
+    const fieldType = types?.get(customKey);
+    if (
+      fieldType === "checkbox" ||
+      c.op === "is_true" ||
+      c.op === "is_false"
+    ) {
+      return compileCustomBoolean(customKey, c.op);
+    }
+    const col = customValueSql(customKey, fieldType, c.op);
+    return applyOperator(
+      col,
+      { type: customValueKind(fieldType, c.op) === "date" ? "date" : "text" },
+      c,
+    );
+  }
+
   const meta = getCompanyField(c.field);
   if (!meta) return null;
 
@@ -141,7 +237,14 @@ function compileCondition(c: FilterCondition): SQL | null {
 
   const col = eventCompanyColumn(c.field);
   if (!col) return null;
+  return applyOperator(col, meta, c);
+}
 
+function applyOperator(
+  col: SQL,
+  meta: { type: string },
+  c: FilterCondition,
+): SQL | null {
   switch (c.op) {
     case "is_empty":
       return sql`${col} IS NULL`;
@@ -258,11 +361,14 @@ function compileCondition(c: FilterCondition): SQL | null {
   }
 }
 
-export function compileFilter(ast: FilterAst | null | undefined): SQL | null {
+export function compileFilter(
+  ast: FilterAst | null | undefined,
+  types?: CustomFieldTypes,
+): SQL | null {
   if (!ast || !ast.conditions || ast.conditions.length === 0) return null;
   const parts: SQL[] = [];
   for (const c of ast.conditions) {
-    const piece = compileCondition(c);
+    const piece = compileCondition(c, types);
     if (piece) parts.push(piece);
   }
   if (parts.length === 0) return null;
@@ -279,13 +385,32 @@ export function compileFilter(ast: FilterAst | null | undefined): SQL | null {
   );
 }
 
-export function compileSort(spec: SortSpec | null | undefined): SQL | null {
+export function compileSort(
+  spec: SortSpec | null | undefined,
+  types?: CustomFieldTypes,
+): SQL | null {
   if (!spec || spec.length === 0) return null;
   const parts: SQL[] = [];
   for (const s of spec) {
+    const customKey = parseCustomFieldKey(s.field);
     const meta = getCompanyField(s.field);
-    if (!meta || !meta.sortable) continue;
-    const col = eventCompanyColumn(s.field);
+    let col: SQL | null = null;
+    if (customKey) {
+      const fieldType = types?.get(customKey);
+      if (fieldType === "longText" || fieldType === "file" || fieldType === "checkbox") {
+        continue;
+      }
+      const op: FilterOperator =
+        fieldType === "date"
+          ? "before"
+          : fieldType === "number" || fieldType === "currency"
+            ? "eq"
+            : "contains";
+      col = customValueSql(customKey, fieldType, op);
+    } else {
+      if (!meta || !meta.sortable) continue;
+      col = eventCompanyColumn(s.field);
+    }
     if (!col) continue;
     const dir: SortDirection = s.dir === "desc" ? "desc" : "asc";
     parts.push(

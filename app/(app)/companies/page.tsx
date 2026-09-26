@@ -39,7 +39,14 @@ import {
 } from "@/lib/views/schema";
 import type { FilterAst, SortSpec } from "@/lib/views/types";
 import { EMPTY_FILTER } from "@/lib/views/types";
-import { DEFAULT_COLUMNS } from "@/lib/views/columns";
+import {
+  DEFAULT_COLUMNS,
+  isBuiltinColumnKey,
+} from "@/lib/views/columns";
+import {
+  customFieldFilterKey,
+  fieldMetaForCustom,
+} from "@/lib/views/fields";
 
 type SearchParams = Promise<{
   record?: string;
@@ -75,7 +82,22 @@ export default async function CompaniesPage({
   }
 
   const params = await searchParams;
-  const savedViews = await listSavedViewsForUser(activeEvent.id, session.user.id);
+  const [savedViews, fieldDefinitions] = await Promise.all([
+    listSavedViewsForUser(activeEvent.id, session.user.id),
+    listFieldDefinitionsForEvent(activeEvent.id),
+  ]);
+  const extraFields = fieldDefinitions.flatMap((def) => {
+    const meta = fieldMetaForCustom(def);
+    return meta ? [meta] : [];
+  });
+  const customFieldTypes = new Map(
+    fieldDefinitions.map((def) => [def.key, def.fieldType]),
+  );
+  const customColumnKeys = new Set(
+    fieldDefinitions.map((def) => customFieldFilterKey(def.key)),
+  );
+  const allowColumn = (key: string) =>
+    isBuiltinColumnKey(key) || customColumnKeys.has(key);
   const requestedView =
     typeof params.view === "string"
       ? (savedViews.find((v) => v.id === params.view) ?? null)
@@ -86,8 +108,8 @@ export default async function CompaniesPage({
       : null;
   const activeView = requestedView ?? fallbackDefault;
 
-  const adHocFilter = sanitizeFilter(decodeFromParam(params.f));
-  const adHocSort = sanitizeSort(decodeFromParam(params.s));
+  const adHocFilter = sanitizeFilter(decodeFromParam(params.f), extraFields);
+  const adHocSort = sanitizeSort(decodeFromParam(params.s), extraFields);
 
   const filter: FilterAst =
     params.f != null
@@ -98,23 +120,28 @@ export default async function CompaniesPage({
       ? adHocSort
       : (activeView?.sort ?? []);
 
-  // Visible columns: decode from URL param, validate against known column keys
   const rawColumns = params.col != null ? decodeFromParam(params.col) : null;
+  const viewColumns = (activeView?.columns ?? []).filter(allowColumn);
   const visibleColumns: string[] = Array.isArray(rawColumns)
-    ? rawColumns.filter((k): k is string => typeof k === "string" && DEFAULT_COLUMNS.includes(k))
-    : DEFAULT_COLUMNS;
+    ? rawColumns.filter((k): k is string => typeof k === "string" && allowColumn(k))
+    : viewColumns.length > 0
+      ? viewColumns
+      : DEFAULT_COLUMNS;
 
   const keyword = typeof params.q === "string" ? params.q : null;
 
-  const [rows, tiers, users, reviewerIds, reviews, fieldDefinitions] =
-    await Promise.all([
-      listEventCompanies(activeEvent.id, { filter, sort, keyword }),
-      listTiersForEvent(activeEvent.id),
-      listUsers(),
-      listReviewerIdsForEvent(activeEvent.id),
-      listReviewsForEvent(activeEvent.id),
-      listFieldDefinitionsForEvent(activeEvent.id),
-    ]);
+  const [rows, tiers, users, reviewerIds, reviews] = await Promise.all([
+    listEventCompanies(activeEvent.id, {
+      filter,
+      sort,
+      keyword,
+      customFieldTypes,
+    }),
+    listTiersForEvent(activeEvent.id),
+    listUsers(),
+    listReviewerIdsForEvent(activeEvent.id),
+    listReviewsForEvent(activeEvent.id),
+  ]);
 
   const owners = users
     .filter((u) => u.isActive)
@@ -210,6 +237,11 @@ export default async function CompaniesPage({
         tierOptions={tierFieldOptions}
         resultCount={rows.length}
         isAdmin={session.user.role === "admin"}
+        extraFields={extraFields}
+        extraColumns={fieldDefinitions.map((def) => ({
+          key: customFieldFilterKey(def.key),
+          label: def.label,
+        }))}
       />
 
       <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
@@ -227,6 +259,7 @@ export default async function CompaniesPage({
         isReviewer={isReviewer}
         sort={sort}
         visibleColumns={visibleColumns}
+        fieldDefinitions={fieldDefinitions}
       />
 
       <CompanyDrawer

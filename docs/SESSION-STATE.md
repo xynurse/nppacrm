@@ -8,6 +8,13 @@
 ---
 
 ## Last updated
+2026-09-26 — **PR #1 merged to `main` (`8d64103`).** Phases 2→3→4→1 are on main. CI fixed in `8d64103` and `a630150` (pnpm pin + build-only `DATABASE_URL`).
+
+**In progress (branch `cursor/phase5-spreadsheet-75b2`, not on main yet):** optional spreadsheet columns (category, fulfillment, custom fields), custom-field filters/sorts, saved views Unassigned / Bounced / By category, migration `0013_fix_stale_view.sql`. `pnpm typecheck`, `pnpm lint`, and `pnpm build` (with the CI database URL) passed. Not browser-verified — this environment has no `.env.local`.
+
+**Prod still needs** `pnpm db:migrate` for 0012 and 0013 before the new columns and the stale-view rewrite are live.
+
+## Previous
 2026-08-09 — **Chunk 15b: TipTap slash commands + `@` mentions (SHIPPED, commit
 `9bf136e`).** The two interactive extensions on top of the 15a editor, both on
 TipTap's Suggestion plugin and rendered through **one shared caret-positioned

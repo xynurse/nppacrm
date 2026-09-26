@@ -2,6 +2,12 @@
 
 ## Active build (committed to main)
 
+### Phase 5 — spreadsheet columns _(2026-09-26, branch `cursor/phase5-spreadsheet-75b2`)_
+Companies can show category, subcategory, fulfillment (agreement, invoice, paid, booth, reps), and event custom fields as optional table columns. Custom fields filter and sort as `custom:<key>`. Shared views Unassigned, Bounced, and By category are seeded; migration 0013 rewrites the inverted “Stale” view. Saved views store the visible column set.
+
+### PR #1 merged — Phases 2→3→4→1 _(2026-09-26, `8d64103` on main)_
+Visual polish, notifications, fulfillment and category fields, calendar, playbooks, and the dashboard Today queue. CI no longer double-pins pnpm, and the build job supplies a non-connecting database URL so route collection succeeds.
+
 ### Chunk 15b — TipTap slash commands + `@` mentions _(2026-08-09, commit `9bf136e`)_
 The two interactive extensions on top of the 15a editor foundation, both driven
 by TipTap's Suggestion plugin and rendered through **one shared caret-positioned
