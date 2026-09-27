@@ -4,7 +4,7 @@
 > `SESSION-STATE.md` / `TODO.md` / `CHANGELOG.md` / the build prompt unless
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
-**Last updated:** 2026-09-26  
+**Last updated:** 2026-09-27  
 **Open PR:** https://github.com/xynurse/nppacrm/pull/1 (`cursor/ui-phases-2341-896f`)  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
@@ -29,7 +29,9 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - `/calendar` · `/playbooks` · Dashboard **Today** queue.
 - Bounced/Deferred filter chips + bulk clear tags.
 
-**Before prod works:** `pnpm db:migrate` for **0012**. Also still need Vercel `CRON_SECRET` + AI Gateway credits.
+**Prod DB:** migrations **0000–0012 applied** (0012 run manually by user 2026-09-27). Next free migration number: **0013**.  
+**Still needed in prod:** Vercel `CRON_SECRET` + AI Gateway credits; Master List CSV import (312 rows) not yet run.  
+**Security follow-up:** Neon `neondb_owner` password was exposed in a chat on 2026-09-27 — rotate it (Neon → Roles → reset), update Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED`, redeploy, update local `.env.local`.
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).

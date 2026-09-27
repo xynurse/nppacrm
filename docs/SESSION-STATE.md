@@ -628,6 +628,6 @@ git log --oneline -8
 | 0010 | ✅ (verified 2026-08-09) | `contact_email_history` (contact email archive). Table present in prod + logged in drizzle. |
 | 0011 | ✅ (verified 2026-08-09) | `interactions.body_doc` + `tasks.description_doc` jsonb (TipTap). Both columns present in prod + logged. |
 
-**Next migration:** 0012. Chunk 15b (`@` mentions) needs **no** migration —
+**Next migration:** 0013 (0012 applied to prod 2026-09-27). Chunk 15b (`@` mentions) needs **no** migration —
 mention nodes live inside the existing `*_doc` jsonb. Chunk 20 (notifications)
 will be the next one that does.
