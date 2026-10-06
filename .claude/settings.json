@@ -1,0 +1,49 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install:*)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm build)",
+      "Bash(pnpm build:offline)",
+      "Bash(pnpm dev)",
+      "Bash(pnpm db:generate:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push origin main)",
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)"
+    ],
+    "deny": [
+      "Bash(pnpm db:migrate)",
+      "Bash(pnpm db:migrate:*)",
+      "Bash(pnpm db:seed)",
+      "Bash(pnpm db:seed:*)",
+      "Bash(pnpm db:studio:*)",
+      "Bash(npx drizzle-kit migrate:*)",
+      "Bash(npx drizzle-kit push:*)",
+      "Bash(pnpm drizzle-kit migrate:*)",
+      "Bash(pnpm drizzle-kit push:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Read(./.env.local)",
+      "Read(./.env)",
+      "Read(./.env.production)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -d node_modules ] || pnpm install --frozen-lockfile >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ]
+  }
+}

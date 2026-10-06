@@ -81,7 +81,17 @@ Also update `TODO.md` to mark completed chunks and `CHANGELOG.md` to add an entr
 - `pnpm dev` — local dev server
 - `pnpm typecheck` — TS check
 - `pnpm lint` — ESLint
+- `pnpm build` — production build (needs Google Fonts network access)
+- `pnpm build:offline` — same build with stubbed fonts + placeholder env, for sandboxes without network. Verification only; never deploy its output.
 - `pnpm db:generate` — generate Drizzle migration
-- `pnpm db:migrate` — apply migrations (dev only from here)
-- `pnpm db:seed` — seed first admin + defaults
+- `pnpm db:migrate` — apply migrations (**user runs this manually** — blocked for Claude, see below)
+- `pnpm db:seed` — seed first admin + defaults (**user runs manually**)
 - `pnpm test` — Playwright e2e
+
+## Claude Code setup (`.claude/`)
+- **Claude Code is the primary agent environment.** Cursor/other agents may still open `cursor/*` branches; merge them to `main` rather than leaving them open.
+- `.claude/settings.json` pre-approves the routine commands (install, typecheck, lint, build, git add/commit/push to main) and **denies** `db:migrate`, `db:seed`, `drizzle-kit migrate/push`, force-pushes, and reading `.env*` files. This enforces the non-negotiable above: `.env.local` points at the **production** Neon database, so any migration run from here would hit prod.
+- A `SessionStart` hook runs `pnpm install --frozen-lockfile` when `node_modules` is missing (fresh clones, Claude Code on the web).
+- **Cloud / web sessions** have no `.env.local` and usually can't reach Google Fonts. Verify with `pnpm typecheck && pnpm lint && pnpm build:offline` — that is the "green build" for the commit policy there. CI on GitHub runs the real `pnpm build`.
+- Project skill: `.claude/skills/sync-outreach` — bulk-apply outreach recaps to the CRM (writes to prod after an explicit preview + "yes").
+- New migrations: write them with `pnpm db:generate`, commit them, and add a line to `docs/AGENT-MEMORY.md` saying the migration still needs a manual `pnpm db:migrate`.

@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "next dev --port 3001",
     "build": "next build",
+    "build:offline": "SKIP_ENV_VALIDATION=true DATABASE_URL=${DATABASE_URL:-postgresql://build:build@127.0.0.1:5432/build} AUTH_SECRET=${AUTH_SECRET:-build-secret-not-used-at-runtime-00} NEXT_FONT_GOOGLE_MOCKED_RESPONSES=$PWD/scripts/font-mock.cjs next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
