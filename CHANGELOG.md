@@ -2,7 +2,10 @@
 
 ## Active build (committed to main)
 
-### Phase 5 — spreadsheet columns _(2026-09-26, branch `cursor/phase5-spreadsheet-75b2`)_
+### Claude Code project config _(2026-10-06, `5f811f3`)_
+`.claude/settings.json` pre-approves routine commands (install, typecheck, lint, build, commit, push to main) and denies migrations, seeding, `drizzle-kit push`, force-pushes and reading `.env*` — local env points at the production database, so the "migrations are manual" rule is now enforced, not just written down. A `SessionStart` hook installs dependencies on fresh clones. New `pnpm build:offline` stubs Google Fonts and env so sandboxes without network can verify a build.
+
+### Phase 5 — spreadsheet columns _(2026-09-26, merged to main 2026-10-06 as `d39ea08`)_
 Companies can show category, subcategory, fulfillment (agreement, invoice, paid, booth, reps), and event custom fields as optional table columns. Custom fields filter and sort as `custom:<key>`. Shared views Unassigned, Bounced, and By category are seeded; migration 0013 rewrites the inverted “Stale” view. Saved views store the visible column set.
 
 ### PR #1 merged — Phases 2→3→4→1 _(2026-09-26, `8d64103` on main)_

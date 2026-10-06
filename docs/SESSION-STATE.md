@@ -8,11 +8,25 @@
 ---
 
 ## Last updated
-2026-09-26 — **PR #1 merged to `main` (`8d64103`).** Phases 2→3→4→1 are on main. CI fixed in `8d64103` and `a630150` (pnpm pin + build-only `DATABASE_URL`).
+2026-10-06 — **Repo audit + PR #2 merged + Claude Code stood up.** PR #2 (Phase 5 spreadsheet columns) merged to `main` as `d39ea08` after resolving a docs-only conflict in `AGENT-MEMORY.md`. Added `.claude/settings.json` (allow/deny rules + SessionStart install hook), `scripts/font-mock.cjs`, and `pnpm build:offline` (`5f811f3`). typecheck, lint and build all green. No open PRs. The user's Mac clone (`/Users/michaelthorn/nppacrm`) was fast-forwarded to `main`.
 
-**In progress ([PR #2](https://github.com/xynurse/nppacrm/pull/2), branch `cursor/phase5-spreadsheet-75b2`, not on main yet):** optional spreadsheet columns (category, fulfillment, custom fields), custom-field filters/sorts, saved views Unassigned / Bounced / By category, migration `0013_fix_stale_view.sql`. `pnpm typecheck`, `pnpm lint`, and `pnpm build` (with the CI database URL) passed. Not browser-verified — this environment has no `.env.local`.
+**Prod still needs (user, manual):** `pnpm db:migrate` for **0013**; rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`.
 
-**Prod still needs** `pnpm db:migrate` for 0012 and 0013 before the new columns and the stale-view rewrite are live.
+**In progress:** nothing uncommitted.
+
+**Known bugs / debt found in the 2026-10-06 audit (not yet fixed — exact fixes):**
+- Opening a company drawer (`?record=` on `/companies`) re-runs `listEventCompanies` + tiers/users/reviews/fields. Fix: load drawer data via its own server action or a parallel route so the table isn't refetched.
+- `listEventCompanies` (`lib/db/queries/companies.ts`) selects `companies.notesDoc` (full TipTap JSON) for every row; Companies, Pipeline, Contacts and CSV all ship it. Fix: drop it from the list select; fetch it only in the drawer.
+- Days-in-stage report (`lib/db/queries/reports.ts` ~L400) loads every `eventCompany.move_status` audit row for all events (`gte(createdAt, new Date(0))` is a no-op). Fix: filter to the event's `event_companies` ids and use `DISTINCT ON (entity_id, changes->>'to')` in SQL.
+- `bulkRemoveTag` (`lib/actions/cells.ts` ~L146) does up to 500 sequential UPDATEs. Fix: one `UPDATE … SET tags_cache = array_remove(tags_cache, $tag) WHERE id = ANY($ids)`.
+- Cron agents (`app/api/cron/{watch,discovery}`) have no `export const maxDuration` and run prospects sequentially. Fix: set `maxDuration` and process with bounded concurrency (3–4).
+- `listActiveEvents()` runs in both the layout and each page. Fix: wrap in React `cache()`.
+- Dead code (knip): unused files `components/app/event-switcher.tsx`, `components/app/user-menu.tsx`, `components/cells/checkbox-cell.tsx`; unused deps `@dnd-kit/sortable`, `@dnd-kit/utilities`, `@types/pdf-parse`; ~38 unused exports; unused `tags` / `company_tags` tables (app uses `tags_cache`).
+
+**Decisions made this session:**
+- **Claude Code is the primary agent environment.** CLAUDE.md's commit policy (commit + push to `main` after a green build) is authoritative; any `cursor/*` / `claude/*` branch gets merged, not left open.
+- Migrations and seeding are **denied** to Claude in `.claude/settings.json`, because `.env.local` → production. The user runs them.
+- In sandboxes without network, `pnpm typecheck && pnpm lint && pnpm build:offline` counts as the green build; CI runs the real `pnpm build`.
 
 ## Previous
 2026-08-09 — **Chunk 15b: TipTap slash commands + `@` mentions (SHIPPED, commit
@@ -185,7 +199,9 @@ points at prod. No rich doc has been written in prod yet
 (`interactions_with_doc = 0`, `tasks_with_doc = 0`).
 
 ## Current git HEAD
-`9bf136e` chunk 15b: TipTap slash commands + `@` mentions — plus this docs
+`5f811f3` chore: stand up Claude Code project config — plus this docs commit on top. (Prior: `d39ea08` Merge PR #2 Phase 5; `863b8d0` Merge PR #3.)
+
+Older history:
 commit on top. (Prior: `750677c` docs: verify migrations 0010/0011; `81e6811`
 chunk 15a.) Prior notable:
 `1229900` feat: retheme UI — indigo/zinc "modern SaaS" identity, drop medical
@@ -553,34 +569,22 @@ column). typecheck + lint + build all green.
 
 ## Next sessions queue
 
-Work through these in order. One chunk per session.
+Work through these in order. One chunk per session. Full detail for each fix is under "Known bugs / debt" at the top.
 
-> **Chunks 15a (`81e6811`) and 15b (`9bf136e`) are DONE, and migrations
-> 0010/0011 are verified applied.** Next up is Chunk 20.
+### 0. (User, manual — not Claude) Prod housekeeping
+`pnpm db:migrate` for 0013 · rotate Neon `neondb_owner` password → Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED` + `.env.local` · set `CRON_SECRET` · delete the three merged remote branches.
 
-### 0. (Optional, needs a login) Browser-verify the TipTap editor
-Not a prerequisite for Chunk 20 — but the whole 15a/15b editor has never been
-run in a browser. When a login is available: open a drawer note, exercise the
-toolbar (bold + bullet list), the `/` block menu, and an `@` mention; save +
-reload; confirm all survive. Note this writes a test row to prod
-(`.env.local` → prod). See the "Verification gap" note up top.
+### 1. Cleanup Pass 1 — dead code ← START HERE
+Delete the 3 unused component files, remove the 3 unused deps (`pnpm remove`), prune unused exports flagged by `npx knip` (keep Drizzle `$infer` schema types), wrap `listActiveEvents` in `cache()`. Low risk; typecheck/lint/build, commit, push.
 
-### 1. Chunk 20 — Notification center ← START HERE
-Bell icon in top bar, `notifications` table, in-app alerts for:
-- Task assignments (`assignedTo` changes)
-- `@` mentions in notes (**TipTap is now done** — mention nodes store the user
-  id in `attrs.id`; walk the saved `*_doc` jsonb for `type: "mention"` nodes to
-  find who to notify)
-- Status changes on companies you own
+### 2. Cleanup Pass 2 — performance
+Drawer data split, drop `notesDoc` from list rows, days-in-stage SQL, `bulkRemoveTag` single statement, cron `maxDuration` + concurrency. Touches >3 files — show the user a plan first.
 
-**What it involves:**
-- DB migration: `notifications` table (`id`, `userId`, `type`, `title`, `body`, `entityType`, `entityId`, `readAt`, `createdAt`). This is migration **0012** (next free number).
-- Bell icon in `TopBar` with unread count badge
-- Dropdown list of recent notifications
-- Hook into existing server actions to write notification rows on trigger events.
-  For mentions: on `logInteraction` / `updateCompanyNotes` / task save, scan the
-  incoming doc for mention nodes and fan out a notification per mentioned `id`.
-- Mark-as-read action
+### 3. Cleanup Pass 3 — housekeeping
+Trim this file (move history sections to CHANGELOG), Neon dev branch for local dev, migration dropping `tags`/`company_tags` (user applies). Also: `/companies` First Load JS 215 kB → dynamic cell imports.
+
+### Later
+Browser-verify TipTap `/` + `@` and Phase 5 columns (needs a login); Chunk 22 remaining field types; Gallery view; Chunk 21 Pusher presence.
 
 ---
 
@@ -634,7 +638,9 @@ git log --oneline -8
 | 0009 | ✅ | agent_schedules, agent_runs, company_suggestions (⚠️ its snapshot was never committed; `0010_snapshot.json` re-baselines the full schema) |
 | 0010 | ✅ (verified 2026-08-09) | `contact_email_history` (contact email archive). Table present in prod + logged in drizzle. |
 | 0011 | ✅ (verified 2026-08-09) | `interactions.body_doc` + `tasks.description_doc` jsonb (TipTap). Both columns present in prod + logged. |
+| 0012 | ✅ (applied by user 2026-09-27) | `notifications`, `companies.category/subcategory`, fulfillment cols on `event_companies`. |
+| 0013 | ❌ **not yet** | `0013_fix_stale_view.sql` — rewrites the inverted "Stale" saved view (PR #2). User runs `pnpm db:migrate`. |
 
-**Next migration:** 0013 (0012 applied to prod 2026-09-27). Chunk 15b (`@` mentions) needs **no** migration —
+**Next migration:** 0014 (0013 committed, not yet applied). Chunk 15b (`@` mentions) needs **no** migration —
 mention nodes live inside the existing `*_doc` jsonb. Chunk 20 (notifications)
 will be the next one that does.

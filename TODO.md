@@ -3,7 +3,22 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped commit: `9bf136e` (chunk 15b — TipTap slash commands + `@` mentions, 2026-08-09) — deployed at `nppacrm.vercel.app`.
+Latest shipped: PR #2 Phase 5 merged to `main` + Claude Code project config (2026-10-06) — deployed at `nppacrm.vercel.app`. **Migration 0013 still needs a manual `pnpm db:migrate`.**
+
+## Shipped 2026-10-06 (repo cleanup + Claude Code setup)
+
+- [x] PR #2 (Phase 5 spreadsheet columns, custom-field filters, saved views) merged to `main`; AGENT-MEMORY conflict resolved
+- [x] `.claude/settings.json` — allow routine commands, deny db:migrate / db:seed / drizzle-kit push / force-push / reading `.env*`
+- [x] `SessionStart` hook installs deps on fresh clones; `pnpm build:offline` for network-less sandboxes
+- [ ] **(user, manual)** `pnpm db:migrate` to apply **0013** to prod
+- [ ] **(user, manual)** Rotate the Neon `neondb_owner` password (exposed 2026-09-27) → update Vercel env + `.env.local`
+- [ ] **(user, manual)** Set Vercel `CRON_SECRET`; delete merged branches `cursor/ui-phases-2341-896f`, `cursor/phase5-spreadsheet-75b2`, `claude/epic-archimedes-tkdh9b`
+
+## Cleanup / optimization passes (from 2026-10-06 audit — see SESSION-STATE "Next sessions queue")
+
+- [ ] **Pass 1 — dead code (low risk):** delete unused `components/app/event-switcher.tsx`, `components/app/user-menu.tsx`, `components/cells/checkbox-cell.tsx`; drop deps `@dnd-kit/sortable`, `@dnd-kit/utilities`, `@types/pdf-parse`; prune ~38 unused exports (knip); wrap `listActiveEvents` in React `cache()`
+- [ ] **Pass 2 — performance:** drawer data loaded separately from the table; drop `companyNotesDoc` from `listEventCompanies`; event-scope + DB-side "days in stage"; single-statement `bulkRemoveTag`; `maxDuration` + bounded concurrency on cron agents
+- [ ] **Pass 3 — housekeeping:** trim SESSION-STATE (history → CHANGELOG); Neon dev branch for local `.env.local`; migration to drop unused `tags` / `company_tags` tables (user applies)
 
 ## Shipped 2026-07-22 (chunk 15a — TipTap rich notes)
 
@@ -236,7 +251,7 @@ Listed in approximate decreasing-leverage order.
   - Triggers: `@mentions` (needs TipTap first), task assignments, status
     changes on owned companies
 
-- [ ] **Chunk 14b — Watch agent + Vercel cron wiring**
+- [x] **Chunk 14b — Watch agent + Vercel cron wiring** _(shipped; `vercel.json` crons + `lib/agents/watch.ts`; needs `CRON_SECRET` in prod)_
   - Discovery agent shipped in chunk 14 (manual run only); the Watch agent
     schedule slot existed but the agent itself was just sketched
   - Need Vercel cron wiring (or Vercel Workflow for durable execution)

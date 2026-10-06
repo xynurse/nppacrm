@@ -36,6 +36,9 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 **Still needed in prod:** Vercel `CRON_SECRET` + AI Gateway credits; Master List CSV import (312 rows) not yet run.  
 **Security follow-up:** Neon `neondb_owner` password was exposed in a chat on 2026-09-27 — rotate it (Neon → Roles → reset), update Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED`, redeploy, update local `.env.local`.
 
+**Claude Code setup (2026-10-06):** `.claude/settings.json` denies db:migrate/seed/drizzle push and `.env*` reads; SessionStart hook installs deps; use `pnpm build:offline` where Google Fonts is unreachable.  
+**Next up:** cleanup Pass 1 (dead code) → Pass 2 (perf) → Pass 3 (housekeeping) — see SESSION-STATE "Known bugs / debt" + "Next sessions queue".
+
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).
 - New custom-field types (multiSelect, datetime, rating, person, relation).
