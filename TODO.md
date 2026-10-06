@@ -76,12 +76,12 @@ Data-only (no commit):
 
 ## Surfaced from Master List import (deferred — "just migrate for now")
 
-- [ ] **Category as a structured field + grouped "By Category" view** — workbook
-  has 24 categories and a dedicated category sheet; CRM only has free-text
-  `industry`. Surface `subcategory` (currently in `customFields`) as a column.
-- [ ] **Payment & fulfillment fields + Confirmed Sponsors view** — agreement
-  signed / invoice sent / paid / booth # / rep names (workbook's Confirmed
-  Sponsors sheet). Needs a migration adding columns to `event_companies`.
+- [x] **Category as a structured field + "By category" view** — `category` /
+  `subcategory` columns (optional), filterable, and a shared view that sorts
+  by category. Not a visual group-header grid.
+- [x] **Payment & fulfillment fields** — agreement / invoice / paid / booth /
+  reps (migration 0012) and optional companies-table columns (Phase 5).
+  Confirmed sponsors remains the existing status view.
 
 ## v1 chunks to rebuild (in order)
 
@@ -227,11 +227,10 @@ Listed in approximate decreasing-leverage order.
 
 - [ ] **Chunk 22 — More custom-field types**
   - multiSelect, datetime, rating, person, relation
-  - Surface custom fields as TABLE COLUMNS (drawer-only in chunk 8)
-  - Custom-field filter operators in the FilterBar
-    (`field: 'custom:fieldKey'` with type-aware jsonb predicates)
+  - [x] Surface custom fields as TABLE COLUMNS (opt-in via the column picker)
+  - [x] Custom-field filter + sort (`custom:<key>`, type-aware jsonb predicates)
 
-- [ ] **Chunk 20 — Notification center**
+- [x] **Chunk 20 — Notification center** _(PR #1, migration 0012)_
   - Bell icon in top bar
   - `notifications` table + dropdown UI
   - Triggers: `@mentions` (needs TipTap first), task assignments, status
@@ -249,14 +248,13 @@ Listed in approximate decreasing-leverage order.
     mirror rather than converting the text columns — see CHANGELOG for why.
   - `companies.notes_doc` wired up (it already existed since 0001).
   - Autosave on debounce for notes; Cmd+Enter submit for interaction logs.
-- [ ] **Chunk 15b — slash commands + `@` mentions**
+- [x] **Chunk 15b — slash commands + `@` mentions** _(2026-08-09, `9bf136e`)_
   - `/` command menu, `@` mention extension (powers chunk 20), `#` linked records
 
 - [ ] **Chunk 16 — Calendar + Gallery views**
-  - New view kinds in the existing saved-views machinery
-  - Calendar for tasks (by due) / interactions (by occurredAt) / companies
-    (by nextActionAt)
-  - Gallery card grid for visual browsing
+  - [x] `/calendar` — open tasks grouped by due month (PR #1)
+  - Gallery card grid still not built
+  - Interactions-by-date and companies-by-nextActionAt calendars still not built
 
 - [ ] **Chunk 21 — Real-time presence + Pusher**
   - Flip `REALTIME_ENABLED=true`, wire Pusher creds

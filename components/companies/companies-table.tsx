@@ -19,6 +19,8 @@ import { DateEditor } from "@/components/cells/date-cell";
 import { PersonEditor } from "@/components/cells/person-cell";
 import { TierEditor } from "@/components/cells/relation-cell";
 import { SingleSelectEditor } from "@/components/cells/single-select-cell";
+import { TextEditor } from "@/components/cells/text-cell";
+import { CustomFieldCell } from "@/components/custom-fields/custom-fields-section";
 import type { PersonOption, TierOption } from "@/components/cells/types";
 import {
   ROW_HEIGHT_BY_DENSITY,
@@ -44,8 +46,10 @@ import {
   PROSPECT_STATUS_VALUES,
 } from "@/lib/db/schema";
 import type { EventCompanyRow } from "@/lib/db/queries/companies";
+import type { CustomFieldDefinition } from "@/lib/db/schema";
+import { customFieldFilterKey, fieldMetaForCustom } from "@/lib/views/fields";
 import { cadenceLevel, cadenceTextClass } from "@/lib/cadence";
-import { formatCurrency, formatRelativeDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatRelativeDate } from "@/lib/format";
 
 const PRIORITY_LABELS = {
   high: "High",
@@ -66,6 +70,7 @@ export function CompaniesTable({
   isReviewer,
   sort: externalSort,
   visibleColumns,
+  fieldDefinitions = [],
 }: {
   rows: EventCompanyRow[];
   activeRecordId: string | null;
@@ -77,6 +82,7 @@ export function CompaniesTable({
   isReviewer: boolean;
   sort?: SortSpec;
   visibleColumns?: string[];
+  fieldDefinitions?: CustomFieldDefinition[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -89,7 +95,11 @@ export function CompaniesTable({
   const toggleSort = useCallback(
     (field: string) => {
       const fieldMeta = COMPANY_FIELDS_BY_KEY[field];
-      if (!fieldMeta?.sortable) return;
+      const customSortable = fieldDefinitions.some((def) => {
+        const meta = fieldMetaForCustom(def);
+        return meta?.key === field && meta.sortable;
+      });
+      if (!fieldMeta?.sortable && !customSortable) return;
       const current = externalSort ?? [];
       const existing = current.find((s) => s.field === field);
       let next: SortSpec;
@@ -105,7 +115,7 @@ export function CompaniesTable({
       if (next.length > 0) sp.set("s", encodeToParam(next));
       router.push(`/companies?${sp.toString()}`, { scroll: false });
     },
-    [externalSort, router, searchParams],
+    [externalSort, fieldDefinitions, router, searchParams],
   );
   const tierById = useMemo(
     () => new Map(tiers.map((t) => [t.id, t])),
@@ -510,6 +520,143 @@ export function CompaniesTable({
           );
         },
       },
+      {
+        id: "category",
+        header: () => sortHeader("category", "Category"),
+        cell: ({ row }) => (
+          <CellShell
+            fieldKey="company.category"
+            entityId={row.original.companyId}
+            value={row.original.companyCategory}
+            display={row.original.companyCategory ?? "—"}
+            onLocalChange={(v) =>
+              setRowField(row.original.id, "companyCategory", v)
+            }
+            Editor={TextEditor}
+          />
+        ),
+      },
+      {
+        id: "subcategory",
+        header: () => sortHeader("subcategory", "Subcategory"),
+        cell: ({ row }) => (
+          <CellShell
+            fieldKey="company.subcategory"
+            entityId={row.original.companyId}
+            value={row.original.companySubcategory}
+            display={row.original.companySubcategory ?? "—"}
+            onLocalChange={(v) =>
+              setRowField(row.original.id, "companySubcategory", v)
+            }
+            Editor={TextEditor}
+          />
+        ),
+      },
+      {
+        id: "agreementSignedAt",
+        header: () => sortHeader("agreementSignedAt", "Agreement"),
+        cell: ({ row }) => (
+          <CellShell
+            fieldKey="eventCompany.agreementSignedAt"
+            entityId={row.original.id}
+            value={row.original.agreementSignedAt}
+            display={formatDate(row.original.agreementSignedAt)}
+            onLocalChange={(v) =>
+              setRowField(row.original.id, "agreementSignedAt", v)
+            }
+            Editor={DateEditor}
+          />
+        ),
+      },
+      {
+        id: "invoiceSentAt",
+        header: () => sortHeader("invoiceSentAt", "Invoice"),
+        cell: ({ row }) => (
+          <CellShell
+            fieldKey="eventCompany.invoiceSentAt"
+            entityId={row.original.id}
+            value={row.original.invoiceSentAt}
+            display={formatDate(row.original.invoiceSentAt)}
+            onLocalChange={(v) =>
+              setRowField(row.original.id, "invoiceSentAt", v)
+            }
+            Editor={DateEditor}
+          />
+        ),
+      },
+      {
+        id: "paidAt",
+        header: () => sortHeader("paidAt", "Paid"),
+        cell: ({ row }) => (
+          <CellShell
+            fieldKey="eventCompany.paidAt"
+            entityId={row.original.id}
+            value={row.original.paidAt}
+            display={formatDate(row.original.paidAt)}
+            onLocalChange={(v) => setRowField(row.original.id, "paidAt", v)}
+            Editor={DateEditor}
+          />
+        ),
+      },
+      {
+        id: "boothNumber",
+        header: () => sortHeader("boothNumber", "Booth"),
+        cell: ({ row }) => (
+          <CellShell
+            fieldKey="eventCompany.boothNumber"
+            entityId={row.original.id}
+            value={row.original.boothNumber}
+            display={row.original.boothNumber ?? "—"}
+            onLocalChange={(v) =>
+              setRowField(row.original.id, "boothNumber", v)
+            }
+            Editor={TextEditor}
+          />
+        ),
+      },
+      {
+        id: "repNames",
+        header: () => sortHeader("repNames", "Reps"),
+        cell: ({ row }) => (
+          <CellShell
+            fieldKey="eventCompany.repNames"
+            entityId={row.original.id}
+            value={row.original.repNames}
+            display={row.original.repNames ?? "—"}
+            onLocalChange={(v) => setRowField(row.original.id, "repNames", v)}
+            Editor={TextEditor}
+          />
+        ),
+      },
+      ...fieldDefinitions.map(
+        (def): ColumnDef<EventCompanyRow> => ({
+          id: customFieldFilterKey(def.key),
+          header: () => {
+            const meta = fieldMetaForCustom(def);
+            return meta?.sortable
+              ? sortHeader(customFieldFilterKey(def.key), def.label)
+              : def.label;
+          },
+          cell: ({ row }) => (
+            <CustomFieldCell
+              entityId={row.original.id}
+              def={def}
+              value={row.original.customFields?.[def.key] ?? null}
+              onLocalChange={(next) => {
+                setRows((prev) =>
+                  prev.map((r) => {
+                    if (r.id !== row.original.id) return r;
+                    const customFields = { ...(r.customFields ?? {}) };
+                    if (next === null || next === "") delete customFields[def.key];
+                    else customFields[def.key] = next;
+                    return { ...r, customFields };
+                  }),
+                );
+              }}
+            />
+          ),
+        }),
+      ),
     ],
     [
       owners,
@@ -521,6 +668,7 @@ export function CompaniesTable({
       reviewerCount,
       isReviewer,
       sortHeader,
+      fieldDefinitions,
     ],
   );
 

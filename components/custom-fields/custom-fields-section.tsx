@@ -75,7 +75,7 @@ export function CustomFieldsSection({
   );
 }
 
-function CustomFieldCell({
+export function CustomFieldCell({
   entityId,
   def,
   value,

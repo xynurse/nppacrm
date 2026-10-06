@@ -20,6 +20,7 @@ type Props = {
   sort: SortSpec;
   isAdmin: boolean;
   isDirty: boolean;
+  columns?: string[];
   onSelectView: (view: SavedView | null) => void;
   onSavedNew: (id: string) => void;
 };
@@ -32,6 +33,7 @@ export function ViewSwitcher({
   sort,
   isAdmin,
   isDirty,
+  columns,
   onSelectView,
   onSavedNew,
 }: Props) {
@@ -67,6 +69,7 @@ export function ViewSwitcher({
         isShared: shared,
         filter,
         sort,
+        columns,
       });
       if (!res.ok) {
         setError(res.error);
@@ -90,6 +93,7 @@ export function ViewSwitcher({
         isShared: active.isShared,
         filter,
         sort,
+        columns,
       });
       if (!res.ok) {
         setError(res.error);

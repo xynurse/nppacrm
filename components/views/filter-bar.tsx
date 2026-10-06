@@ -27,6 +27,7 @@ type Props = {
   ownerOptions: FieldOption[];
   tierOptions: FieldOption[];
   resultCount: number;
+  extraFields?: FieldMeta[];
 };
 
 function defaultValueFor(meta: FieldMeta, op: FilterOperator): FilterValue {
@@ -81,7 +82,17 @@ export function FilterBar({
   ownerOptions,
   tierOptions,
   resultCount,
+  extraFields = [],
 }: Props) {
+  const allFields = useMemo(
+    () => [...COMPANY_FIELDS, ...extraFields],
+    [extraFields],
+  );
+  const fieldByKey = useMemo(() => {
+    const map: Record<string, FieldMeta> = { ...COMPANY_FIELDS_BY_KEY };
+    for (const field of extraFields) map[field.key] = field;
+    return map;
+  }, [extraFields]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -111,7 +122,7 @@ export function FilterBar({
   };
 
   const addCondition = (fieldKey: string) => {
-    const meta = COMPANY_FIELDS_BY_KEY[fieldKey];
+    const meta = fieldByKey[fieldKey];
     if (!meta) return;
     const op = meta.operators[0]!;
     const newCond: FilterCondition = {
@@ -130,14 +141,14 @@ export function FilterBar({
     setEditingIndex(null);
   };
 
-  const sortable = COMPANY_FIELDS.filter((f) => f.sortable);
+  const sortable = allFields.filter((f) => f.sortable);
 
   return (
     <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1.5 dark:border-slate-800 dark:bg-zinc-900">
       <Filter className="h-3.5 w-3.5 text-slate-400" />
 
       {filter.conditions.map((cond, i) => {
-        const meta = COMPANY_FIELDS_BY_KEY[cond.field];
+        const meta = fieldByKey[cond.field];
         if (!meta) return null;
         const valueStr = describeValue(meta, cond, ownerOptions, tierOptions);
         return (
@@ -210,6 +221,7 @@ export function FilterBar({
         </Button>
         {adding ? (
           <FieldPicker
+            fields={allFields}
             onPick={addCondition}
             onClose={() => setAdding(false)}
           />
@@ -259,9 +271,11 @@ export function FilterBar({
 }
 
 function FieldPicker({
+  fields,
   onPick,
   onClose,
 }: {
+  fields: FieldMeta[];
   onPick: (key: string) => void;
   onClose: () => void;
 }) {
@@ -270,9 +284,9 @@ function FieldPicker({
   return (
     <div
       ref={ref}
-      className="absolute left-0 top-full z-20 mt-1 w-56 rounded-md border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-zinc-900"
+      className="absolute left-0 top-full z-20 mt-1 max-h-80 w-56 overflow-y-auto rounded-md border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-zinc-900"
     >
-      {COMPANY_FIELDS.map((f) => (
+      {fields.map((f) => (
         <button
           key={f.key}
           type="button"
@@ -477,7 +491,7 @@ function SortMenu({
         <p className="px-1 text-xs text-slate-500">No sort applied</p>
       ) : (
         sort.map((s, i) => {
-          const meta = COMPANY_FIELDS_BY_KEY[s.field];
+          const meta = fields.find((f) => f.key === s.field);
           if (!meta) return null;
           return (
             <div key={i} className="flex items-center gap-1.5">
