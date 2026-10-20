@@ -2,6 +2,9 @@
 
 ## Active build (committed to main)
 
+### Chunk 1 — dependency security + auth hardening _(2026-10-20, `7e48a0f`)_
+Cleared every production dependency advisory (was 5 critical / 17 high, including an unauthenticated RCE in Next.js image optimization): Next 15.5.27, next-auth beta.32, `@auth/core` 0.41.3, TipTap 3.31, plus `pnpm-workspace.yaml` overrides for transitive packages; CI now fails on new high/critical advisories. Role and active status are re-read from the database on every request, so deactivating or demoting a user takes effect immediately. Sign-in is throttled (5 failures per email / 20 per IP in 15 minutes, new `login_attempts` table — migration 0014), unknown emails take the same time as known ones, and new passwords need 12+ characters. Admins can't lock themselves out, interactions can only be edited by their author or an admin, and the benefits helper is no longer browser-callable. Uploads are capped at 50 MB under a `crm/` prefix, and file fields / prospectus fetches only accept this app's Blob store. The "Viewer" role is labelled "Member".
+
 ### Claude Code project config _(2026-10-06, `5f811f3`)_
 `.claude/settings.json` pre-approves routine commands (install, typecheck, lint, build, commit, push to main) and denies migrations, seeding, `drizzle-kit push`, force-pushes and reading `.env*` — local env points at the production database, so the "migrations are manual" rule is now enforced, not just written down. A `SessionStart` hook installs dependencies on fresh clones. New `pnpm build:offline` stubs Google Fonts and env so sandboxes without network can verify a build.
 

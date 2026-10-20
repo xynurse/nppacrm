@@ -4,8 +4,8 @@
 > `SESSION-STATE.md` / `TODO.md` / `CHANGELOG.md` / the build prompt unless
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
-**Last updated:** 2026-10-06  
-**main:** PR #1, #2 (Phase 5) and #3 merged. No open PRs.  
+**Last updated:** 2026-10-20  
+**main:** Chunk 1 (security) `7e48a0f` on top of PR #1–#3. No open PRs.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -22,6 +22,11 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Commit policy: **Claude Code is the primary environment** — follow CLAUDE.md (commit + push to `main` after every green build). Any `cursor/*` or `claude/*` branch must be merged to `main` before the session ends.
 
 ## Shipped recently
+**Chunk 1 — dependency security + auth hardening (`7e48a0f`, 2026-10-20)**
+- Next 15.5.27 / next-auth beta.32 / @auth/core 0.41.3 / TipTap 3.31 + `pnpm-workspace.yaml` overrides → `pnpm audit --prod` clean; CI audit step.
+- `requireSession` re-reads role + isActive from DB (`getVerifiedSession`). Login throttle in `authorize()` (`lib/auth/throttle.ts`, table `login_attempts`). 12-char passwords. Upload cap/prefix + own-Blob-host checks (`lib/blob.ts`).
+- "viewer" = normal teammate, labelled **Member** (decided — don't gate mutations by role).
+
 **On main — PR #1 (Phases 2→3→4→1), merged 2026-09-26**
 - UI polish, notifications, fulfillment + category fields, `/calendar`, `/playbooks`, Today queue, bounced/deferred chips.
 - CI: drop the duplicate pnpm pin; build-only `DATABASE_URL` so `next build` can collect cron routes.
@@ -32,12 +37,12 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Saved views persist columns. New shared views: Unassigned, Bounced, By category.
 - **0013** rewrites the inverted "Stale (no contact 14+ days)" view to older-than-14-days and renames it when the new name is free.
 
-**Prod DB:** migrations **0000–0012 applied** (0012 run manually by user 2026-09-27). **0013 NOT yet applied** — user runs `pnpm db:migrate` manually. Next free migration number: **0014**.  
+**Prod DB:** migrations **0000–0012 applied**. **0013 + 0014 NOT yet applied** — user runs `pnpm db:migrate` manually (login throttle fails open until 0014). Next free migration number: **0015**.  
 **Still needed in prod:** Vercel `CRON_SECRET` + AI Gateway credits; Master List CSV import (312 rows) not yet run.  
 **Security follow-up:** Neon `neondb_owner` password was exposed in a chat on 2026-09-27 — rotate it (Neon → Roles → reset), update Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED`, redeploy, update local `.env.local`.
 
 **Claude Code setup (2026-10-06):** `.claude/settings.json` denies db:migrate/seed/drizzle push and `.env*` reads; SessionStart hook installs deps; use `pnpm build:offline` where Google Fonts is unreachable.  
-**Next up:** cleanup Pass 1 (dead code) → Pass 2 (perf) → Pass 3 (housekeeping) — see SESSION-STATE "Known bugs / debt" + "Next sessions queue".
+**Next up:** Chunk 2 (shared status-change path + days-in-stage bug) → Chunk 3 (mobile nav + dead code) → Chunk 4 (transactions/integrity) → Chunk 5 (perf) — see SESSION-STATE "Known bugs" + "Next sessions queue".
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).

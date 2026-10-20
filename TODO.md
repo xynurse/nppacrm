@@ -3,7 +3,22 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped: PR #2 Phase 5 merged to `main` + Claude Code project config (2026-10-06) — deployed at `nppacrm.vercel.app`. **Migration 0013 still needs a manual `pnpm db:migrate`.**
+Latest shipped: Chunk 1 — dependency security + auth hardening (2026-10-20, `7e48a0f`). **Migrations 0013 + 0014 still need a manual `pnpm db:migrate`.**
+
+## Shipped 2026-10-20 (Chunk 1 — security)
+
+- [x] Full repo audit (security, performance, features/UX) — findings + exact fixes in SESSION-STATE "Known bugs"
+- [x] Dependency upgrades + overrides; `pnpm audit --prod` clean; audit step in CI
+- [x] DB-verified role/isActive per request; 14-day session
+- [x] Login throttle (`login_attempts`, migration 0014) + dummy-hash timing fix + 12-char passwords
+- [x] Admin self-lockout guard; interaction edit ownership; benefits helper out of `"use server"`
+- [x] Upload cap / prefix; Blob-host checks on file fields + prospectus fetch
+- [x] "Viewer" → "Member" label
+- [ ] **(user, manual)** `pnpm db:migrate` to apply **0013 + 0014**
+- [ ] Chunk 2 — shared status-change path + days-in-stage fix
+- [ ] Chunk 3 — mobile "More" nav + dead-code Pass 1
+- [ ] Chunk 4 — transactions / data-integrity fixes
+- [ ] Chunk 5 — performance Pass 2
 
 ## Shipped 2026-10-06 (repo cleanup + Claude Code setup)
 

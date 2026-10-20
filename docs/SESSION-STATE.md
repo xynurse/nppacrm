@@ -8,6 +8,36 @@
 ---
 
 ## Last updated
+2026-10-20 — **Full repo audit (2026-10-10) + Chunk 1: dependency security + auth hardening (SHIPPED, `7e48a0f`).** Three parallel reviews (security, performance, features/UX); findings below. Chunk 1 cleared every `pnpm audit --prod` advisory (was 5 critical / 17 high, incl. a Next.js image-optimizer RCE) and hardened auth. typecheck, lint, `build:offline` green; Playwright not run (needs a DB login).
+
+**Prod still needs (user, manual):** `pnpm db:migrate` for **0013 and 0014**; rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`. Login throttling is a no-op (fails open) until 0014 is applied.
+
+**In progress:** nothing uncommitted.
+
+**Known bugs found in the 2026-10-10 audit (not yet fixed — exact fixes):**
+- **Days-in-stage is wrong** (`lib/db/queries/reports.ts` ~L411): the loop never checks `to === ec.status`, so `enteredAt` ends on the entity's *oldest* move; also scans every event's audit rows. Fix: SQL `DISTINCT ON (entity_id)` over the event's ids where `changes->>'to' = status`, newest first.
+- **Status changes outside the kanban write no `eventCompany.move_status` audit and skip the confirm gate**: `updateField` (`lib/actions/cells.ts` ~L31) and bulk update (~L172). Bulk "Confirmed" creates no benefits and needs no amount/tier. Fix: one shared `changeStatus()` used by kanban, inline cell and bulk.
+- **No transactions** (`neon-http`): `markProposalSent`, `quickAddEventCompany`, `uploadProspectus` (soft-deletes old before inserting new), CSV import (~1,000 serial calls for 312 rows). Fix: `db.batch([...])` or a `neon-serverless` Pool client.
+- Tasks hard-deleted with no snapshot (`lib/actions/tasks.ts` ~L233) — needs `deletedAt` (migration).
+- Custom-field writes are read-modify-write of the whole jsonb (`lib/actions/custom-fields.ts` ~L165) — concurrent edits lose data. Fix: `custom_fields || jsonb_build_object(k, v)`.
+- Custom date fields accept `2026-13-45` (regex only, ~L226) and then break `::timestamptz` casts in `lib/views/compile.ts`. Fix: real date parse server-side.
+- Soft-deleted prospects still mutable (`updateField`, `moveEventCompanyStatus`, `confirmEventCompany`, bulk): add `isNull(deletedAt)`. `confirmEventCompany` doesn't check tier belongs to event; `applyNlUpdate` / `acceptCompanySuggestion` trust client `eventId`.
+- AI spend cap (`lib/ai/spend.ts`) ignores `agent_runs` + NL update; cron agents have no `maxDuration`/abort; killed runs stay `running`.
+- Calendar overdue uses UTC date (`app/(app)/calendar/page.tsx` ~L82); date-only `updateField` saves UTC midnight.
+- CSV export (`lib/actions/csv.ts` ~L38, `lib/actions/reports.ts` ~L20) doesn't neutralise leading `= + - @`.
+- **Mobile nav dead-ends:** sidebar is `hidden lg:flex`, `BottomNav` has 5 items — no route to Event/Calendar/Playbooks/Reports/admin, event switcher or sign-out below `lg`.
+- Blobs are still `access: "public"` — moving to private needs a private store + migrating existing files.
+- `/companies` First Load JS rose 215 → 235 kB with the TipTap 3.31 bump.
+- Earlier (2026-10-06) debt below under "Previous" still stands: drawer refetch, `notesDoc` in list rows, `bulkRemoveTag` loop, `listActiveEvents` cache, dead code.
+
+**Decisions made this session:**
+- **"viewer" role = normal teammate** (full edit, no admin). Not made read-only; UI label is now **"Member"**, enum value unchanged. Don't add per-mutation role gates unless the user asks for a true read-only role (would need an enum migration).
+- **Login throttle storage = Postgres** (`login_attempts`, migration 0014), not Upstash. Enforced inside `authorize()` because the Auth.js callback endpoint can be POSTed directly. Fails open while the table is missing.
+- Role/isActive come from the DB per request (`getVerifiedSession`, React `cache()`), not the JWT.
+- Transitive security fixes are pinned in `pnpm-workspace.yaml` `overrides` (pnpm 11 reads them there; needed `pnpm install --no-optimistic-repeat-install` to apply). CI now runs `pnpm audit --prod --audit-level=high`.
+- Upload cap is 50 MB (matches the prospectus picker), not 25.
+
+## Previous
 2026-10-06 — **Repo audit + PR #2 merged + Claude Code stood up.** PR #2 (Phase 5 spreadsheet columns) merged to `main` as `d39ea08` after resolving a docs-only conflict in `AGENT-MEMORY.md`. Added `.claude/settings.json` (allow/deny rules + SessionStart install hook), `scripts/font-mock.cjs`, and `pnpm build:offline` (`5f811f3`). typecheck, lint and build all green. No open PRs. The user's Mac clone (`/Users/michaelthorn/nppacrm`) was fast-forwarded to `main`.
 
 **Prod still needs (user, manual):** `pnpm db:migrate` for **0013**; rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`.
@@ -28,7 +58,6 @@
 - Migrations and seeding are **denied** to Claude in `.claude/settings.json`, because `.env.local` → production. The user runs them.
 - In sandboxes without network, `pnpm typecheck && pnpm lint && pnpm build:offline` counts as the green build; CI runs the real `pnpm build`.
 
-## Previous
 2026-08-09 — **Chunk 15b: TipTap slash commands + `@` mentions (SHIPPED, commit
 `9bf136e`).** The two interactive extensions on top of the 15a editor, both on
 TipTap's Suggestion plugin and rendered through **one shared caret-positioned
@@ -199,7 +228,7 @@ points at prod. No rich doc has been written in prod yet
 (`interactions_with_doc = 0`, `tasks_with_doc = 0`).
 
 ## Current git HEAD
-`5f811f3` chore: stand up Claude Code project config — plus this docs commit on top. (Prior: `d39ea08` Merge PR #2 Phase 5; `863b8d0` Merge PR #3.)
+`7e48a0f` chunk 1: dependency security + auth hardening — plus this docs commit on top. (Prior: `bfdab1f` docs; `5f811f3` Claude Code config; `d39ea08` Merge PR #2.)
 
 Older history:
 commit on top. (Prior: `750677c` docs: verify migrations 0010/0011; `81e6811`
@@ -569,22 +598,25 @@ column). typecheck + lint + build all green.
 
 ## Next sessions queue
 
-Work through these in order. One chunk per session. Full detail for each fix is under "Known bugs / debt" at the top.
+Work through these in order. One chunk per session. Exact fixes are under "Known bugs" at the top.
 
 ### 0. (User, manual — not Claude) Prod housekeeping
-`pnpm db:migrate` for 0013 · rotate Neon `neondb_owner` password → Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED` + `.env.local` · set `CRON_SECRET` · delete the three merged remote branches.
+`pnpm db:migrate` for **0013 + 0014** · rotate Neon `neondb_owner` password → Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED` + `.env.local` · set `CRON_SECRET` · delete the three merged remote branches.
 
-### 1. Cleanup Pass 1 — dead code ← START HERE
-Delete the 3 unused component files, remove the 3 unused deps (`pnpm remove`), prune unused exports flagged by `npx knip` (keep Drizzle `$infer` schema types), wrap `listActiveEvents` in `cache()`. Low risk; typecheck/lint/build, commit, push.
+### 1. Chunk 2 — status-change parity + days-in-stage ← START HERE
+One shared `changeStatus()` (audit `move_status`, confirm gate, benefits) used by kanban, inline cell and bulk; rewrite days-in-stage as event-scoped SQL; add `isNull(deletedAt)` guards on those mutations. Show the user a plan first (>3 files).
 
-### 2. Cleanup Pass 2 — performance
-Drawer data split, drop `notesDoc` from list rows, days-in-stage SQL, `bulkRemoveTag` single statement, cron `maxDuration` + concurrency. Touches >3 files — show the user a plan first.
+### 2. Chunk 3 — mobile nav + dead code (Pass 1)
+"More" sheet in `BottomNav` (Event, Calendar, Playbooks, Reports, admin, event switch, sign out); then Pass 1 dead-code removal + `listActiveEvents` `cache()`.
 
-### 3. Cleanup Pass 3 — housekeeping
-Trim this file (move history sections to CHANGELOG), Neon dev branch for local dev, migration dropping `tags`/`company_tags` (user applies). Also: `/companies` First Load JS 215 kB → dynamic cell imports.
+### 3. Chunk 4 — integrity
+Transactions (`db.batch`) for multi-step writes + batched CSV import; atomic custom-field jsonb writes; real date validation; task soft-delete (migration); CSV formula escaping; UTC/date-only fixes.
 
-### Later
-Browser-verify TipTap `/` + `@` and Phase 5 columns (needs a login); Chunk 22 remaining field types; Gallery view; Chunk 21 Pusher presence.
+### 4. Chunk 5 — performance (Pass 2)
+Drawer data split, drop `notesDoc` from list rows, parallelise `/companies` fetches, lazy-load ⌘K palette + drawer tabs, edge-safe middleware auth config (middleware is ~600 KB), cron `maxDuration` + concurrency + spend cap on agents.
+
+### Feature backlog (ranked, from the audit)
+Renewal rollover ("start next year from…") · tier inventory + weighted forecast/pace · fulfillment board · duplicate detection/merge · playbooks from the drawer · email "open in mail / mark sent" · export pack · sponsor self-service link · vitest for `compile.ts`/serializer/reports.
 
 ---
 
@@ -640,7 +672,8 @@ git log --oneline -8
 | 0011 | ✅ (verified 2026-08-09) | `interactions.body_doc` + `tasks.description_doc` jsonb (TipTap). Both columns present in prod + logged. |
 | 0012 | ✅ (applied by user 2026-09-27) | `notifications`, `companies.category/subcategory`, fulfillment cols on `event_companies`. |
 | 0013 | ❌ **not yet** | `0013_fix_stale_view.sql` — rewrites the inverted "Stale" saved view (PR #2). User runs `pnpm db:migrate`. |
+| 0014 | ❌ **not yet** | `login_attempts` table (login throttle, chunk 1). Code fails open until applied. |
 
-**Next migration:** 0014 (0013 committed, not yet applied). Chunk 15b (`@` mentions) needs **no** migration —
+**Next migration:** 0015 (0013 + 0014 committed, not yet applied). Chunk 15b (`@` mentions) needs **no** migration —
 mention nodes live inside the existing `*_doc` jsonb. Chunk 20 (notifications)
 will be the next one that does.
