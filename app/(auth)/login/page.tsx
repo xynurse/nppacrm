@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getVerifiedSession } from "@/lib/auth";
 import { LoginForm } from "@/components/auth/login-form";
 import { LogoMark } from "@/components/app/logo-mark";
 
 export default async function LoginPage() {
-  const session = await auth();
-  if (session?.user) redirect("/");
+  // Verified (DB-checked) so a deactivated user with a live cookie lands on
+  // the form instead of bouncing between / and /login.
+  const session = await getVerifiedSession();
+  if (session) redirect("/");
 
   return (
     <div className="w-full max-w-sm">

@@ -1,5 +1,6 @@
 "use server";
 
+import { isOwnBlobUrl, MAX_UPLOAD_BYTES } from "@/lib/blob";
 import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -59,14 +60,26 @@ export async function uploadProspectus(
   }
   const { eventId, blobUrl, blobPathname, fileName, fileSize } = parsed.data;
 
+  // Only fetch from our own Blob store — never an arbitrary admin-typed URL.
+  if (!isOwnBlobUrl(blobUrl)) {
+    return { ok: false, error: "Prospectus must be uploaded to this app" };
+  }
+
   // Pull the file back from Blob to extract text.
   let text = "";
   try {
-    const res = await fetch(blobUrl);
+    const res = await fetch(blobUrl, { signal: AbortSignal.timeout(30_000) });
+    const declared = Number(res.headers.get("content-length") ?? 0);
+    if (declared > MAX_UPLOAD_BYTES) {
+      return { ok: false, error: "Prospectus is over 50 MB" };
+    }
     if (!res.ok) {
       return { ok: false, error: `Couldn't fetch uploaded blob (${res.status})` };
     }
     const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.byteLength > MAX_UPLOAD_BYTES) {
+      return { ok: false, error: "Prospectus is over 50 MB" };
+    }
     const parsedPdf = await extractPdfText(buf);
     text = parsedPdf.text.trim();
     if (text.length === 0) {

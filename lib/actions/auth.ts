@@ -1,6 +1,6 @@
 "use server";
 
-import { AuthError } from "next-auth";
+import { AuthError, CredentialsSignin } from "next-auth";
 import { signIn, signOut } from "@/auth";
 import { loginSchema } from "@/lib/schemas/auth";
 
@@ -20,6 +20,13 @@ export async function loginAction(raw: unknown): Promise<ActionResult> {
     });
     return { ok: true };
   } catch (err) {
+    // Matched by code, not class, in case Auth.js re-creates the error.
+    if (err instanceof CredentialsSignin && err.code === "locked") {
+      return {
+        ok: false,
+        error: "Too many sign-in attempts. Try again in 15 minutes.",
+      };
+    }
     if (err instanceof AuthError) {
       return { ok: false, error: "Invalid email or password" };
     }

@@ -1,5 +1,6 @@
 "use server";
 
+import { isOwnBlobUrl } from "@/lib/blob";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireAdmin, requireSession } from "@/lib/auth";
@@ -239,7 +240,8 @@ function validateValueForField(
       return (
         typeof value === "object" &&
         value !== null &&
-        typeof (value as { url?: unknown }).url === "string"
+        typeof (value as { url?: unknown }).url === "string" &&
+        isOwnBlobUrl((value as { url: string }).url)
       );
     default:
       return false;

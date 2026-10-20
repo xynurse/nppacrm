@@ -4,6 +4,7 @@ import { upload } from "@vercel/blob/client";
 import { FileText, Trash2, Upload } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { UPLOAD_PREFIX } from "@/lib/blob-limits";
 import {
   deleteProspectus,
   uploadProspectus,
@@ -51,7 +52,7 @@ export function ProspectusManager({ eventId, prospectus, blobConfigured }: Props
     setError(null);
     setUploading(true);
     try {
-      const blob = await upload(file.name, file, {
+      const blob = await upload(`${UPLOAD_PREFIX}${file.name}`, file, {
         access: "public",
         handleUploadUrl: "/api/upload",
       });

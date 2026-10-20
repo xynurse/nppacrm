@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireSession } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
-import { instantiateBenefitsForEventCompany } from "@/lib/actions/benefits";
+import { instantiateBenefitsForEventCompany } from "@/lib/benefits/instantiate";
 import { db } from "@/lib/db";
 import {
   PROSPECT_STATUS_VALUES,

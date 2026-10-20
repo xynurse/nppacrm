@@ -66,7 +66,7 @@ function UserRow({ user }: { user: UserRow }) {
             });
           }}
         >
-          <option value="viewer">Viewer</option>
+          <option value="viewer">Member</option>
           <option value="admin">Admin</option>
         </Select>
       </td>
@@ -96,7 +96,7 @@ function UserRow({ user }: { user: UserRow }) {
           disabled={pending}
           onClick={() => {
             const password = window.prompt(
-              `Reset password for ${user.email}? Enter new temporary password (min 8 chars):`,
+              `Reset password for ${user.email}? Enter new temporary password (min 12 chars):`,
             );
             if (!password) return;
             startTransition(async () => {

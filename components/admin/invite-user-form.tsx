@@ -54,7 +54,7 @@ export function InviteUserForm() {
       <div className="space-y-1">
         <Label htmlFor="invite-role">Role</Label>
         <Select id="invite-role" name="role" defaultValue="viewer">
-          <option value="viewer">Viewer</option>
+          <option value="viewer">Member</option>
           <option value="admin">Admin</option>
         </Select>
       </div>
@@ -64,7 +64,7 @@ export function InviteUserForm() {
           id="invite-password"
           name="password"
           type="text"
-          minLength={8}
+          minLength={12}
           required
           disabled={pending}
         />

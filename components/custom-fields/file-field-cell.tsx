@@ -5,6 +5,7 @@ import { Paperclip, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { updateCustomField } from "@/lib/actions/custom-fields";
 import type { FileFieldValue } from "@/lib/db/schema";
+import { UPLOAD_PREFIX } from "@/lib/blob-limits";
 
 type Props = {
   entityId: string;
@@ -38,7 +39,7 @@ export function FileFieldCell({
     setError(null);
     setUploading(true);
     try {
-      const blob = await upload(file.name, file, {
+      const blob = await upload(`${UPLOAD_PREFIX}${file.name}`, file, {
         access: "public",
         handleUploadUrl: "/api/upload",
       });

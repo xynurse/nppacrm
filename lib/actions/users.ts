@@ -61,6 +61,15 @@ export async function updateUser(raw: unknown): Promise<ActionResult> {
   }
 
   const { id, ...rest } = parsed.data;
+  if (
+    id === session.user.id &&
+    (rest.isActive === false || (rest.role && rest.role !== "admin"))
+  ) {
+    return {
+      ok: false,
+      error: "You can't demote or deactivate your own account.",
+    };
+  }
   const updates: Partial<typeof users.$inferInsert> = { updatedAt: new Date() };
   if (rest.name !== undefined) updates.name = rest.name;
   if (rest.role !== undefined) updates.role = rest.role;

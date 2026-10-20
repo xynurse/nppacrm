@@ -4,6 +4,7 @@ import {
 } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
+import { MAX_UPLOAD_BYTES, UPLOAD_PREFIX } from "@/lib/blob";
 import { env } from "@/lib/env";
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -21,7 +22,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     const json = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async () => ({
+      onBeforeGenerateToken: async (pathname) => {
+        if (!pathname.startsWith(UPLOAD_PREFIX) || pathname.includes("..")) {
+          throw new Error("Invalid upload path");
+        }
+        return {
         allowedContentTypes: [
           "application/pdf",
           "image/png",
@@ -34,8 +39,10 @@ export async function POST(request: Request): Promise<NextResponse> {
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         ],
         addRandomSuffix: true,
+        maximumSizeInBytes: MAX_UPLOAD_BYTES,
         tokenPayload: JSON.stringify({ userId: session.user.id }),
-      }),
+        };
+      },
       onUploadCompleted: async () => {
         // No-op: the custom-field write happens client-side via updateCustomField
         // after blob completion, with audit recorded server-side there.

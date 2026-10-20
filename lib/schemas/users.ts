@@ -4,7 +4,10 @@ export const inviteUserSchema = z.object({
   email: z.email(),
   name: z.string().min(1).max(120),
   role: z.enum(["admin", "viewer"]).default("viewer"),
-  password: z.string().min(8).max(72),
+  password: z
+    .string()
+    .min(12, "Password must be at least 12 characters")
+    .max(72),
 });
 
 export const updateUserSchema = z.object({
@@ -16,7 +19,10 @@ export const updateUserSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   id: z.uuid(),
-  password: z.string().min(8).max(72),
+  password: z
+    .string()
+    .min(12, "Password must be at least 12 characters")
+    .max(72),
 });
 
 export type InviteUserInput = z.infer<typeof inviteUserSchema>;

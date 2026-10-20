@@ -12,7 +12,7 @@ export function UserMenu({
       <div className="hidden text-right sm:block">
         <div className="text-sm font-medium leading-tight">{user.name}</div>
         <div className="text-xs leading-tight text-slate-500 dark:text-slate-400">
-          {user.role === "admin" ? "Admin" : "Viewer"} · {user.email}
+          {user.role === "admin" ? "Admin" : "Member"} · {user.email}
         </div>
       </div>
       <form action={logoutAction}>

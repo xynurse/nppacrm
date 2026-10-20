@@ -177,6 +177,16 @@ export async function updateInteraction(
   if (!parsed.success) return { ok: false, error: "Invalid input" };
   const { id, ...patch } = parsed.data;
 
+  const [existing] = await db
+    .select({ userId: interactions.userId })
+    .from(interactions)
+    .where(eq(interactions.id, id))
+    .limit(1);
+  if (!existing) return { ok: false, error: "Not found" };
+  if (session.user.role !== "admin" && existing.userId !== session.user.id) {
+    return { ok: false, error: "You can only edit your own interactions" };
+  }
+
   const updates: Record<string, unknown> = { updatedAt: new Date() };
   if ("subject" in patch) updates.subject = patch.subject ?? null;
   if ("body" in patch || "bodyDoc" in patch) {
