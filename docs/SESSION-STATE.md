@@ -10,7 +10,7 @@
 ## Last updated
 2026-10-20 — **Full repo audit (2026-10-10) + Chunk 1: dependency security + auth hardening (SHIPPED, `7e48a0f`).** Three parallel reviews (security, performance, features/UX); findings below. Chunk 1 cleared every `pnpm audit --prod` advisory (was 5 critical / 17 high, incl. a Next.js image-optimizer RCE) and hardened auth. typecheck, lint, `build:offline` green; Playwright not run (needs a DB login).
 
-**Prod still needs (user, manual):** `pnpm db:migrate` for **0013 and 0014**; rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`. Login throttling is a no-op (fails open) until 0014 is applied.
+**Prod still needs (user, manual):** rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`. (0013 + 0014 applied by user 2026-10-20 — login throttling and the fixed Stale view are live.)
 
 **In progress:** nothing uncommitted.
 
@@ -601,7 +601,7 @@ column). typecheck + lint + build all green.
 Work through these in order. One chunk per session. Exact fixes are under "Known bugs" at the top.
 
 ### 0. (User, manual — not Claude) Prod housekeeping
-`pnpm db:migrate` for **0013 + 0014** · rotate Neon `neondb_owner` password → Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED` + `.env.local` · set `CRON_SECRET` · delete the three merged remote branches.
+rotate Neon `neondb_owner` password → Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED` + `.env.local` · set `CRON_SECRET` · delete the three merged remote branches.
 
 ### 1. Chunk 2 — status-change parity + days-in-stage ← START HERE
 One shared `changeStatus()` (audit `move_status`, confirm gate, benefits) used by kanban, inline cell and bulk; rewrite days-in-stage as event-scoped SQL; add `isNull(deletedAt)` guards on those mutations. Show the user a plan first (>3 files).
@@ -671,9 +671,9 @@ git log --oneline -8
 | 0010 | ✅ (verified 2026-08-09) | `contact_email_history` (contact email archive). Table present in prod + logged in drizzle. |
 | 0011 | ✅ (verified 2026-08-09) | `interactions.body_doc` + `tasks.description_doc` jsonb (TipTap). Both columns present in prod + logged. |
 | 0012 | ✅ (applied by user 2026-09-27) | `notifications`, `companies.category/subcategory`, fulfillment cols on `event_companies`. |
-| 0013 | ❌ **not yet** | `0013_fix_stale_view.sql` — rewrites the inverted "Stale" saved view (PR #2). User runs `pnpm db:migrate`. |
-| 0014 | ❌ **not yet** | `login_attempts` table (login throttle, chunk 1). Code fails open until applied. |
+| 0013 | ✅ (applied by user 2026-10-20) | `0013_fix_stale_view.sql` — rewrites the inverted "Stale" saved view (PR #2). |
+| 0014 | ✅ (applied by user 2026-10-20) | `login_attempts` table (login throttle, chunk 1) — throttling now active. |
 
-**Next migration:** 0015 (0013 + 0014 committed, not yet applied). Chunk 15b (`@` mentions) needs **no** migration —
+**Next migration:** 0015. All committed migrations (0000–0014) are applied in prod. Chunk 15b (`@` mentions) needs **no** migration —
 mention nodes live inside the existing `*_doc` jsonb. Chunk 20 (notifications)
 will be the next one that does.

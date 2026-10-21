@@ -37,7 +37,7 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Saved views persist columns. New shared views: Unassigned, Bounced, By category.
 - **0013** rewrites the inverted "Stale (no contact 14+ days)" view to older-than-14-days and renames it when the new name is free.
 
-**Prod DB:** migrations **0000–0012 applied**. **0013 + 0014 NOT yet applied** — user runs `pnpm db:migrate` manually (login throttle fails open until 0014). Next free migration number: **0015**.  
+**Prod DB:** migrations **0000–0014 applied** (0013 + 0014 run by user 2026-10-20). Next free migration number: **0015**.  
 **Still needed in prod:** Vercel `CRON_SECRET` + AI Gateway credits; Master List CSV import (312 rows) not yet run.  
 **Security follow-up:** Neon `neondb_owner` password was exposed in a chat on 2026-09-27 — rotate it (Neon → Roles → reset), update Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED`, redeploy, update local `.env.local`.
 
@@ -65,7 +65,6 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 
 ## Ops / known gaps
 - TipTap `/` and `@` and Phase 5 columns were not browser-verified here (no `.env.local` / login).
-- Stale view stays inverted until **0013** is applied.
 - Repo is public — user undecided on private.
 
 ## How to work in new chats (token discipline)

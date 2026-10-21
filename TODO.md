@@ -3,7 +3,7 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped: Chunk 1 — dependency security + auth hardening (2026-10-20, `7e48a0f`). **Migrations 0013 + 0014 still need a manual `pnpm db:migrate`.**
+Latest shipped: Chunk 1 — dependency security + auth hardening (2026-10-20, `7e48a0f`). All migrations (0000–0014) applied in prod.
 
 ## Shipped 2026-10-20 (Chunk 1 — security)
 
@@ -14,7 +14,7 @@ Latest shipped: Chunk 1 — dependency security + auth hardening (2026-10-20, `7
 - [x] Admin self-lockout guard; interaction edit ownership; benefits helper out of `"use server"`
 - [x] Upload cap / prefix; Blob-host checks on file fields + prospectus fetch
 - [x] "Viewer" → "Member" label
-- [ ] **(user, manual)** `pnpm db:migrate` to apply **0013 + 0014**
+- [x] **(user, manual)** `pnpm db:migrate` applied **0013 + 0014** (2026-10-20)
 - [ ] Chunk 2 — shared status-change path + days-in-stage fix
 - [ ] Chunk 3 — mobile "More" nav + dead-code Pass 1
 - [ ] Chunk 4 — transactions / data-integrity fixes
@@ -25,7 +25,7 @@ Latest shipped: Chunk 1 — dependency security + auth hardening (2026-10-20, `7
 - [x] PR #2 (Phase 5 spreadsheet columns, custom-field filters, saved views) merged to `main`; AGENT-MEMORY conflict resolved
 - [x] `.claude/settings.json` — allow routine commands, deny db:migrate / db:seed / drizzle-kit push / force-push / reading `.env*`
 - [x] `SessionStart` hook installs deps on fresh clones; `pnpm build:offline` for network-less sandboxes
-- [ ] **(user, manual)** `pnpm db:migrate` to apply **0013** to prod
+- [x] **(user, manual)** `pnpm db:migrate` to apply **0013** to prod (2026-10-20)
 - [ ] **(user, manual)** Rotate the Neon `neondb_owner` password (exposed 2026-09-27) → update Vercel env + `.env.local`
 - [ ] **(user, manual)** Set Vercel `CRON_SECRET`; delete merged branches `cursor/ui-phases-2341-896f`, `cursor/phase5-spreadsheet-75b2`, `claude/epic-archimedes-tkdh9b`
 
