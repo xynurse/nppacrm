@@ -12,6 +12,8 @@
 
 **Prod still needs (user, manual):** rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`. No migration this chunk.
 
+**Follow-up same day (`d1a6efa`):** CI audit gate failed on new Next.js advisories (critical SVG image-optimizer RCE + high Server Actions DoS, both ≤15.5.27) → bumped `next`/`eslint-config-next` to **15.5.28**; CI green.
+
 **In progress:** nothing uncommitted.
 
 **Decisions made (chunk 2):**

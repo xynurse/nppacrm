@@ -27,7 +27,7 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Days-in-stage = event-scoped SQL in `lib/db/queries/reports.ts` (also reads legacy audit actions — keep them).
 
 **Chunk 1 — dependency security + auth hardening (`7e48a0f`, 2026-10-20)**
-- Next 15.5.27 / next-auth beta.32 / @auth/core 0.41.3 / TipTap 3.31 + `pnpm-workspace.yaml` overrides → `pnpm audit --prod` clean; CI audit step.
+- Next 15.5.28 / next-auth beta.32 / @auth/core 0.41.3 / TipTap 3.31 + `pnpm-workspace.yaml` overrides → `pnpm audit --prod` clean; CI audit step.
 - `requireSession` re-reads role + isActive from DB (`getVerifiedSession`). Login throttle in `authorize()` (`lib/auth/throttle.ts`, table `login_attempts`). 12-char passwords. Upload cap/prefix + own-Blob-host checks (`lib/blob.ts`).
 - "viewer" = normal teammate, labelled **Member** (decided — don't gate mutations by role).
 
