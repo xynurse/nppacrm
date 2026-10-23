@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
   bulkRemoveTag,
   bulkUpdateEventCompanies,
@@ -30,6 +30,7 @@ export function BulkActionBar({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [message, setMessage] = useState<string | null>(null);
   const count = selectedIds.length;
   if (count === 0) return null;
 
@@ -43,6 +44,14 @@ export function BulkActionBar({
   return (
     <div className="sticky bottom-4 left-0 right-0 z-20 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 py-2 text-sm shadow-md dark:border-zinc-700 dark:bg-zinc-900">
       <span className="font-medium">{count} selected</span>
+      {message ? (
+        <span
+          role="status"
+          className="order-last basis-full text-center text-xs text-zinc-500 dark:text-zinc-400"
+        >
+          {message}
+        </span>
+      ) : null}
       <span className="text-zinc-300">·</span>
       <Select
         className="h-8 w-40 text-xs"
@@ -52,12 +61,20 @@ export function BulkActionBar({
           const status = e.target.value;
           if (!status) return;
           startTransition(async () => {
-            await bulkUpdateEventCompanies({
+            const res = await bulkUpdateEventCompanies({
               ids: selectedIds,
               patch: {
                 status: status as (typeof PROSPECT_STATUS_VALUES)[number],
               },
             });
+            setMessage(
+              res.ok
+                ? [
+                    `${res.updated} updated`,
+                    ...res.skipped.map((s) => `${s.count} skipped — ${s.reason}`),
+                  ].join(" · ")
+                : res.error,
+            );
             router.refresh();
           });
         }}

@@ -26,6 +26,11 @@ export type CellShellProps<V> = {
   display: ReactNode;
   Editor: (props: CellEditorProps<V>) => ReactNode;
   onLocalChange?: (next: V) => void;
+  /**
+   * Return true to take over a save (e.g. open a dialog instead of writing
+   * the value directly). The editor closes and nothing is persisted here.
+   */
+  interceptSave?: (next: V) => boolean;
   className?: string;
   align?: "left" | "right";
 };
@@ -37,6 +42,7 @@ export function CellShell<V>({
   display,
   Editor,
   onLocalChange,
+  interceptSave,
   className,
   align = "left",
 }: CellShellProps<V>) {
@@ -58,6 +64,7 @@ export function CellShell<V>({
     async (next: V) => {
       setEditing(false);
       setError(null);
+      if (interceptSave?.(next)) return;
       onLocalChange?.(next);
       const result = await updateField({
         fieldKey,
@@ -69,7 +76,7 @@ export function CellShell<V>({
         onLocalChange?.(value);
       }
     },
-    [entityId, fieldKey, onLocalChange, value],
+    [entityId, fieldKey, interceptSave, onLocalChange, value],
   );
 
   return (

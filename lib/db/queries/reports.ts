@@ -1,7 +1,6 @@
-import { and, asc, desc, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
-  auditLog,
   eventCompanies,
   events,
   interactions,
@@ -356,7 +355,8 @@ export async function getCadenceBreakdown(
 
 /**
  * Average days a prospect has been in its CURRENT status, broken out by
- * status. Computed from audit_log entries with action='eventCompany.move_status'.
+ * status, from the newest audit entry that moved it into that status (see
+ * the SQL below for which audit actions count).
  *
  * For prospects with NO move history (still in their seeded status), we
  * fall back to days since `eventCompany.createdAt`.
@@ -372,16 +372,61 @@ export type DaysInStageRow = {
 export async function getAverageDaysInStage(
   eventId: string,
 ): Promise<DaysInStageRow[]> {
-  const ecs = await db
-    .select({
-      id: eventCompanies.id,
-      status: eventCompanies.status,
-      createdAt: eventCompanies.createdAt,
-    })
-    .from(eventCompanies)
-    .where(
-      and(eq(eventCompanies.eventId, eventId), isNull(eventCompanies.deletedAt)),
-    );
+  // For each live prospect: the newest audit entry that moved it INTO its
+  // current status. New writes all log `eventCompany.move_status` (via
+  // lib/pipeline/change-status); the other branches read older action types
+  // so history written before that consolidation still counts:
+  //   - eventCompany.confirm              → confirmed
+  //   - eventCompany.mark_proposal_sent   → proposal_sent
+  //   - eventCompany.update_field         → changes.status (inline cell)
+  //   - eventCompany.bulk_update          → changes.patch.status for each of changes.ids
+  const result = await db.execute<{
+    id: string;
+    status: ProspectStatus;
+    created_at: string | Date;
+    entered_at: string | Date | null;
+  }>(sql`
+    with ecs as (
+      select id, status, created_at
+      from event_companies
+      where event_id = ${eventId} and deleted_at is null
+    ),
+    bulk as (
+      select ids.id as entity_id, a.created_at
+      from audit_log a
+      cross join lateral jsonb_array_elements_text(a.changes->'ids') as ids(id)
+      join ecs on ecs.id::text = ids.id
+      where a.entity_type = 'eventCompany'
+        and a.action = 'eventCompany.bulk_update'
+        and a.changes->'patch'->>'status' = ecs.status::text
+    )
+    select
+      ecs.id,
+      ecs.status,
+      ecs.created_at,
+      greatest(
+        (
+          select max(a.created_at)
+          from audit_log a
+          where a.entity_type = 'eventCompany'
+            and a.entity_id = ecs.id::text
+            and (
+              (a.action = 'eventCompany.move_status' and a.changes->>'to' = ecs.status::text)
+              or (a.action = 'eventCompany.update_field' and a.changes->>'status' = ecs.status::text)
+              or (a.action = 'eventCompany.confirm' and ecs.status = 'confirmed')
+              or (a.action = 'eventCompany.mark_proposal_sent' and ecs.status = 'proposal_sent')
+            )
+        ),
+        (select max(b.created_at) from bulk b where b.entity_id = ecs.id::text)
+      ) as entered_at
+    from ecs
+  `);
+
+  const ecs = result.rows.map((r) => ({
+    id: r.id,
+    status: r.status,
+    since: new Date(r.entered_at ?? r.created_at),
+  }));
 
   if (ecs.length === 0) {
     return PROSPECT_STATUS_VALUES.map((s) => ({
@@ -391,35 +436,6 @@ export async function getAverageDaysInStage(
     }));
   }
 
-  // Latest audit entry per (entityId, status reached) by reading move_status rows.
-  const audits = await db
-    .select({
-      entityId: auditLog.entityId,
-      changes: auditLog.changes,
-      createdAt: auditLog.createdAt,
-    })
-    .from(auditLog)
-    .where(
-      and(
-        eq(auditLog.entityType, "eventCompany"),
-        eq(auditLog.action, "eventCompany.move_status"),
-        gte(auditLog.createdAt, new Date(0)),
-      ),
-    )
-    .orderBy(desc(auditLog.createdAt));
-
-  // For each ec.id, find the most recent audit entry where changes.to === ec.status.
-  const enteredAt = new Map<string, Date>();
-  const seenStatusEntry = new Set<string>();
-  for (const a of audits) {
-    const to = (a.changes as { to?: string })?.to;
-    if (!to) continue;
-    const key = `${a.entityId}::${to}`;
-    if (seenStatusEntry.has(key)) continue;
-    seenStatusEntry.add(key);
-    enteredAt.set(a.entityId, a.createdAt);
-  }
-
   const now = Date.now();
   const sums: Record<string, { count: number; totalDays: number }> = {};
   for (const s of PROSPECT_STATUS_VALUES) {
@@ -427,9 +443,7 @@ export async function getAverageDaysInStage(
   }
 
   for (const ec of ecs) {
-    const since =
-      enteredAt.get(ec.id) ?? ec.createdAt;
-    const days = Math.floor((now - since.getTime()) / 86_400_000);
+    const days = Math.floor((now - ec.since.getTime()) / 86_400_000);
     const bucket = sums[ec.status];
     if (!bucket) continue;
     bucket.count += 1;

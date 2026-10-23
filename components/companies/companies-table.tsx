@@ -29,6 +29,7 @@ import {
 import { BulkActionBar } from "./bulk-action-bar";
 import { CompanyAvatar } from "./company-avatar";
 import { ReviewerCell } from "./reviewer-cell";
+import { StatusCell } from "./status-cell";
 import {
   BOUNCED_TAG,
   BouncedBadge,
@@ -36,15 +37,11 @@ import {
   DeferredBadge,
   hasBouncedTag,
   hasDeferredTag,
-  PROSPECT_STATUS_LABELS,
   StatusBadge,
 } from "./status-badge";
 import { PriorityDot } from "./priority-dot";
 import { cn } from "@/lib/cn";
-import {
-  PROSPECT_PRIORITY_VALUES,
-  PROSPECT_STATUS_VALUES,
-} from "@/lib/db/schema";
+import { PROSPECT_PRIORITY_VALUES } from "@/lib/db/schema";
 import type { EventCompanyRow } from "@/lib/db/queries/companies";
 import type { CustomFieldDefinition } from "@/lib/db/schema";
 import { customFieldFilterKey, fieldMetaForCustom } from "@/lib/views/fields";
@@ -258,27 +255,15 @@ export function CompaniesTable({
         accessorKey: "status",
         header: () => sortHeader("status", "Status"),
         cell: ({ row }) => (
-          <CellShell<string | null>
-            fieldKey="eventCompany.status"
-            entityId={row.original.id}
-            value={row.original.status}
+          <StatusCell
+            row={row.original}
+            tiers={tiers}
             display={<StatusBadge status={row.original.status} />}
-            onLocalChange={(v) =>
-              setRowField(
-                row.original.id,
-                "status",
-                v as EventCompanyRow["status"],
-              )
-            }
-            Editor={(p) => (
-              <SingleSelectEditor
-                {...p}
-                options={PROSPECT_STATUS_VALUES.map((v) => ({
-                  value: v,
-                  label: PROSPECT_STATUS_LABELS[v],
-                }))}
-              />
-            )}
+            onStatusChange={(v) => setRowField(row.original.id, "status", v)}
+            onConfirmed={(input) => {
+              setRowField(row.original.id, "confirmedAmount", input.confirmedAmount);
+              setRowField(row.original.id, "confirmedTierId", input.confirmedTierId);
+            }}
           />
         ),
       },

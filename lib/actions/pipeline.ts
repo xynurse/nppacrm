@@ -11,8 +11,10 @@ import {
   PROSPECT_STATUS_VALUES,
   companies,
   eventCompanies,
+  sponsorshipTiers,
   tasks,
 } from "@/lib/db/schema";
+import { changeStatus } from "@/lib/pipeline/change-status";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -28,88 +30,13 @@ export async function moveEventCompanyStatus(
   const parsed = moveSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid input" };
 
-  const [existing] = await db
-    .select({
-      status: eventCompanies.status,
-      eventId: eventCompanies.eventId,
-      ownerId: eventCompanies.ownerId,
-      companyId: eventCompanies.companyId,
-      confirmedAmount: eventCompanies.confirmedAmount,
-      confirmedTierId: eventCompanies.confirmedTierId,
-    })
-    .from(eventCompanies)
-    .where(eq(eventCompanies.id, parsed.data.id))
-    .limit(1);
-  if (!existing) return { ok: false, error: "Not found" };
-
-  if (parsed.data.status === "confirmed") {
-    if (!existing.confirmedAmount || !existing.confirmedTierId) {
-      return {
-        ok: false,
-        error: "Set confirmed amount and tier before moving to Confirmed.",
-      };
-    }
-  }
-
-  await db
-    .update(eventCompanies)
-    .set({
-      status: parsed.data.status,
-      updatedAt: new Date(),
-      updatedBy: session.user.id,
-    })
-    .where(eq(eventCompanies.id, parsed.data.id));
-
-  await recordAudit({
-    userId: session.user.id,
-    eventId: existing.eventId,
-    action: "eventCompany.move_status",
-    entityType: "eventCompany",
-    entityId: parsed.data.id,
-    changes: { from: existing.status, to: parsed.data.status },
+  const r = await changeStatus({
+    id: parsed.data.id,
+    to: parsed.data.status,
+    actor: session.user,
+    source: "kanban",
   });
-
-  if (
-    existing.ownerId &&
-    existing.ownerId !== session.user.id &&
-    existing.status !== parsed.data.status
-  ) {
-    const [co] = await db
-      .select({ name: companies.name })
-      .from(companies)
-      .where(eq(companies.id, existing.companyId))
-      .limit(1);
-    const { createNotification } = await import("@/lib/notifications");
-    await createNotification({
-      userId: existing.ownerId,
-      type: "status_change",
-      title: `${co?.name ?? "A prospect"} → ${parsed.data.status.replace(/_/g, " ")}`,
-      body: session.user.name
-        ? `Updated by ${session.user.name}`
-        : "Status changed on a company you own",
-      entityType: "eventCompany",
-      entityId: parsed.data.id,
-      href: `/companies?record=${parsed.data.id}`,
-    });
-  }
-
-  // Auto-instantiate benefits when we just moved into confirmed.
-  if (parsed.data.status === "confirmed" && existing.status !== "confirmed") {
-    const r = await instantiateBenefitsForEventCompany({
-      eventCompanyId: parsed.data.id,
-      userId: session.user.id,
-    });
-    if (r.created > 0) {
-      await recordAudit({
-        userId: session.user.id,
-        eventId: existing.eventId,
-        action: "benefits.auto_instantiate",
-        entityType: "eventCompany",
-        entityId: parsed.data.id,
-        changes: { created: r.created, tierId: r.tierId },
-      });
-    }
-  }
+  if (!r.ok) return r;
 
   revalidatePath("/companies");
   revalidatePath("/pipeline");
@@ -139,14 +66,31 @@ export async function confirmEventCompany(
       eventId: eventCompanies.eventId,
     })
     .from(eventCompanies)
-    .where(eq(eventCompanies.id, parsed.data.id))
+    .where(
+      and(
+        eq(eventCompanies.id, parsed.data.id),
+        isNull(eventCompanies.deletedAt),
+      ),
+    )
     .limit(1);
   if (!existing) return { ok: false, error: "Not found" };
 
+  const [tier] = await db
+    .select({ id: sponsorshipTiers.id })
+    .from(sponsorshipTiers)
+    .where(
+      and(
+        eq(sponsorshipTiers.id, parsed.data.confirmedTierId),
+        eq(sponsorshipTiers.eventId, existing.eventId),
+      ),
+    )
+    .limit(1);
+  if (!tier) return { ok: false, error: "That tier isn't part of this event" };
+
+  // Amount + tier first so the shared status change passes its confirm gate.
   await db
     .update(eventCompanies)
     .set({
-      status: "confirmed",
       confirmedAmount: parsed.data.confirmedAmount,
       confirmedTierId: parsed.data.confirmedTierId,
       updatedAt: new Date(),
@@ -167,20 +111,32 @@ export async function confirmEventCompany(
     },
   });
 
-  const r = await instantiateBenefitsForEventCompany({
-    eventCompanyId: parsed.data.id,
-    userId: session.user.id,
-    tierIdOverride: parsed.data.confirmedTierId,
+  const moved = await changeStatus({
+    id: parsed.data.id,
+    to: "confirmed",
+    actor: session.user,
+    source: "confirm",
   });
-  if (r.created > 0) {
-    await recordAudit({
+  if (!moved.ok) return moved;
+
+  // Already confirmed (amount/tier edit): the status change was a no-op, so
+  // top up benefits for a possibly new tier here. Idempotent either way.
+  if (existing.status === "confirmed") {
+    const r = await instantiateBenefitsForEventCompany({
+      eventCompanyId: parsed.data.id,
       userId: session.user.id,
-      eventId: existing.eventId,
-      action: "benefits.auto_instantiate",
-      entityType: "eventCompany",
-      entityId: parsed.data.id,
-      changes: { created: r.created, tierId: r.tierId },
+      tierIdOverride: parsed.data.confirmedTierId,
     });
+    if (r.created > 0) {
+      await recordAudit({
+        userId: session.user.id,
+        eventId: existing.eventId,
+        action: "benefits.auto_instantiate",
+        entityType: "eventCompany",
+        entityId: parsed.data.id,
+        changes: { created: r.created, tierId: r.tierId },
+      });
+    }
   }
 
   revalidatePath("/companies");
@@ -247,7 +203,6 @@ export async function markProposalSent(
   await db
     .update(eventCompanies)
     .set({
-      status: "proposal_sent",
       proposalUrl: parsed.data.proposalUrl,
       proposalSentAt: now,
       proposalValidUntil: parsed.data.proposalValidUntil ?? null,
@@ -256,6 +211,14 @@ export async function markProposalSent(
       updatedBy: session.user.id,
     })
     .where(eq(eventCompanies.id, parsed.data.id));
+
+  const moved = await changeStatus({
+    id: parsed.data.id,
+    to: "proposal_sent",
+    actor: session.user,
+    source: "proposal",
+  });
+  if (!moved.ok) return moved;
 
   // 7-day follow-up due date as YYYY-MM-DD.
   const dueDate = new Date(now.getTime() + 7 * 86_400_000)

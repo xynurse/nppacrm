@@ -35,10 +35,7 @@ import {
   PROSPECT_STATUS_LABELS,
   StatusBadge,
 } from "./status-badge";
-import {
-  PROSPECT_PRIORITY_VALUES,
-  PROSPECT_STATUS_VALUES,
-} from "@/lib/db/schema";
+import { PROSPECT_PRIORITY_VALUES } from "@/lib/db/schema";
 import type {
   ArchivedEmailRow,
   ContactRow,
@@ -49,6 +46,7 @@ import type { TaskRow } from "@/lib/db/queries/tasks";
 import type { RichDoc } from "@/lib/tiptap/types";
 import { formatCurrency, formatRelativeDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { StatusCell } from "./status-cell";
 
 const PRIORITY_LABELS = {
   high: "High",
@@ -518,23 +516,15 @@ function OverviewTab({
         <KV
           label="Status"
           value={
-            <CellShell<string | null>
-              fieldKey="eventCompany.status"
-              entityId={row.id}
-              value={row.status}
+            <StatusCell
+              row={row}
+              tiers={tiers}
               display={PROSPECT_STATUS_LABELS[row.status]}
-              onLocalChange={(v) =>
-                update("status", v as EventCompanyRow["status"])
-              }
-              Editor={(p) => (
-                <SingleSelectEditor
-                  {...p}
-                  options={PROSPECT_STATUS_VALUES.map((s) => ({
-                    value: s,
-                    label: PROSPECT_STATUS_LABELS[s],
-                  }))}
-                />
-              )}
+              onStatusChange={(v) => update("status", v)}
+              onConfirmed={(input) => {
+                update("confirmedAmount", input.confirmedAmount);
+                update("confirmedTierId", input.confirmedTierId);
+              }}
             />
           }
         />

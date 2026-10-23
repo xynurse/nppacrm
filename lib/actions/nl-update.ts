@@ -11,11 +11,12 @@ import {
   type NlProspect,
 } from "@/lib/ai/nl-update";
 import { checkSpendCap } from "@/lib/ai/spend";
+import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth";
+import { changeStatus } from "@/lib/pipeline/change-status";
 import { recordAudit } from "@/lib/audit";
 import { createTask } from "@/lib/actions/tasks";
 import { logInteraction } from "@/lib/actions/interactions";
-import { moveEventCompanyStatus } from "@/lib/actions/pipeline";
 import { updateField } from "@/lib/actions/cells";
 import { db } from "@/lib/db";
 import {
@@ -261,9 +262,11 @@ export async function applyNlUpdate(raw: unknown): Promise<
             });
             continue;
           }
-          const r = await moveEventCompanyStatus({
+          const r = await changeStatus({
             id: item.companyId,
-            status: op.status,
+            to: op.status,
+            actor: session.user,
+            source: "nl_update",
           });
           if (r.ok) {
             applied.push(`status → ${op.status}`);
@@ -356,5 +359,9 @@ export async function applyNlUpdate(raw: unknown): Promise<
     },
   });
 
+  if (appliedCount > 0) {
+    revalidatePath("/companies");
+    revalidatePath("/pipeline");
+  }
   return { ok: true, results, appliedCount };
 }
