@@ -3,7 +3,7 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped: Chunk 1 — dependency security + auth hardening (2026-10-20, `7e48a0f`). All migrations (0000–0014) applied in prod.
+Latest shipped: Chunk 2 — one status-change path + correct days-in-stage (2026-10-23, `8cbddeb`). All migrations (0000–0014) applied in prod.
 
 ## Shipped 2026-10-20 (Chunk 1 — security)
 
@@ -15,7 +15,7 @@ Latest shipped: Chunk 1 — dependency security + auth hardening (2026-10-20, `7
 - [x] Upload cap / prefix; Blob-host checks on file fields + prospectus fetch
 - [x] "Viewer" → "Member" label
 - [x] **(user, manual)** `pnpm db:migrate` applied **0013 + 0014** (2026-10-20)
-- [ ] Chunk 2 — shared status-change path + days-in-stage fix
+- [x] Chunk 2 — shared status-change path + days-in-stage fix (`8cbddeb`, 2026-10-23)
 - [ ] Chunk 3 — mobile "More" nav + dead-code Pass 1
 - [ ] Chunk 4 — transactions / data-integrity fixes
 - [ ] Chunk 5 — performance Pass 2

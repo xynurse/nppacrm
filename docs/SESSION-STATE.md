@@ -8,7 +8,23 @@
 ---
 
 ## Last updated
-2026-10-20 — **Full repo audit (2026-10-10) + Chunk 1: dependency security + auth hardening (SHIPPED, `7e48a0f`).** Three parallel reviews (security, performance, features/UX); findings below. Chunk 1 cleared every `pnpm audit --prod` advisory (was 5 critical / 17 high, incl. a Next.js image-optimizer RCE) and hardened auth. typecheck, lint, `build:offline` green; Playwright not run (needs a DB login).
+2026-10-23 — **Chunk 2: one status-change path + correct days-in-stage (SHIPPED, `8cbddeb`).** Every prospect status change (kanban, confirm dialog, proposal sent, inline cell, bulk, NL update) now goes through `lib/pipeline/change-status.ts`. Days-in-stage rewritten as event-scoped SQL. typecheck, lint, `build:offline` green; days-in-stage SQL verified against a seeded PGlite scratch DB (6 cases incl. legacy audit actions). **Not browser-verified** (no login here) — the table/drawer Confirmed dialog and bulk-bar message should be clicked through once.
+
+**Prod still needs (user, manual):** rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`. No migration this chunk.
+
+**In progress:** nothing uncommitted.
+
+**Decisions made (chunk 2):**
+- `changeStatuses()` is the only place that writes `event_companies.status` (CSV import's initial status excepted). New audit shape: `eventCompany.move_status` with `{from, to, source}` where source ∈ kanban | confirm | proposal | cell | bulk | nl_update.
+- Days-in-stage also reads the pre-consolidation actions (`eventCompany.confirm`, `mark_proposal_sent`, `update_field` `changes.status`, `bulk_update` `changes.ids`) so history isn't lost — keep those branches.
+- Bulk "Confirmed" stays in the menu but only applies to rows that already have amount + tier; the rest are reported as skipped.
+- Inline Confirmed opens the kanban `ConfirmModal` (via `CellShell.interceptSave` + `components/companies/status-cell.tsx`).
+
+**Resolved from the 2026-10-10 audit list below:** days-in-stage bug; status changes outside the kanban skipping audit/confirm gate; soft-deleted prospects mutable via status/confirm/cell/bulk; `confirmEventCompany` tier not checked against event.
+
+---
+
+**Earlier — 2026-10-20 (Chunk 1, `7e48a0f`):** 2026-10-20 — **Full repo audit (2026-10-10) + Chunk 1: dependency security + auth hardening (SHIPPED, `7e48a0f`).** Three parallel reviews (security, performance, features/UX); findings below. Chunk 1 cleared every `pnpm audit --prod` advisory (was 5 critical / 17 high, incl. a Next.js image-optimizer RCE) and hardened auth. typecheck, lint, `build:offline` green; Playwright not run (needs a DB login).
 
 **Prod still needs (user, manual):** rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`. (0013 + 0014 applied by user 2026-10-20 — login throttling and the fixed Stale view are live.)
 
@@ -228,7 +244,7 @@ points at prod. No rich doc has been written in prod yet
 (`interactions_with_doc = 0`, `tasks_with_doc = 0`).
 
 ## Current git HEAD
-`7e48a0f` chunk 1: dependency security + auth hardening — plus this docs commit on top. (Prior: `bfdab1f` docs; `5f811f3` Claude Code config; `d39ea08` Merge PR #2.)
+`8cbddeb` chunk 2: one status-change path + correct days-in-stage — plus this docs commit on top. (Prior: `9285ab1` docs; `7e48a0f` chunk 1 security; `d39ea08` Merge PR #2.)
 
 Older history:
 commit on top. (Prior: `750677c` docs: verify migrations 0010/0011; `81e6811`
@@ -603,10 +619,9 @@ Work through these in order. One chunk per session. Exact fixes are under "Known
 ### 0. (User, manual — not Claude) Prod housekeeping
 rotate Neon `neondb_owner` password → Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED` + `.env.local` · set `CRON_SECRET` · delete the three merged remote branches.
 
-### 1. Chunk 2 — status-change parity + days-in-stage ← START HERE
-One shared `changeStatus()` (audit `move_status`, confirm gate, benefits) used by kanban, inline cell and bulk; rewrite days-in-stage as event-scoped SQL; add `isNull(deletedAt)` guards on those mutations. Show the user a plan first (>3 files).
+### 1. ~~Chunk 2 — status-change parity + days-in-stage~~ ✅ SHIPPED `8cbddeb`
 
-### 2. Chunk 3 — mobile nav + dead code (Pass 1)
+### 2. Chunk 3 — mobile nav + dead code (Pass 1) ← START HERE
 "More" sheet in `BottomNav` (Event, Calendar, Playbooks, Reports, admin, event switch, sign out); then Pass 1 dead-code removal + `listActiveEvents` `cache()`.
 
 ### 3. Chunk 4 — integrity

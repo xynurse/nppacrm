@@ -2,6 +2,9 @@
 
 ## Active build (committed to main)
 
+### Chunk 2 — one status-change path + correct days-in-stage _(2026-10-23, `8cbddeb`)_
+All six ways of changing a prospect's status (kanban, confirm dialog, proposal sent, table/drawer cell, bulk, AI quick update) now share `lib/pipeline/change-status.ts`: it ignores deleted prospects, requires amount + tier for Confirmed, records a per-prospect status change with its source, notifies the owner and creates benefits. Picking Confirmed in the table or drawer opens the same amount/tier dialog as the kanban, and bulk status reports how many were updated or skipped. Confirming checks that the tier belongs to the event. Days-in-stage is now one event-scoped query that uses the newest move into the current status (it previously used the oldest move and scanned every event), and still counts history recorded the old ways.
+
 ### Chunk 1 — dependency security + auth hardening _(2026-10-20, `7e48a0f`)_
 Cleared every production dependency advisory (was 5 critical / 17 high, including an unauthenticated RCE in Next.js image optimization): Next 15.5.27, next-auth beta.32, `@auth/core` 0.41.3, TipTap 3.31, plus `pnpm-workspace.yaml` overrides for transitive packages; CI now fails on new high/critical advisories. Role and active status are re-read from the database on every request, so deactivating or demoting a user takes effect immediately. Sign-in is throttled (5 failures per email / 20 per IP in 15 minutes, new `login_attempts` table — migration 0014), unknown emails take the same time as known ones, and new passwords need 12+ characters. Admins can't lock themselves out, interactions can only be edited by their author or an admin, and the benefits helper is no longer browser-callable. Uploads are capped at 50 MB under a `crm/` prefix, and file fields / prospectus fetches only accept this app's Blob store. The "Viewer" role is labelled "Member".
 
