@@ -8,7 +8,23 @@
 ---
 
 ## Last updated
-2026-10-23 — **Chunk 2: one status-change path + correct days-in-stage (SHIPPED, `8cbddeb`).** Every prospect status change (kanban, confirm dialog, proposal sent, inline cell, bulk, NL update) now goes through `lib/pipeline/change-status.ts`. Days-in-stage rewritten as event-scoped SQL. typecheck, lint, `build:offline` green; days-in-stage SQL verified against a seeded PGlite scratch DB (6 cases incl. legacy audit actions). **Not browser-verified** (no login here) — the table/drawer Confirmed dialog and bulk-bar message should be clicked through once.
+2026-10-25 — **Chunk 3: mobile "More" nav + dead-code pass 1 (SHIPPED, `39830a3`) + dep fix `94a009b`.** typecheck, lint, `build:offline`, CI green. **Not browser-verified** (no login here) — open the app on a phone once: More sheet opens/closes, Escape + backdrop, event switch, sign out, admin links for admins.
+
+**Prod still needs (user, manual):** rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`. No migration this chunk.
+
+**In progress:** nothing uncommitted.
+
+**Decisions made (chunk 3):**
+- Mobile bottom bar = Home, Companies, Pipeline, Tasks, More (`BOTTOM_BAR_HREFS` in `components/app/nav-config.ts`). Everything else goes in the More sheet. Nav lists live only in `nav-config.ts` — edit there, not in sidebar/bottom-nav.
+- `setDefaultView` deleted (user decision). `updateInteraction` and `updateFieldDefinition` are intentionally kept although no UI calls them yet (future edit buttons).
+- knip leftovers that are intentional: `scripts/font-mock.cjs`, `scripts/reset-admin-password.ts`, `@auth/core`, `eslint`/`eslint-config-next`, `buttonVariants`, schema enums/types, `tags`/`company_tags` (drop via migration in Pass 3).
+- New advisories keep landing every few days (Next 15.5.28 on 10-23, zod 4.6.7 + undici 6.29.1 on 10-25). The CI audit gate catches them, but they block deploy-time CI until bumped. Consider Dependabot/Renovate for security-only PRs.
+
+**Resolved from the audit list:** mobile nav dead-ends; sidebar showing raw "viewer"; dead code Pass 1; `listActiveEvents` cache.
+
+---
+
+**Earlier — 2026-10-23 (Chunk 2, `8cbddeb`):** 2026-10-23 — **Chunk 2: one status-change path + correct days-in-stage (SHIPPED, `8cbddeb`).** Every prospect status change (kanban, confirm dialog, proposal sent, inline cell, bulk, NL update) now goes through `lib/pipeline/change-status.ts`. Days-in-stage rewritten as event-scoped SQL. typecheck, lint, `build:offline` green; days-in-stage SQL verified against a seeded PGlite scratch DB (6 cases incl. legacy audit actions). **Not browser-verified** (no login here) — the table/drawer Confirmed dialog and bulk-bar message should be clicked through once.
 
 **Prod still needs (user, manual):** rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`. No migration this chunk.
 
@@ -246,7 +262,7 @@ points at prod. No rich doc has been written in prod yet
 (`interactions_with_doc = 0`, `tasks_with_doc = 0`).
 
 ## Current git HEAD
-`8cbddeb` chunk 2: one status-change path + correct days-in-stage — plus this docs commit on top. (Prior: `9285ab1` docs; `7e48a0f` chunk 1 security; `d39ea08` Merge PR #2.)
+`94a009b` fix(deps): zod 4.6.7 + undici — plus this docs commit on top. (Prior: `39830a3` chunk 3 mobile nav + dead code; `8cbddeb` chunk 2; `7e48a0f` chunk 1.)
 
 Older history:
 commit on top. (Prior: `750677c` docs: verify migrations 0010/0011; `81e6811`
@@ -623,10 +639,10 @@ rotate Neon `neondb_owner` password → Vercel `DATABASE_URL`/`DATABASE_URL_UNPO
 
 ### 1. ~~Chunk 2 — status-change parity + days-in-stage~~ ✅ SHIPPED `8cbddeb`
 
-### 2. Chunk 3 — mobile nav + dead code (Pass 1) ← START HERE
+### 2. ~~Chunk 3 — mobile nav + dead code (Pass 1)~~ ✅ SHIPPED `39830a3`
 "More" sheet in `BottomNav` (Event, Calendar, Playbooks, Reports, admin, event switch, sign out); then Pass 1 dead-code removal + `listActiveEvents` `cache()`.
 
-### 3. Chunk 4 — integrity
+### 3. Chunk 4 — integrity ← START HERE
 Transactions (`db.batch`) for multi-step writes + batched CSV import; atomic custom-field jsonb writes; real date validation; task soft-delete (migration); CSV formula escaping; UTC/date-only fixes.
 
 ### 4. Chunk 5 — performance (Pass 2)

@@ -3,7 +3,7 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped: Chunk 2 — one status-change path + correct days-in-stage (2026-10-23, `8cbddeb`). All migrations (0000–0014) applied in prod.
+Latest shipped: Chunk 3 — mobile "More" nav + dead-code pass 1 (2026-10-25, `39830a3`). All migrations (0000–0014) applied in prod.
 
 ## Shipped 2026-10-20 (Chunk 1 — security)
 
@@ -16,7 +16,7 @@ Latest shipped: Chunk 2 — one status-change path + correct days-in-stage (2026
 - [x] "Viewer" → "Member" label
 - [x] **(user, manual)** `pnpm db:migrate` applied **0013 + 0014** (2026-10-20)
 - [x] Chunk 2 — shared status-change path + days-in-stage fix (`8cbddeb`, 2026-10-23)
-- [ ] Chunk 3 — mobile "More" nav + dead-code Pass 1
+- [x] Chunk 3 — mobile "More" nav + dead-code Pass 1 (`39830a3`, 2026-10-25)
 - [ ] Chunk 4 — transactions / data-integrity fixes
 - [ ] Chunk 5 — performance Pass 2
 
@@ -31,7 +31,7 @@ Latest shipped: Chunk 2 — one status-change path + correct days-in-stage (2026
 
 ## Cleanup / optimization passes (from 2026-10-06 audit — see SESSION-STATE "Next sessions queue")
 
-- [ ] **Pass 1 — dead code (low risk):** delete unused `components/app/event-switcher.tsx`, `components/app/user-menu.tsx`, `components/cells/checkbox-cell.tsx`; drop deps `@dnd-kit/sortable`, `@dnd-kit/utilities`, `@types/pdf-parse`; prune ~38 unused exports (knip); wrap `listActiveEvents` in React `cache()`
+- [x] **Pass 1 — dead code (low risk) — done in Chunk 3:** delete unused `components/app/event-switcher.tsx`, `components/app/user-menu.tsx`, `components/cells/checkbox-cell.tsx`; drop deps `@dnd-kit/sortable`, `@dnd-kit/utilities`, `@types/pdf-parse`; prune ~38 unused exports (knip); wrap `listActiveEvents` in React `cache()`
 - [ ] **Pass 2 — performance:** drawer data loaded separately from the table; drop `companyNotesDoc` from `listEventCompanies`; event-scope + DB-side "days in stage"; single-statement `bulkRemoveTag`; `maxDuration` + bounded concurrency on cron agents
 - [ ] **Pass 3 — housekeeping:** trim SESSION-STATE (history → CHANGELOG); Neon dev branch for local `.env.local`; migration to drop unused `tags` / `company_tags` tables (user applies)
 

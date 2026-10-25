@@ -2,6 +2,9 @@
 
 ## Active build (committed to main)
 
+### Chunk 3 — mobile "More" nav + dead-code pass 1 _(2026-10-25, `39830a3`; deps `94a009b`)_
+On phones the bottom bar is now Home, Companies, Pipeline, Tasks and More. More opens an accessible bottom sheet with Contacts, Event, Calendar, Playbooks, Reports, admin links, the event switcher and sign out, none of which were reachable below the desktop breakpoint before. Navigation is defined once in `components/app/nav-config.ts` for both the sidebar and mobile, and the sidebar now shows "Member" instead of "viewer". Removed two dead components, three unused dependencies, about a dozen unused helpers and the unvalidated `setDefaultView` action; `listActiveEvents` now runs once per request. Follow-up: zod 4.6.7 and undici ≥ 6.29.1 for newly published high advisories.
+
 ### Chunk 2 — one status-change path + correct days-in-stage _(2026-10-23, `8cbddeb`)_
 All six ways of changing a prospect's status (kanban, confirm dialog, proposal sent, table/drawer cell, bulk, AI quick update) now share `lib/pipeline/change-status.ts`: it ignores deleted prospects, requires amount + tier for Confirmed, records a per-prospect status change with its source, notifies the owner and creates benefits. Picking Confirmed in the table or drawer opens the same amount/tier dialog as the kanban, and bulk status reports how many were updated or skipped. Confirming checks that the tier belongs to the event. Days-in-stage is now one event-scoped query that uses the newest move into the current status (it previously used the oldest move and scanned every event), and still counts history recorded the old ways.
 

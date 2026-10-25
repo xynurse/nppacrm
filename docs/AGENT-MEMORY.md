@@ -4,8 +4,8 @@
 > `SESSION-STATE.md` / `TODO.md` / `CHANGELOG.md` / the build prompt unless
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
-**Last updated:** 2026-10-23  
-**main:** Chunk 2 `8cbddeb`, Chunk 1 `7e48a0f`, on top of PR #1–#3. No open PRs.  
+**Last updated:** 2026-10-25  
+**main:** Chunk 3 `39830a3` (+ deps `94a009b`), Chunk 2 `8cbddeb`, Chunk 1 `7e48a0f`. No open PRs.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -22,6 +22,9 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Commit policy: **Claude Code is the primary environment** — follow CLAUDE.md (commit + push to `main` after every green build). Any `cursor/*` or `claude/*` branch must be merged to `main` before the session ends.
 
 ## Shipped recently
+**Chunk 3 — mobile nav + dead code (`39830a3`, 2026-10-25)**
+- Nav defined once in `components/app/nav-config.ts`; mobile bottom bar + `more-sheet.tsx`; `event-switcher.tsx` shared. `setDefaultView` deleted.
+
 **Chunk 2 — status-change path (`8cbddeb`, 2026-10-23)**
 - `lib/pipeline/change-status.ts` is the ONLY writer of prospect status (confirm gate, `move_status` audit w/ source, owner notify, benefits, skips deleted). Inline Confirmed → `StatusCell` opens `ConfirmModal`.
 - Days-in-stage = event-scoped SQL in `lib/db/queries/reports.ts` (also reads legacy audit actions — keep them).
@@ -46,7 +49,7 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 **Security follow-up:** Neon `neondb_owner` password was exposed in a chat on 2026-09-27 — rotate it (Neon → Roles → reset), update Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED`, redeploy, update local `.env.local`.
 
 **Claude Code setup (2026-10-06):** `.claude/settings.json` denies db:migrate/seed/drizzle push and `.env*` reads; SessionStart hook installs deps; use `pnpm build:offline` where Google Fonts is unreachable.  
-**Next up:** Chunk 3 (mobile nav + dead code) → Chunk 4 (transactions/integrity) → Chunk 5 (perf) — see SESSION-STATE "Known bugs" + "Next sessions queue".
+**Next up:** Chunk 4 (transactions/integrity) → Chunk 5 (perf) — see SESSION-STATE "Known bugs" + "Next sessions queue".
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).
