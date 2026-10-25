@@ -228,7 +228,7 @@ export function getCompanyField(key: string): FieldMeta | null {
   return COMPANY_FIELDS_BY_KEY[key] ?? null;
 }
 
-export const CUSTOM_FIELD_PREFIX = "custom:";
+const CUSTOM_FIELD_PREFIX = "custom:";
 const CUSTOM_KEY_RE = /^[a-z][a-z0-9_]*$/;
 
 export function customFieldFilterKey(key: string): string {

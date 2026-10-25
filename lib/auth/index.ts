@@ -41,7 +41,3 @@ export async function requireAdmin() {
   return session;
 }
 
-export async function getCurrentUser() {
-  const session = await getVerifiedSession();
-  return session?.user ?? null;
-}

@@ -1,57 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useTransition } from "react";
-import {
-  BarChart3,
-  Building2,
-  CalendarDays,
-  CheckSquare,
-  ChevronDown,
-  History,
-  KanbanSquare,
-  LayoutDashboard,
-  ListTodo,
-  LogOut,
-  BookOpen,
-  Search,
-  Settings,
-  Users,
-} from "lucide-react";
+import { usePathname } from "next/navigation";
+import { LogOut } from "lucide-react";
 import type { Event } from "@/lib/db/schema";
-import { setActiveEvent } from "@/lib/actions/events";
 import { logoutAction } from "@/lib/actions/auth";
 import { cn } from "@/lib/cn";
+import { EventSwitcher } from "./event-switcher";
 import { LogoMark } from "./logo-mark";
-
-type NavItem = {
-  href: string;
-  label: string;
-  Icon: React.ComponentType<{ className?: string }>;
-};
-
-const mainNav: NavItem[] = [
-  { href: "/", label: "Dashboard", Icon: LayoutDashboard },
-  { href: "/event", label: "Event", Icon: CalendarDays },
-  { href: "/companies", label: "Companies", Icon: Building2 },
-  { href: "/contacts", label: "Contacts", Icon: Users },
-  { href: "/tasks", label: "Tasks", Icon: CheckSquare },
-  { href: "/calendar", label: "Calendar", Icon: ListTodo },
-  { href: "/pipeline", label: "Pipeline", Icon: KanbanSquare },
-  { href: "/playbooks", label: "Playbooks", Icon: BookOpen },
-  { href: "/reports", label: "Reports", Icon: BarChart3 },
-];
-
-const adminNav: NavItem[] = [
-  { href: "/admin/events", label: "Events", Icon: Settings },
-  { href: "/admin/users", label: "Users", Icon: Users },
-  { href: "/admin/audit", label: "Audit Log", Icon: History },
-];
+import {
+  adminNav,
+  discoverNavItem,
+  isActive,
+  mainNav,
+  roleLabel,
+  type NavItem,
+  type Role,
+} from "./nav-config";
 
 interface SidebarProps {
-  role: "admin" | "viewer";
-  user: { name: string; email: string; role: "admin" | "viewer" };
+  role: Role;
+  user: { name: string; email: string; role: Role };
   events: Event[];
   activeEventId: string | null;
 }
@@ -63,11 +32,6 @@ function getInitials(name: string) {
     .slice(0, 2)
     .join("")
     .toUpperCase();
-}
-
-function isActive(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
@@ -99,8 +63,7 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
 
 export function Sidebar({ role, user, events, activeEventId }: SidebarProps) {
   const pathname = usePathname() ?? "/";
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const discover = discoverNavItem(activeEventId);
 
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r border-white/[0.06] bg-zinc-950 lg:flex">
@@ -123,31 +86,11 @@ export function Sidebar({ role, user, events, activeEventId }: SidebarProps) {
           <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
             Active Event
           </p>
-          <div className="relative">
-            <select
-              className="w-full cursor-pointer appearance-none rounded-md border border-white/[0.08] bg-white/[0.06] px-3 py-1.5 pr-7 text-xs text-white transition-colors hover:bg-white/[0.1] focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50"
-              value={activeEventId ?? ""}
-              disabled={pending}
-              onChange={(e) => {
-                const value = e.target.value || null;
-                startTransition(async () => {
-                  await setActiveEvent({ eventId: value });
-                  router.refresh();
-                });
-              }}
-            >
-              {events.map((event) => (
-                <option
-                  key={event.id}
-                  value={event.id}
-                  className="bg-zinc-950 text-white"
-                >
-                  {event.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-zinc-400" />
-          </div>
+          <EventSwitcher
+            events={events}
+            activeEventId={activeEventId}
+            tone="dark"
+          />
         </div>
       )}
 
@@ -165,15 +108,8 @@ export function Sidebar({ role, user, events, activeEventId }: SidebarProps) {
             Admin
           </p>
           <div className="space-y-0.5">
-            {activeEventId ? (
-              <NavLink
-                item={{
-                  href: `/admin/events/${activeEventId}/agents`,
-                  label: "Discover",
-                  Icon: Search,
-                }}
-                pathname={pathname}
-              />
+            {discover ? (
+              <NavLink item={discover} pathname={pathname} />
             ) : null}
             {adminNav.map((item) => (
               <NavLink key={item.href} item={item} pathname={pathname} />
@@ -192,8 +128,8 @@ export function Sidebar({ role, user, events, activeEventId }: SidebarProps) {
             <p className="truncate text-xs font-medium leading-none text-white">
               {user.name}
             </p>
-            <p className="mt-0.5 truncate text-[10px] capitalize text-zinc-400">
-              {user.role}
+            <p className="mt-0.5 truncate text-[10px] text-zinc-400">
+              {roleLabel(user.role)}
             </p>
           </div>
           <form action={logoutAction}>

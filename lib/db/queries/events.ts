@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { eventReviewers, events, users } from "@/lib/db/schema";
@@ -6,13 +7,17 @@ export async function listEvents() {
   return db.select().from(events).orderBy(asc(events.name));
 }
 
-export async function listActiveEvents() {
+/**
+ * Called by the (app) layout and nearly every page; `cache()` dedupes it to
+ * one query per request.
+ */
+export const listActiveEvents = cache(async () => {
   return db
     .select()
     .from(events)
     .where(eq(events.status, "active"))
     .orderBy(asc(events.name));
-}
+});
 
 export async function getEventById(id: string) {
   const [row] = await db.select().from(events).where(eq(events.id, id));

@@ -2,60 +2,105 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Building2,
-  CheckSquare,
-  KanbanSquare,
-  LayoutDashboard,
-  Users,
-} from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Event } from "@/lib/db/schema";
 import { cn } from "@/lib/cn";
+import { MoreSheet } from "./more-sheet";
+import {
+  BOTTOM_BAR_HREFS,
+  isActive,
+  mainNav,
+  type Role,
+} from "./nav-config";
 
-type NavItem = {
-  href: string;
-  label: string;
-  Icon: React.ComponentType<{ className?: string }>;
-};
+const barItems = BOTTOM_BAR_HREFS.map(
+  (href) => mainNav.find((item) => item.href === href)!,
+).map((item) => (item.href === "/" ? { ...item, label: "Home" } : item));
 
-const items: NavItem[] = [
-  { href: "/", label: "Home", Icon: LayoutDashboard },
-  { href: "/companies", label: "Companies", Icon: Building2 },
-  { href: "/contacts", label: "Contacts", Icon: Users },
-  { href: "/tasks", label: "Tasks", Icon: CheckSquare },
-  { href: "/pipeline", label: "Pipeline", Icon: KanbanSquare },
-];
+const moreItems = mainNav.filter(
+  (item) => !BOTTOM_BAR_HREFS.includes(item.href),
+);
 
-function isActive(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
+const tabClass =
+  "flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors";
+const tabColor = (active: boolean) =>
+  active
+    ? "text-brand-600 dark:text-brand-400"
+    : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200";
 
-export function BottomNav() {
+export function BottomNav({
+  role,
+  user,
+  events,
+  activeEventId,
+}: {
+  role: Role;
+  user: { name: string; email: string; role: Role };
+  events: Event[];
+  activeEventId: string | null;
+}) {
   const pathname = usePathname() ?? "/";
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
+
+  const closeMore = useCallback(() => {
+    setMoreOpen(false);
+    moreButtonRef.current?.focus();
+  }, []);
+
+  // Close if the route changes underneath (e.g. browser back).
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
+
+  const moreActive =
+    moreItems.some((item) => isActive(pathname, item.href)) ||
+    pathname.startsWith("/admin");
+
   return (
-    <nav
-      className="sticky bottom-0 z-30 grid grid-cols-5 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] dark:border-slate-800 dark:bg-zinc-900 lg:hidden"
-      aria-label="Primary"
-    >
-      {items.map((item) => {
-        const active = isActive(pathname, item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors",
-              active
-                ? "text-brand-600 dark:text-brand-400"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
-            )}
-            aria-current={active ? "page" : undefined}
-          >
-            <item.Icon className="h-5 w-5" />
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
+    <>
+      <nav
+        className="sticky bottom-0 z-30 grid grid-cols-5 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] dark:border-slate-800 dark:bg-zinc-900 lg:hidden"
+        aria-label="Primary"
+      >
+        {barItems.map((item) => {
+          const active = isActive(pathname, item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(tabClass, tabColor(active))}
+              aria-current={active ? "page" : undefined}
+            >
+              <item.Icon className="h-5 w-5" />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+        <button
+          ref={moreButtonRef}
+          type="button"
+          onClick={() => setMoreOpen(true)}
+          className={cn(tabClass, tabColor(moreActive))}
+          aria-haspopup="dialog"
+          aria-expanded={moreOpen}
+          aria-controls="more-sheet"
+        >
+          <MoreHorizontal className="h-5 w-5" />
+          <span>More</span>
+        </button>
+      </nav>
+      <MoreSheet
+        open={moreOpen}
+        onClose={closeMore}
+        pathname={pathname}
+        items={moreItems}
+        role={role}
+        user={user}
+        events={events}
+        activeEventId={activeEventId}
+      />
+    </>
   );
 }

@@ -50,7 +50,12 @@ export default async function AppLayout({
           {children}
         </main>
       </div>
-      <BottomNav />
+      <BottomNav
+        role={session.user.role}
+        user={user}
+        events={events}
+        activeEventId={activeEvent?.id ?? null}
+      />
       <CommandProvider
         eventId={activeEvent?.id ?? null}
         isAdmin={session.user.role === "admin"}

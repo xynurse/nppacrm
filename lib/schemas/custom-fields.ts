@@ -64,7 +64,7 @@ const fileValueSchema = z.object({
   uploadedAt: z.string(),
 });
 
-export const customFieldValueSchema = z.union([
+const customFieldValueSchema = z.union([
   z.string(),
   z.number(),
   z.boolean(),

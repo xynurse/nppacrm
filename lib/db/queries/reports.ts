@@ -15,7 +15,7 @@ import {
  * "declined" + "past_sponsor" as terminal off-funnel buckets; the other 7
  * progress monotonically left → right.
  */
-export const FUNNEL_ORDER: ProspectStatus[] = [
+const FUNNEL_ORDER: ProspectStatus[] = [
   "prospect",
   "contacted",
   "engaged",
@@ -24,7 +24,7 @@ export const FUNNEL_ORDER: ProspectStatus[] = [
   "committed",
   "confirmed",
 ];
-export const OFF_FUNNEL: ProspectStatus[] = ["declined", "past_sponsor"];
+const OFF_FUNNEL: ProspectStatus[] = ["declined", "past_sponsor"];
 
 export type FunnelStage = {
   status: ProspectStatus;

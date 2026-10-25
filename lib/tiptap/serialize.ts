@@ -12,24 +12,14 @@ import type { RichDoc, RichNode } from "./types";
  */
 
 /** Serialized docs larger than this are rejected by `richDocSchema`. */
-export const MAX_DOC_BYTES = 200_000;
-
-/** Marks we know how to render. Anything else is ignored on read. */
-export const KNOWN_MARKS = [
-  "bold",
-  "italic",
-  "underline",
-  "strike",
-  "code",
-  "link",
-] as const;
+const MAX_DOC_BYTES = 200_000;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /** Structural check only — we do not validate against the full schema. */
-export function isRichDoc(value: unknown): value is RichDoc {
+function isRichDoc(value: unknown): value is RichDoc {
   if (!isRecord(value)) return false;
   if (value.type !== "doc") return false;
   if (value.content !== undefined && value.content !== null) {

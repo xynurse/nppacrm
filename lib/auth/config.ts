@@ -25,7 +25,7 @@ const DUMMY_HASH =
   "$2b$12$2C14vw6Chu27l8eKrZGcX.RSmqctNTBBXyo8hmwWjypSCl74o/vhC";
 
 /** Thrown (not returned) so `loginAction` can show a lockout message. */
-export class LoginLockedError extends CredentialsSignin {
+class LoginLockedError extends CredentialsSignin {
   override code = "locked";
 }
 

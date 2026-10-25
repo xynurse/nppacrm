@@ -25,7 +25,7 @@ import { DEFAULT_MODEL_ID, resolveModel } from "@/lib/ai/gateway";
 // A flat op shape (rather than a discriminated union) keeps the JSON schema the
 // model must satisfy simple and robust across providers. Per-kind required
 // fields are validated again server-side in `applyNlUpdate`.
-export const nlOpSchema = z.object({
+const nlOpSchema = z.object({
   kind: z
     .enum([
       "set_status",
@@ -66,7 +66,7 @@ export const nlOpSchema = z.object({
 
 export type NlOp = z.infer<typeof nlOpSchema>;
 
-export const nlMatchSchema = z.object({
+const nlMatchSchema = z.object({
   companyId: z
     .string()
     .describe("MUST be one of the ids from the prospect list, copied exactly."),
@@ -76,7 +76,7 @@ export const nlMatchSchema = z.object({
 
 export type NlMatch = z.infer<typeof nlMatchSchema>;
 
-export const nlUpdateSchema = z.object({
+const nlUpdateSchema = z.object({
   matches: z.array(nlMatchSchema),
   unmatched: z
     .array(z.string())

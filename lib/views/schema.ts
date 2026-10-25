@@ -48,12 +48,12 @@ const conditionSchema = z.object({
   valueTo: valueSchema.optional(),
 });
 
-export const filterAstSchema = z.object({
+const filterAstSchema = z.object({
   op: z.enum(["and", "or"]),
   conditions: z.array(conditionSchema).max(20),
 });
 
-export const sortSpecSchema = z
+const sortSpecSchema = z
   .array(
     z.object({
       field: z.string().min(1),
@@ -61,12 +61,6 @@ export const sortSpecSchema = z
     }),
   )
   .max(5);
-
-export const viewStateSchema = z.object({
-  filter: filterAstSchema,
-  sort: sortSpecSchema,
-  columns: z.array(z.string()).optional(),
-});
 
 function fieldLookup(extra: FieldMeta[]): Map<string, FieldMeta> {
   const map = new Map<string, FieldMeta>(

@@ -206,68 +206,6 @@ export async function listEventCompanies(
   return rows;
 }
 
-export async function getEventCompany(
-  id: string,
-): Promise<EventCompanyRow | null> {
-  const rows = await db
-    .select({
-      id: eventCompanies.id,
-      eventId: eventCompanies.eventId,
-      companyId: eventCompanies.companyId,
-      companyName: companies.name,
-      companyWebsite: companies.website,
-      companyLogoUrl: companies.logoUrl,
-      companyIndustry: companies.industry,
-      companyCategory: companies.category,
-      companySubcategory: companies.subcategory,
-      companyHqLocation: companies.hqLocation,
-      companyNotesDoc: companies.notesDoc,
-      status: eventCompanies.status,
-      priority: eventCompanies.priority,
-      proposedAmount: eventCompanies.proposedAmount,
-      confirmedAmount: eventCompanies.confirmedAmount,
-      currency: eventCompanies.currency,
-      ownerId: eventCompanies.ownerId,
-      ownerName: owners.name,
-      targetTierId: eventCompanies.targetTierId,
-      targetTierName: targetTiers.name,
-      targetTierColor: targetTiers.color,
-      confirmedTierId: eventCompanies.confirmedTierId,
-      confirmedTierName: confirmedTiers.name,
-      nextActionAt: eventCompanies.nextActionAt,
-      lastContactedAt: eventCompanies.lastContactedAt,
-      proposalUrl: eventCompanies.proposalUrl,
-      proposalSentAt: eventCompanies.proposalSentAt,
-      proposalValidUntil: eventCompanies.proposalValidUntil,
-      whyTheyShouldAttend: eventCompanies.whyTheyShouldAttend,
-      keyTalkingPoints: eventCompanies.keyTalkingPoints,
-      emailAngle: eventCompanies.emailAngle,
-      sponsorshipHook: eventCompanies.sponsorshipHook,
-      companyContext: eventCompanies.companyContext,
-      relationshipNotes: eventCompanies.relationshipNotes,
-      agreementSignedAt: eventCompanies.agreementSignedAt,
-      invoiceSentAt: eventCompanies.invoiceSentAt,
-      paidAt: eventCompanies.paidAt,
-      boothNumber: eventCompanies.boothNumber,
-      repNames: eventCompanies.repNames,
-      tagsCache: eventCompanies.tagsCache,
-      customFields: eventCompanies.customFields,
-    })
-    .from(eventCompanies)
-    .innerJoin(companies, eq(companies.id, eventCompanies.companyId))
-    .leftJoin(owners, eq(owners.id, eventCompanies.ownerId))
-    .leftJoin(targetTiers, eq(targetTiers.id, eventCompanies.targetTierId))
-    .leftJoin(
-      confirmedTiers,
-      eq(confirmedTiers.id, eventCompanies.confirmedTierId),
-    )
-    .where(
-      and(eq(eventCompanies.id, id), isNull(eventCompanies.deletedAt)),
-    )
-    .limit(1);
-  return rows[0] ?? null;
-}
-
 export async function listTiersForEvent(eventId: string) {
   return db
     .select()

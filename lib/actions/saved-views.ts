@@ -2,7 +2,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { requireAdmin, requireSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { savedViews } from "@/lib/db/schema";
@@ -160,35 +160,3 @@ export async function deleteSavedView(raw: unknown): Promise<ActionResult> {
   return { ok: true };
 }
 
-export async function setDefaultView(input: {
-  id: string;
-  eventId: string;
-}): Promise<ActionResult> {
-  const session = await requireAdmin();
-
-  await db
-    .update(savedViews)
-    .set({ isDefault: false })
-    .where(
-      and(
-        eq(savedViews.eventId, input.eventId),
-        eq(savedViews.scope, "companies"),
-      ),
-    );
-  await db
-    .update(savedViews)
-    .set({ isDefault: true })
-    .where(eq(savedViews.id, input.id));
-
-  await recordAudit({
-    userId: session.user.id,
-    eventId: input.eventId,
-    action: "saved_view.set_default",
-    entityType: "saved_view",
-    entityId: input.id,
-    changes: {},
-  });
-
-  revalidatePath("/companies");
-  return { ok: true };
-}

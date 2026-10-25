@@ -1,4 +1,4 @@
-import { aliasedTable, and, asc, desc, eq, isNotNull, isNull } from "drizzle-orm";
+import { aliasedTable, and, asc, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { isUndefinedColumnError } from "@/lib/db/errors";
 import { companies, eventCompanies, tasks, users } from "@/lib/db/schema";
@@ -106,34 +106,3 @@ export async function listTasksForEvent(
   );
 }
 
-export async function countOpenTasksForUser(
-  eventId: string,
-  userId: string,
-): Promise<number> {
-  const rows = await db
-    .select({ id: tasks.id })
-    .from(tasks)
-    .where(
-      and(
-        eq(tasks.eventId, eventId),
-        eq(tasks.assignedTo, userId),
-        isNull(tasks.completedAt),
-      ),
-    );
-  return rows.length;
-}
-
-export async function listCompletedTasksForEvent(
-  eventId: string,
-): Promise<TaskRow[]> {
-  return withDocFallback((select) =>
-    db
-      .select(select)
-      .from(tasks)
-      .leftJoin(eventCompanies, eq(eventCompanies.id, tasks.eventCompanyId))
-      .leftJoin(companies, eq(companies.id, eventCompanies.companyId))
-      .leftJoin(assignees, eq(assignees.id, tasks.assignedTo))
-      .where(and(eq(tasks.eventId, eventId), isNotNull(tasks.completedAt)))
-      .orderBy(desc(tasks.completedAt)),
-  );
-}

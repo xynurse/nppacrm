@@ -22,8 +22,3 @@ export function isUndefinedTableError(err: unknown): boolean {
 export function isUndefinedColumnError(err: unknown): boolean {
   return pgErrorCode(err) === "42703";
 }
-
-/** Either shape of "the schema is behind this code". */
-export function isMissingSchemaError(err: unknown): boolean {
-  return isUndefinedTableError(err) || isUndefinedColumnError(err);
-}

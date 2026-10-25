@@ -24,11 +24,3 @@ export async function listSavedViewsForUser(
     .orderBy(asc(savedViews.displayOrder), asc(savedViews.name));
 }
 
-export async function getSavedView(id: string): Promise<SavedView | null> {
-  const [row] = await db
-    .select()
-    .from(savedViews)
-    .where(eq(savedViews.id, id))
-    .limit(1);
-  return row ?? null;
-}

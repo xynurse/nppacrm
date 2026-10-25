@@ -10,7 +10,7 @@ import { env } from "@/lib/env";
  *  3. VERCEL_OIDC_TOKEN — injected by `vercel env pull` locally or auto-present
  *     on deployed Vercel functions (no separate key needed).
  */
-export function isAiConfigured(): boolean {
+function isAiConfigured(): boolean {
   if (env.AI_GATEWAY_API_KEY || env.ANTHROPIC_API_KEY) return true;
   if (process.env.VERCEL_OIDC_TOKEN) return true;
   // On Vercel deployments, OIDC is always available even before env pull.
@@ -104,7 +104,7 @@ export async function resolveModel(
  * Suggestion shape that the model must return.
  * Mirrors the four whitelisted outreach fields on eventCompany.
  */
-export const enrichmentSchema = z.object({
+const enrichmentSchema = z.object({
   suggestions: z
     .array(
       z.object({

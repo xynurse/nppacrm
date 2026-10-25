@@ -6,7 +6,7 @@ import { env } from "@/lib/env";
 /**
  * Sum cost_usd for jobs created since the start of today (UTC).
  */
-export async function spendToday(): Promise<number> {
+async function spendToday(): Promise<number> {
   const startOfDay = new Date();
   startOfDay.setUTCHours(0, 0, 0, 0);
 

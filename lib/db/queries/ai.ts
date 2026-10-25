@@ -39,19 +39,6 @@ export async function getActiveProspectus(
   return row ?? null;
 }
 
-export async function getActiveProspectusText(
-  eventId: string,
-): Promise<string | null> {
-  const [row] = await db
-    .select({ text: prospectuses.textContent })
-    .from(prospectuses)
-    .where(
-      and(eq(prospectuses.eventId, eventId), isNull(prospectuses.deletedAt)),
-    )
-    .limit(1);
-  return row?.text ?? null;
-}
-
 export type SuggestionRow = {
   id: string;
   jobId: string;

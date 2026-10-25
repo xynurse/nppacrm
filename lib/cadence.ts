@@ -14,8 +14,8 @@ const ACTIVE_CADENCE_STATUSES: ReadonlySet<ProspectStatus> = new Set([
   "committed",
 ]);
 
-export const CADENCE_AMBER_DAYS = 14;
-export const CADENCE_RED_DAYS = 30;
+const CADENCE_AMBER_DAYS = 14;
+const CADENCE_RED_DAYS = 30;
 
 export type CadenceLevel = "ok" | "amber" | "red";
 

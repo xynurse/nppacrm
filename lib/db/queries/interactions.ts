@@ -67,22 +67,3 @@ export async function listInteractionsForEventCompany(
   }
 }
 
-export async function listRecentInteractionsForEvent(
-  eventId: string,
-  limit = 20,
-) {
-  return db
-    .select({
-      id: interactions.id,
-      eventCompanyId: interactions.eventCompanyId,
-      type: interactions.type,
-      subject: interactions.subject,
-      occurredAt: interactions.occurredAt,
-      userName: authors.name,
-    })
-    .from(interactions)
-    .leftJoin(authors, eq(authors.id, interactions.userId))
-    .where(eq(interactions.eventId, eventId))
-    .orderBy(desc(interactions.occurredAt))
-    .limit(limit);
-}

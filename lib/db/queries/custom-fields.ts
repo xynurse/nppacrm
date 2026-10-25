@@ -25,13 +25,3 @@ export async function listFieldDefinitionsForEvent(
     );
 }
 
-export async function getFieldDefinition(
-  id: string,
-): Promise<CustomFieldDefinition | null> {
-  const [row] = await db
-    .select()
-    .from(customFieldDefinitions)
-    .where(eq(customFieldDefinitions.id, id))
-    .limit(1);
-  return row ?? null;
-}
