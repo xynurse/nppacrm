@@ -4,7 +4,7 @@
 > `SESSION-STATE.md` / `TODO.md` / `CHANGELOG.md` / the build prompt unless
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
-**Last updated:** 2026-10-25  
+**Last updated:** 2026-10-26  
 **main:** Chunk 3 `39830a3` (+ deps `94a009b`), Chunk 2 `8cbddeb`, Chunk 1 `7e48a0f`. No open PRs.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
@@ -49,7 +49,7 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 **Security follow-up:** Neon `neondb_owner` password was exposed in a chat on 2026-09-27 — rotate it (Neon → Roles → reset), update Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED`, redeploy, update local `.env.local`.
 
 **Claude Code setup (2026-10-06):** `.claude/settings.json` denies db:migrate/seed/drizzle push and `.env*` reads; SessionStart hook installs deps; use `pnpm build:offline` where Google Fonts is unreachable.  
-**Next up:** Chunk 4 (transactions/integrity) → Chunk 5 (perf) — see SESSION-STATE "Known bugs" + "Next sessions queue".
+**Next up:** Chunk 4 — full plan in SESSION-STATE "Next sessions queue" §3 (presented 2026-10-25, awaiting user approval; re-present before coding) — (transactions/integrity) → Chunk 5 (perf) — see SESSION-STATE "Known bugs" + "Next sessions queue".
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).

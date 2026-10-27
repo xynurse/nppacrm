@@ -8,7 +8,7 @@
 ---
 
 ## Last updated
-2026-10-25 — **Chunk 3: mobile "More" nav + dead-code pass 1 (SHIPPED, `39830a3`) + dep fix `94a009b`.** typecheck, lint, `build:offline`, CI green. **Not browser-verified** (no login here) — open the app on a phone once: More sheet opens/closes, Escape + backdrop, event switch, sign out, admin links for admins.
+2026-10-26 — **Handoff: Chunk 4 plan written to "Next sessions queue" §3, awaiting approval.** Previous session (2026-10-25): **Chunk 3: mobile "More" nav + dead-code pass 1 (SHIPPED, `39830a3`) + dep fix `94a009b`.** typecheck, lint, `build:offline`, CI green. **Not browser-verified** (no login here) — open the app on a phone once: More sheet opens/closes, Escape + backdrop, event switch, sign out, admin links for admins.
 
 **Prod still needs (user, manual):** rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`. No migration this chunk.
 
@@ -642,8 +642,20 @@ rotate Neon `neondb_owner` password → Vercel `DATABASE_URL`/`DATABASE_URL_UNPO
 ### 2. ~~Chunk 3 — mobile nav + dead code (Pass 1)~~ ✅ SHIPPED `39830a3`
 "More" sheet in `BottomNav` (Event, Calendar, Playbooks, Reports, admin, event switch, sign out); then Pass 1 dead-code removal + `listActiveEvents` `cache()`.
 
-### 3. Chunk 4 — integrity ← START HERE
-Transactions (`db.batch`) for multi-step writes + batched CSV import; atomic custom-field jsonb writes; real date validation; task soft-delete (migration); CSV formula escaping; UTC/date-only fixes.
+### 3. Chunk 4 — integrity ← START HERE (plan written 2026-10-25, NOT yet approved)
+The full plan was presented to the user on 2026-10-25; they handed off before approving. **Re-present this plan, get approval (incl. whether to keep step 5), then implement.** No code for chunk 4 exists yet.
+
+**Key constraint:** `neon-http` has no interactive transactions, but `db.batch([...])` runs statements as ONE atomic transaction. Later statements can't use earlier `RETURNING` ids → pre-generate ids with `crypto.randomUUID()` and put dependent inserts in the same batch.
+
+1. **Atomic writes** — new helper in `lib/audit.ts` that builds audit insert *values/queries* (incl. ip/user-agent from `headers()`) so audit rows can go inside a batch. Apply to: `quickAddEventCompany` (`lib/actions/cells.ts` — company + event_company + audit; today can orphan a company), `uploadProspectus` (`lib/actions/ai.ts` — soft-delete old + insert new + audit; today can leave none), `markProposalSent` (`lib/actions/pipeline.ts` — proposal fields + follow-up task + audit, then `changeStatus`), `changeStatuses` (`lib/pipeline/change-status.ts` — update + move_status rows), `updateField` / `updateCustomField` (write + audit).
+2. **CSV import batched + atomic** (`lib/actions/csv.ts` ~L347–420): today up to 4 serial inserts/row (~1,000 round trips for 312 rows), partial on timeout. Pre-generate ids, chunked multi-row inserts for companies / contacts / event_companies (keep `onConflictDoNothing` on (event_id, company_id)), whole import + audit in one `db.batch`. Keep preview + dedupe rules unchanged.
+3. **Custom-field writes atomic** (`lib/actions/custom-fields.ts` ~L165): replace read-modify-write of the whole jsonb with `custom_fields = coalesce(custom_fields,'{}'::jsonb) || jsonb_build_object(key, value)` (or `- key` to clear).
+4. **Real date validation:** custom date fields (`validateValueForField` in `custom-fields.ts`) and `dateRegex` in `lib/cells/registry.ts` ~L222 accept `2026-13-45` → add a real calendar check. In `lib/views/compile.ts` date operands (`between/before/after/on`, ~L312–337) validate via an `asDate()` helper; invalid → condition dropped (return null) instead of a Postgres cast error.
+5. **Task soft-delete** — **migration 0015**: `tasks.deleted_at timestamptz` + index. `deleteTask` (`lib/actions/tasks.ts` ~L233) sets `deletedAt` and stores the full task snapshot in the audit `changes`; filter `isNull(tasks.deletedAt)` in `lib/db/queries/{tasks,dashboard,search}.ts`; add `restoreTask` following `lib/actions/restore.ts` + Restore button on `task.delete` rows in `/admin/audit`. **Deploy order:** push 1 = everything else + the migration file (additive, harmless) → user runs `pnpm db:migrate` → push 2 = task soft-delete code (it reads the new column).
+6. **CSV formula escaping:** one shared `lib/csv.ts` `escapeCsv` replacing the copies in `lib/actions/csv.ts` ~L38 and `lib/actions/reports.ts` ~L20; prefix `'` to string cells starting with `= + - @ \t \r`, but leave real numbers (e.g. `-500`) alone.
+7. **Dates/timezones:** `lib/dates.ts` `todayInTimeZone(tz)` (Intl `en-CA`) using `events.timezone` (default America/Chicago). Use for calendar overdue (`app/(app)/calendar/page.tsx` ~L82, currently UTC) and the proposal +7-day follow-up due date. Date-only cell writes (`updateField` date branch) store **12:00 UTC** instead of midnight so they don't display as the previous day in US zones; don't rewrite existing values.
+
+**Verify:** `pnpm audit --prod --audit-level=high && pnpm typecheck && pnpm lint && pnpm build:offline`; PGlite scratch tests (install `@electric-sql/pglite` in the session scratchpad, NOT the repo) for: CSV batch import incl. a forced mid-batch failure leaving zero rows, concurrent custom-field key merges, date validators. ~14 files, 1 migration, no new deps.
 
 ### 4. Chunk 5 — performance (Pass 2)
 Drawer data split, drop `notesDoc` from list rows, parallelise `/companies` fetches, lazy-load ⌘K palette + drawer tabs, edge-safe middleware auth config (middleware is ~600 KB), cron `maxDuration` + concurrency + spend cap on agents.
