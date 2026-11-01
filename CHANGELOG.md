@@ -2,6 +2,9 @@
 
 ## Active build (committed to main)
 
+### Chunk 4 — integrity _(2026-10-31, `1e5c70b` on `cursor/chunk-4-integrity-d147`)_
+Writes that could leave a half-finished row now commit together: quick-add (company + prospect + audit), prospectus replace, proposal fields + the 7-day follow-up task + audit, status changes and their audit rows, cell edits, and custom-field edits. CSV import inserts companies, contacts, and prospects in one batch instead of up to four round trips per row. Custom fields merge a single key in SQL, so two people editing different keys no longer wipe each other. Impossible dates such as 2026-13-45 are rejected, and a bad date filter is ignored instead of crashing the query. CSV export prefixes a quote on formula-like cells and leaves real numbers alone. Calendar overdue and the proposal follow-up use the event timezone, and date-only cells are stored at noon UTC so they do not show as the previous day in US timezones. Migration 0015 adds `tasks.deleted_at`; task delete stays a hard delete until that migration is applied and the follow-up ships.
+
 ### Chunk 3 — mobile "More" nav + dead-code pass 1 _(2026-10-25, `39830a3`; deps `94a009b`)_
 On phones the bottom bar is now Home, Companies, Pipeline, Tasks and More. More opens an accessible bottom sheet with Contacts, Event, Calendar, Playbooks, Reports, admin links, the event switcher and sign out, none of which were reachable below the desktop breakpoint before. Navigation is defined once in `components/app/nav-config.ts` for both the sidebar and mobile, and the sidebar now shows "Member" instead of "viewer". Removed two dead components, three unused dependencies, about a dozen unused helpers and the unvalidated `setDefaultView` action; `listActiveEvents` now runs once per request. Follow-up: zod 4.6.7 and undici ≥ 6.29.1 for newly published high advisories.
 

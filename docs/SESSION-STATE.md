@@ -8,7 +8,23 @@
 ---
 
 ## Last updated
-2026-10-26 — **Handoff: Chunk 4 plan written to "Next sessions queue" §3, awaiting approval.** Previous session (2026-10-25): **Chunk 3: mobile "More" nav + dead-code pass 1 (SHIPPED, `39830a3`) + dep fix `94a009b`.** typecheck, lint, `build:offline`, CI green. **Not browser-verified** (no login here) — open the app on a phone once: More sheet opens/closes, Escape + backdrop, event switch, sign out, admin links for admins.
+2026-10-31 — **Chunk 4 integrity code committed on `cursor/chunk-4-integrity-d147` (`1e5c70b`), not merged.** typecheck, lint, `pnpm audit --prod`, `build:offline` green. PGlite scratch tests (not in the repo) covered date validators, CSV formula escaping, jsonb key merges, and a mid-transaction import failure leaving zero rows. **Not browser-verified** (no login here).
+
+**In this commit:** atomic batches for quick-add, prospectus replace, proposal+task+audit, status move+audit, cell writes, custom-field writes; chunked atomic CSV import; custom-field jsonb merge; real calendar-date checks; shared `escapeCsv`; event-timezone "today" for calendar overdue and the proposal follow-up; date-only values stored at 12:00 UTC. **Migration 0015** (`tasks.deleted_at`) is journaled only — schema and queries do not reference it yet.
+
+**Not in this commit (do this after the user runs `pnpm db:migrate`):** task soft-delete, audit snapshot, `isNull(deletedAt)` filters, `restoreTask`, Restore button on `task.delete`.
+
+**Prod still needs (user, manual):** `pnpm db:migrate` for **0015** before the soft-delete follow-up; rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`.
+
+**In progress:** nothing uncommitted on this branch after the docs commit.
+
+**Decisions made (chunk 4):**
+- `db.batch` via `runAtomic` is the transaction. `auditInsert` is synchronous; `auditRows` loads ip/user-agent. An async function must not return the Drizzle builder.
+- Proposal fields, follow-up task, and `mark_proposal_sent` audit commit together, then `changeStatus` still owns the status write. Status stays out of the proposal update.
+- CSV audit counts are the rows queued, not `RETURNING` (later statements cannot see earlier ids). `onConflictDoNothing` remains the race safety.
+- Step 5 application code waits for 0015. Adding `deletedAt` to the Drizzle schema now would make every task query select a missing column.
+
+**Earlier — 2026-10-26 — Handoff: Chunk 4 plan written, then approved 2026-10-31.** Previous session (2026-10-25): **Chunk 3: mobile "More" nav + dead-code pass 1 (SHIPPED, `39830a3`) + dep fix `94a009b`.** typecheck, lint, `build:offline`, CI green. **Not browser-verified** (no login here) — open the app on a phone once: More sheet opens/closes, Escape + backdrop, event switch, sign out, admin links for admins.
 
 **Prod still needs (user, manual):** rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`. No migration this chunk.
 
@@ -642,8 +658,10 @@ rotate Neon `neondb_owner` password → Vercel `DATABASE_URL`/`DATABASE_URL_UNPO
 ### 2. ~~Chunk 3 — mobile nav + dead code (Pass 1)~~ ✅ SHIPPED `39830a3`
 "More" sheet in `BottomNav` (Event, Calendar, Playbooks, Reports, admin, event switch, sign out); then Pass 1 dead-code removal + `listActiveEvents` `cache()`.
 
-### 3. Chunk 4 — integrity ← START HERE (plan written 2026-10-25, NOT yet approved)
-The full plan was presented to the user on 2026-10-25; they handed off before approving. **Re-present this plan, get approval (incl. whether to keep step 5), then implement.** No code for chunk 4 exists yet.
+### 3. Chunk 4 — integrity ← steps 1–4, 6, 7 committed `1e5c70b` (2026-10-31)
+Approved 2026-10-31 and implemented on `cursor/chunk-4-integrity-d147`. Steps 1–4, 6, and 7 are in that commit. **Step 5 application code is not.** Migration 0015 is in the journal; run `pnpm db:migrate` before writing queries against `tasks.deleted_at`.
+
+Original plan (kept so the follow-up does not re-derive it):
 
 **Key constraint:** `neon-http` has no interactive transactions, but `db.batch([...])` runs statements as ONE atomic transaction. Later statements can't use earlier `RETURNING` ids → pre-generate ids with `crypto.randomUUID()` and put dependent inserts in the same batch.
 

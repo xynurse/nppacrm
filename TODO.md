@@ -3,7 +3,7 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped: Chunk 3 — mobile "More" nav + dead-code pass 1 (2026-10-25, `39830a3`). All migrations (0000–0014) applied in prod.
+Latest shipped: Chunk 4 integrity on `cursor/chunk-4-integrity-d147` (`1e5c70b`, 2026-10-31), not merged. Prod migrations are still 0000–0014. **0015 needs a manual `pnpm db:migrate` before task soft-delete code.**
 
 ## Shipped 2026-10-20 (Chunk 1 — security)
 
@@ -17,7 +17,7 @@ Latest shipped: Chunk 3 — mobile "More" nav + dead-code pass 1 (2026-10-25, `3
 - [x] **(user, manual)** `pnpm db:migrate` applied **0013 + 0014** (2026-10-20)
 - [x] Chunk 2 — shared status-change path + days-in-stage fix (`8cbddeb`, 2026-10-23)
 - [x] Chunk 3 — mobile "More" nav + dead-code Pass 1 (`39830a3`, 2026-10-25)
-- [ ] Chunk 4 — transactions / data-integrity fixes
+- [x] Chunk 4 — transactions / data-integrity fixes (`1e5c70b`). Task soft-delete behavior still open until 0015 is migrated, then: soft-delete + audit snapshot + restore.
 - [ ] Chunk 5 — performance Pass 2
 
 ## Shipped 2026-10-06 (repo cleanup + Claude Code setup)

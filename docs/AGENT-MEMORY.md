@@ -4,8 +4,8 @@
 > `SESSION-STATE.md` / `TODO.md` / `CHANGELOG.md` / the build prompt unless
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
-**Last updated:** 2026-10-26  
-**main:** Chunk 3 `39830a3` (+ deps `94a009b`), Chunk 2 `8cbddeb`, Chunk 1 `7e48a0f`. No open PRs.  
+**Last updated:** 2026-10-31  
+**Branch:** `cursor/chunk-4-integrity-d147` @ `1e5c70b` (not on main yet). Prior main: Chunk 3 `39830a3`.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -22,6 +22,16 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Commit policy: **Claude Code is the primary environment** — follow CLAUDE.md (commit + push to `main` after every green build). Any `cursor/*` or `claude/*` branch must be merged to `main` before the session ends.
 
 ## Shipped recently
+**Chunk 4 — integrity (`1e5c70b`, 2026-10-31) — awaiting merge + manual migrate**
+- `runAtomic` (`lib/db/batch.ts`) + `auditRows`/`auditInsert` (`lib/audit.ts`). Neon HTTP batch is one transaction. Async helpers must not return the query builder (it is thenable and would run early).
+- Atomic: quick-add, prospectus replace, proposal fields + follow-up task + audit (then `changeStatus`), status update + `move_status` audits, cell update + audit, custom-field update + audit.
+- CSV import: pre-generated company ids, chunked multi-row inserts, one batch, `onConflictDoNothing` kept. Preview/dedupe unchanged.
+- Custom fields: `lib/custom-fields/patch.ts` jsonb `||` / key delete. Deleted prospects rejected.
+- Real calendar dates (`lib/dates.ts`) in cell validation, custom fields, and view filters (invalid date filters are dropped).
+- `lib/csv.ts` `escapeCsv` prefixes `'` on formula-like strings; real numbers like `-500` stay numbers.
+- Calendar overdue and proposal +7-day due date use `events.timezone` (default America/Chicago). Date-only cell writes store 12:00 UTC.
+- **Migration 0015** (`tasks.deleted_at` + index) is in the journal. Do **not** query the column until the user runs `pnpm db:migrate`. Task soft-delete code is the follow-up, not this commit.
+
 **Chunk 3 — mobile nav + dead code (`39830a3`, 2026-10-25)**
 - Nav defined once in `components/app/nav-config.ts`; mobile bottom bar + `more-sheet.tsx`; `event-switcher.tsx` shared. `setDefaultView` deleted.
 
@@ -44,12 +54,12 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Saved views persist columns. New shared views: Unassigned, Bounced, By category.
 - **0013** rewrites the inverted "Stale (no contact 14+ days)" view to older-than-14-days and renames it when the new name is free.
 
-**Prod DB:** migrations **0000–0014 applied** (0013 + 0014 run by user 2026-10-20). Next free migration number: **0015**.  
-**Still needed in prod:** Vercel `CRON_SECRET` + AI Gateway credits; Master List CSV import (312 rows) not yet run.  
+**Prod DB:** migrations **0000–0014 applied**. **0015 is committed, not applied** — user must run `pnpm db:migrate` before any code reads `tasks.deleted_at`. Next free number after that: **0016**.  
+**Still needed in prod:** Vercel `CRON_SECRET` + AI Gateway credits.  
 **Security follow-up:** Neon `neondb_owner` password was exposed in a chat on 2026-09-27 — rotate it (Neon → Roles → reset), update Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED`, redeploy, update local `.env.local`.
 
 **Claude Code setup (2026-10-06):** `.claude/settings.json` denies db:migrate/seed/drizzle push and `.env*` reads; SessionStart hook installs deps; use `pnpm build:offline` where Google Fonts is unreachable.  
-**Next up:** Chunk 4 — full plan in SESSION-STATE "Next sessions queue" §3 (presented 2026-10-25, awaiting user approval; re-present before coding) — (transactions/integrity) → Chunk 5 (perf) — see SESSION-STATE "Known bugs" + "Next sessions queue".
+**Next up:** After 0015 is migrated, task soft-delete (set `deletedAt`, snapshot in the `task.delete` audit, filter `isNull(deletedAt)` in task/dashboard/search queries, `restoreTask` + Restore on `task.delete` in `/admin/audit`). Then Chunk 5 (perf). Do not add `deletedAt` to the Drizzle schema until that follow-up — selects would break prod before the migration.
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).
