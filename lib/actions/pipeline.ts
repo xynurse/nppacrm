@@ -4,13 +4,16 @@ import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireSession } from "@/lib/auth";
-import { recordAudit } from "@/lib/audit";
+import { auditInsert, auditRows, recordAudit } from "@/lib/audit";
 import { instantiateBenefitsForEventCompany } from "@/lib/benefits/instantiate";
+import { addCalendarDays, todayInTimeZone } from "@/lib/dates";
 import { db } from "@/lib/db";
+import { runAtomic } from "@/lib/db/batch";
 import {
   PROSPECT_STATUS_VALUES,
   companies,
   eventCompanies,
+  events,
   sponsorshipTiers,
   tasks,
 } from "@/lib/db/schema";
@@ -179,8 +182,10 @@ export async function markProposalSent(
       companyId: eventCompanies.companyId,
       ownerId: eventCompanies.ownerId,
       status: eventCompanies.status,
+      timezone: events.timezone,
     })
     .from(eventCompanies)
+    .innerJoin(events, eq(events.id, eventCompanies.eventId))
     .where(
       and(
         eq(eventCompanies.id, parsed.data.id),
@@ -199,18 +204,54 @@ export async function markProposalSent(
   const companyName = companyRow?.name ?? "this prospect";
 
   const now = new Date();
+  const sentOn = todayInTimeZone(existing.timezone, now);
+  const dueDate = addCalendarDays(sentOn, 7);
+  const followUpTaskId = crypto.randomUUID();
 
-  await db
-    .update(eventCompanies)
-    .set({
-      proposalUrl: parsed.data.proposalUrl,
-      proposalSentAt: now,
-      proposalValidUntil: parsed.data.proposalValidUntil ?? null,
-      lastContactedAt: now,
-      updatedAt: now,
-      updatedBy: session.user.id,
-    })
-    .where(eq(eventCompanies.id, parsed.data.id));
+  await runAtomic([
+    db
+      .update(eventCompanies)
+      .set({
+        proposalUrl: parsed.data.proposalUrl,
+        proposalSentAt: now,
+        proposalValidUntil: parsed.data.proposalValidUntil ?? null,
+        lastContactedAt: now,
+        updatedAt: now,
+        updatedBy: session.user.id,
+      })
+      .where(
+        and(
+          eq(eventCompanies.id, parsed.data.id),
+          isNull(eventCompanies.deletedAt),
+        ),
+      ),
+    db.insert(tasks).values({
+      id: followUpTaskId,
+      eventId: existing.eventId,
+      eventCompanyId: existing.id,
+      title: `Follow up on ${companyName} proposal`,
+      description: `Proposal sent ${sentOn}: ${parsed.data.proposalUrl}`,
+      dueDate,
+      priority: "medium",
+      assignedTo: existing.ownerId,
+      createdBy: session.user.id,
+    }),
+    auditInsert(
+      await auditRows({
+        userId: session.user.id,
+        eventId: existing.eventId,
+        action: "eventCompany.mark_proposal_sent",
+        entityType: "eventCompany",
+        entityId: parsed.data.id,
+        changes: {
+          from: existing.status,
+          proposalUrl: parsed.data.proposalUrl,
+          proposalValidUntil: parsed.data.proposalValidUntil ?? null,
+          followUpTaskId,
+        },
+      }),
+    ),
+  ]);
 
   const moved = await changeStatus({
     id: parsed.data.id,
@@ -218,48 +259,10 @@ export async function markProposalSent(
     actor: session.user,
     source: "proposal",
   });
-  if (!moved.ok) return moved;
-
-  // 7-day follow-up due date as YYYY-MM-DD.
-  const dueDate = new Date(now.getTime() + 7 * 86_400_000)
-    .toISOString()
-    .slice(0, 10);
-
-  const [createdTask] = await db
-    .insert(tasks)
-    .values({
-      eventId: existing.eventId,
-      eventCompanyId: existing.id,
-      title: `Follow up on ${companyName} proposal`,
-      description: `Proposal sent ${now.toISOString().slice(0, 10)}: ${parsed.data.proposalUrl}`,
-      dueDate,
-      priority: "medium",
-      assignedTo: existing.ownerId,
-      createdBy: session.user.id,
-    })
-    .returning({ id: tasks.id });
-
-  if (!createdTask) {
-    // We don't roll back the proposal update — the data is still useful.
-    return { ok: false, error: "Saved proposal but failed to create follow-up task" };
-  }
-
-  await recordAudit({
-    userId: session.user.id,
-    eventId: existing.eventId,
-    action: "eventCompany.mark_proposal_sent",
-    entityType: "eventCompany",
-    entityId: parsed.data.id,
-    changes: {
-      from: existing.status,
-      proposalUrl: parsed.data.proposalUrl,
-      proposalValidUntil: parsed.data.proposalValidUntil ?? null,
-      followUpTaskId: createdTask.id,
-    },
-  });
 
   revalidatePath("/companies");
   revalidatePath("/pipeline");
   revalidatePath("/tasks");
-  return { ok: true, followUpTaskId: createdTask.id };
+  if (!moved.ok) return moved;
+  return { ok: true, followUpTaskId };
 }

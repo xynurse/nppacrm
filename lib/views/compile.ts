@@ -1,4 +1,5 @@
 import { sql, type SQL } from "drizzle-orm";
+import { isRealCalendarDate } from "@/lib/dates";
 import {
   companies,
   eventCompanies,
@@ -136,6 +137,14 @@ function asString(v: FilterValue | undefined): string | null {
   if (typeof v === "string") return v;
   if (typeof v === "number") return String(v);
   return null;
+}
+
+/** Drop the condition when the operand is not a real calendar day, so a
+ * value like 2026-13-45 cannot reach a Postgres cast. */
+function asDate(v: FilterValue | undefined): string | null {
+  const s = asString(v);
+  if (!s || !isRealCalendarDate(s)) return null;
+  return s;
 }
 
 function asNumber(v: FilterValue | undefined): number | null {
@@ -311,8 +320,8 @@ function applyOperator(
     }
     case "between": {
       if (meta.type === "date") {
-        const a = asString(c.value);
-        const b = asString(c.valueTo);
+        const a = asDate(c.value);
+        const b = asDate(c.valueTo);
         if (!a || !b) return null;
         return sql`${col} BETWEEN ${a}::timestamptz AND ${b}::timestamptz`;
       }
@@ -322,17 +331,17 @@ function applyOperator(
       return sql`${col} BETWEEN ${a} AND ${b}`;
     }
     case "before": {
-      const v = asString(c.value);
+      const v = asDate(c.value);
       if (!v) return null;
       return sql`${col} < ${v}::timestamptz`;
     }
     case "after": {
-      const v = asString(c.value);
+      const v = asDate(c.value);
       if (!v) return null;
       return sql`${col} > ${v}::timestamptz`;
     }
     case "on": {
-      const v = asString(c.value);
+      const v = asDate(c.value);
       if (!v) return null;
       return sql`${col}::date = ${v}::date`;
     }

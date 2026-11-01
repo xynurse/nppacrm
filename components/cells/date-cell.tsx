@@ -14,7 +14,9 @@ function toDateInputValue(value: Date | null): string {
 
 function fromDateInputValue(raw: string): Date | null {
   if (!raw) return null;
-  const d = new Date(`${raw}T00:00:00Z`);
+  // Noon UTC keeps the calendar day stable in US timezones. Midnight UTC
+  // displays as the previous evening in America/Chicago.
+  const d = new Date(`${raw}T12:00:00.000Z`);
   if (Number.isNaN(d.getTime())) return null;
   return d;
 }

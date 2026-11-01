@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isRealCalendarDate } from "@/lib/dates";
 import { PROSPECT_PRIORITY_VALUES, PROSPECT_STATUS_VALUES } from "@/lib/db/schema";
 
 export type CellType =
@@ -219,8 +220,6 @@ export function isFieldKey(key: string): key is FieldKey {
   return Object.prototype.hasOwnProperty.call(FIELD_REGISTRY, key);
 }
 
-const dateRegex = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/u;
-
 export function valueValidator(field: FieldDef): z.ZodType {
   const nullable = z.null();
   switch (field.type) {
@@ -240,7 +239,7 @@ export function valueValidator(field: FieldDef): z.ZodType {
     case "date":
       return z.union([
         z.date(),
-        z.string().regex(dateRegex),
+        z.string().refine(isRealCalendarDate, "Invalid date"),
         nullable,
         z.literal(""),
       ]);

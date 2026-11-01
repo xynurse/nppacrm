@@ -1,11 +1,14 @@
 "use server";
 
 import { isOwnBlobUrl } from "@/lib/blob";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireAdmin, requireSession } from "@/lib/auth";
-import { recordAudit } from "@/lib/audit";
+import { auditInsert, auditRows, recordAudit } from "@/lib/audit";
+import { customFieldsPatch } from "@/lib/custom-fields/patch";
+import { isRealCalendarDate } from "@/lib/dates";
 import { db } from "@/lib/db";
+import { runAtomic } from "@/lib/db/batch";
 import {
   customFieldDefinitions,
   eventCompanies,
@@ -166,41 +169,41 @@ export async function updateCustomField(raw: unknown): Promise<ActionResult> {
   const [existing] = await db
     .select({
       eventId: eventCompanies.eventId,
-      customFields: eventCompanies.customFields,
+      deletedAt: eventCompanies.deletedAt,
     })
     .from(eventCompanies)
     .where(eq(eventCompanies.id, entityId))
     .limit(1);
-  if (!existing) return { ok: false, error: "Record not found" };
+  if (!existing || existing.deletedAt) {
+    return { ok: false, error: "Record not found" };
+  }
 
   if (existing.eventId !== def.eventId) {
     return { ok: false, error: "Field does not belong to this event" };
   }
 
-  const next = { ...(existing.customFields ?? {}) };
-  if (value === null || value === "") {
-    delete next[def.key];
-  } else {
-    next[def.key] = value;
-  }
-
-  await db
-    .update(eventCompanies)
-    .set({
-      customFields: next,
-      updatedAt: new Date(),
-      updatedBy: session.user.id,
-    })
-    .where(eq(eventCompanies.id, entityId));
-
-  await recordAudit({
-    userId: session.user.id,
-    eventId: existing.eventId,
-    action: "eventCompany.update_custom_field",
-    entityType: "eventCompany",
-    entityId,
-    changes: { key: def.key, value },
-  });
+  await runAtomic([
+    db
+      .update(eventCompanies)
+      .set({
+        customFields: customFieldsPatch(def.key, value),
+        updatedAt: new Date(),
+        updatedBy: session.user.id,
+      })
+      .where(
+        and(eq(eventCompanies.id, entityId), isNull(eventCompanies.deletedAt)),
+      ),
+    auditInsert(
+      await auditRows({
+        userId: session.user.id,
+        eventId: existing.eventId,
+        action: "eventCompany.update_custom_field",
+        entityType: "eventCompany",
+        entityId,
+        changes: { key: def.key, value },
+      }),
+    ),
+  ]);
 
   revalidatePath("/companies");
   return { ok: true };
@@ -225,10 +228,7 @@ function validateValueForField(
         Number.isFinite(Number(value))
       );
     case "date":
-      return (
-        typeof value === "string" &&
-        /^\d{4}-\d{2}-\d{2}/.test(value)
-      );
+      return typeof value === "string" && isRealCalendarDate(value);
     case "checkbox":
       return typeof value === "boolean";
     case "singleSelect": {

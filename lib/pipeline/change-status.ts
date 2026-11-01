@@ -1,7 +1,8 @@
 import { and, inArray, isNull } from "drizzle-orm";
-import { recordAuditMany } from "@/lib/audit";
+import { auditInsert, auditRows, recordAuditMany } from "@/lib/audit";
 import { instantiateBenefitsForEventCompany } from "@/lib/benefits/instantiate";
 import { db } from "@/lib/db";
+import { runAtomic } from "@/lib/db/batch";
 import {
   companies,
   eventCompanies,
@@ -80,27 +81,30 @@ export async function changeStatuses(opts: {
   if (eligible.length === 0) return result;
 
   const eligibleIds = eligible.map((r) => r.id);
-  await db
-    .update(eventCompanies)
-    .set({ status: to, updatedAt: new Date(), updatedBy: actor.id })
-    .where(
-      and(
-        inArray(eventCompanies.id, eligibleIds),
-        isNull(eventCompanies.deletedAt),
+  await runAtomic([
+    db
+      .update(eventCompanies)
+      .set({ status: to, updatedAt: new Date(), updatedBy: actor.id })
+      .where(
+        and(
+          inArray(eventCompanies.id, eligibleIds),
+          isNull(eventCompanies.deletedAt),
+        ),
       ),
-    );
+    auditInsert(
+      await auditRows(
+        eligible.map((r) => ({
+          userId: actor.id,
+          eventId: r.eventId,
+          action: "eventCompany.move_status",
+          entityType: "eventCompany",
+          entityId: r.id,
+          changes: { from: r.status, to, source },
+        })),
+      ),
+    ),
+  ]);
   result.updated = eligibleIds;
-
-  await recordAuditMany(
-    eligible.map((r) => ({
-      userId: actor.id,
-      eventId: r.eventId,
-      action: "eventCompany.move_status",
-      entityType: "eventCompany",
-      entityId: r.id,
-      changes: { from: r.status, to, source },
-    })),
-  );
 
   await notifyOwners(eligible, to, actor);
 

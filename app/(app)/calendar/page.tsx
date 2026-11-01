@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/auth";
+import { todayInTimeZone } from "@/lib/dates";
 import { listActiveEvents } from "@/lib/db/queries/events";
 import { listTasksForEvent } from "@/lib/db/queries/tasks";
 import { formatRelativeDate } from "@/lib/format";
@@ -40,6 +41,7 @@ export default async function CalendarPage() {
   }
 
   const tasks = await listTasksForEvent(activeEvent.id, { onlyOpen: true });
+  const today = todayInTimeZone(activeEvent.timezone);
   const grouped = new Map<string, typeof tasks>();
   for (const t of tasks) {
     const k = monthKey(t.dueDate);
@@ -77,9 +79,7 @@ export default async function CalendarPage() {
             </h2>
             <ul className="surface-card divide-y divide-zinc-100 overflow-hidden dark:divide-zinc-800">
               {(grouped.get(key) ?? []).map((t) => {
-                const overdue =
-                  t.dueDate &&
-                  t.dueDate < new Date().toISOString().slice(0, 10);
+                const overdue = t.dueDate && t.dueDate < today;
                 return (
                   <li
                     key={t.id}

@@ -4,14 +4,16 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin, requireSession } from "@/lib/auth";
-import { recordAudit } from "@/lib/audit";
+import { auditInsert, auditRows, recordAudit } from "@/lib/audit";
 import {
   FIELD_REGISTRY,
   isFieldKey,
   normalizeValue,
   valueValidator,
 } from "@/lib/cells/registry";
+import { dateOnlyToNoonUtc } from "@/lib/dates";
 import { db } from "@/lib/db";
+import { runAtomic } from "@/lib/db/batch";
 import {
   companies,
   eventCompanies,
@@ -53,10 +55,7 @@ export async function updateField(raw: unknown): Promise<ActionResult> {
     };
   }
 
-  const value =
-    field.type === "date" && validation.data
-      ? new Date(validation.data as string)
-      : validation.data;
+  const value = storedCellValue(field, validation.data);
 
   if (fieldKey === "eventCompany.status") {
     if (typeof value !== "string" || !value) {
@@ -74,35 +73,52 @@ export async function updateField(raw: unknown): Promise<ActionResult> {
     return { ok: true };
   }
 
+  const audit = auditInsert(
+    await auditRows({
+      userId: session.user.id,
+      action: `${field.entity}.update_field`,
+      entityType: field.entity,
+      entityId,
+      changes: { [field.column]: value },
+    }),
+  );
+
   if (field.entity === "eventCompany") {
+    const [existing] = await db
+      .select({ id: eventCompanies.id })
+      .from(eventCompanies)
+      .where(
+        and(eq(eventCompanies.id, entityId), isNull(eventCompanies.deletedAt)),
+      )
+      .limit(1);
+    if (!existing) return { ok: false, error: "Prospect not found" };
     const setObj: Record<string, unknown> = {
       [camelOf(field.column)]: value,
       updatedAt: new Date(),
       updatedBy: session.user.id,
     };
-    const updated = await db
-      .update(eventCompanies)
-      .set(setObj)
-      .where(
-        and(eq(eventCompanies.id, entityId), isNull(eventCompanies.deletedAt)),
-      )
-      .returning({ id: eventCompanies.id });
-    if (updated.length === 0) return { ok: false, error: "Prospect not found" };
+    await runAtomic([
+      db
+        .update(eventCompanies)
+        .set(setObj)
+        .where(
+          and(
+            eq(eventCompanies.id, entityId),
+            isNull(eventCompanies.deletedAt),
+          ),
+        ),
+      audit,
+    ]);
   } else {
     const setObj: Record<string, unknown> = {
       [camelOf(field.column)]: value,
       updatedAt: new Date(),
     };
-    await db.update(companies).set(setObj).where(eq(companies.id, entityId));
+    await runAtomic([
+      db.update(companies).set(setObj).where(eq(companies.id, entityId)),
+      audit,
+    ]);
   }
-
-  await recordAudit({
-    userId: session.user.id,
-    action: `${field.entity}.update_field`,
-    entityType: field.entity,
-    entityId,
-    changes: { [field.column]: value },
-  });
 
   revalidatePath("/companies");
   return { ok: true };
@@ -110,6 +126,17 @@ export async function updateField(raw: unknown): Promise<ActionResult> {
 
 function camelOf(snake: string): string {
   return snake.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+}
+
+function storedCellValue(
+  field: { type: string },
+  data: unknown,
+): unknown {
+  if (field.type !== "date" || data == null || data === "") return data;
+  if (data instanceof Date || typeof data === "string") {
+    return dateOnlyToNoonUtc(data);
+  }
+  return data;
 }
 
 const bulkUpdateSchema = z.object({
@@ -239,35 +266,32 @@ export async function quickAddEventCompany(
   const parsed = quickAddSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Name is required" };
 
-  const [company] = await db
-    .insert(companies)
-    .values({ name: parsed.data.name })
-    .returning({ id: companies.id });
-  if (!company) return { ok: false, error: "Failed to create company" };
-
-  const [ec] = await db
-    .insert(eventCompanies)
-    .values({
+  const companyId = crypto.randomUUID();
+  const eventCompanyId = crypto.randomUUID();
+  await runAtomic([
+    db.insert(companies).values({ id: companyId, name: parsed.data.name }),
+    db.insert(eventCompanies).values({
+      id: eventCompanyId,
       eventId: parsed.data.eventId,
-      companyId: company.id,
+      companyId,
       ownerId: session.user.id,
       createdBy: session.user.id,
       updatedBy: session.user.id,
-    })
-    .returning({ id: eventCompanies.id });
-  if (!ec) return { ok: false, error: "Failed to create event company" };
-
-  await recordAudit({
-    userId: session.user.id,
-    eventId: parsed.data.eventId,
-    action: "eventCompany.quick_add",
-    entityType: "eventCompany",
-    entityId: ec.id,
-    changes: { companyId: company.id, name: parsed.data.name },
-  });
+    }),
+    auditInsert(
+      await auditRows({
+        userId: session.user.id,
+        eventId: parsed.data.eventId,
+        action: "eventCompany.quick_add",
+        entityType: "eventCompany",
+        entityId: eventCompanyId,
+        changes: { companyId, name: parsed.data.name },
+      }),
+    ),
+  ]);
 
   revalidatePath("/companies");
-  return { ok: true, id: ec.id };
+  return { ok: true, id: eventCompanyId };
 }
 
 const softDeleteSchema = z.object({

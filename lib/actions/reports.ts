@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { requireSession } from "@/lib/auth";
+import { escapeCsv } from "@/lib/csv";
 import {
   getAverageDaysInStage,
   getCadenceBreakdown,
@@ -16,15 +17,6 @@ type ExportResult =
   | { ok: false; error: string };
 
 const schema = z.object({ eventId: z.uuid(), kind: z.string() });
-
-function escapeCsv(v: unknown): string {
-  if (v === null || v === undefined) return "";
-  const s = String(v);
-  if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
-}
 
 function toCsv(rows: Array<readonly (string | number | null | undefined)[]>): string {
   return rows.map((r) => r.map(escapeCsv).join(",")).join("\n");

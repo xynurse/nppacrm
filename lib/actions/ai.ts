@@ -15,8 +15,9 @@ import { extractPdfText, estimateTokens } from "@/lib/ai/pdf";
 import { formatHitsForPrompt, valyuSearch } from "@/lib/ai/search";
 import { checkSpendCap } from "@/lib/ai/spend";
 import { requireAdmin, requireSession } from "@/lib/auth";
-import { recordAudit } from "@/lib/audit";
+import { auditInsert, auditRows, recordAudit } from "@/lib/audit";
 import { db } from "@/lib/db";
+import { runAtomic } from "@/lib/db/batch";
 import {
   enrichmentJobs,
   enrichmentSuggestions,
@@ -98,19 +99,19 @@ export async function uploadProspectus(
   }
 
   const tokenEstimate = estimateTokens(text);
+  const prospectusId = crypto.randomUUID();
 
-  // Soft-delete any existing active prospectus for this event so the partial
-  // unique index lets us insert a fresh one.
-  await db
-    .update(prospectuses)
-    .set({ deletedAt: new Date() })
-    .where(
-      and(eq(prospectuses.eventId, eventId), isNull(prospectuses.deletedAt)),
-    );
-
-  const [created] = await db
-    .insert(prospectuses)
-    .values({
+  // Soft-delete the current prospectus and insert the new one in one
+  // transaction. A failed insert used to leave the event with none.
+  await runAtomic([
+    db
+      .update(prospectuses)
+      .set({ deletedAt: new Date() })
+      .where(
+        and(eq(prospectuses.eventId, eventId), isNull(prospectuses.deletedAt)),
+      ),
+    db.insert(prospectuses).values({
+      id: prospectusId,
       eventId,
       blobUrl,
       blobPathname,
@@ -119,22 +120,21 @@ export async function uploadProspectus(
       textContent: text,
       textTokenEstimate: tokenEstimate,
       uploadedBy: session.user.id,
-    })
-    .returning({ id: prospectuses.id });
-
-  if (!created) return { ok: false, error: "Failed to save prospectus" };
-
-  await recordAudit({
-    userId: session.user.id,
-    eventId,
-    action: "prospectus.upload",
-    entityType: "prospectus",
-    entityId: created.id,
-    changes: { fileName, fileSize, tokenEstimate },
-  });
+    }),
+    auditInsert(
+      await auditRows({
+        userId: session.user.id,
+        eventId,
+        action: "prospectus.upload",
+        entityType: "prospectus",
+        entityId: prospectusId,
+        changes: { fileName, fileSize, tokenEstimate },
+      }),
+    ),
+  ]);
 
   revalidatePath(`/admin/events/${eventId}/prospectus`);
-  return { ok: true, id: created.id, tokenEstimate };
+  return { ok: true, id: prospectusId, tokenEstimate };
 }
 
 const deleteProspectusSchema = z.object({ id: z.uuid() });

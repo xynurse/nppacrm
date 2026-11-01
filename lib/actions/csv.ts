@@ -4,8 +4,11 @@ import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin, requireSession } from "@/lib/auth";
-import { recordAudit } from "@/lib/audit";
+import { auditInsert, auditRows, recordAudit } from "@/lib/audit";
+import { escapeCsv } from "@/lib/csv";
+import { dateOnlyToNoonUtc, isRealCalendarDate } from "@/lib/dates";
 import { db } from "@/lib/db";
+import { runAtomic } from "@/lib/db/batch";
 import {
   companies,
   contacts,
@@ -34,15 +37,6 @@ const EXPORT_COLUMNS = [
   "lastContactedAt",
   "nextActionAt",
 ] as const;
-
-function escapeCsv(value: unknown): string {
-  if (value === null || value === undefined) return "";
-  const s = String(value);
-  if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
-}
 
 const exportSchema = z.object({
   eventId: z.uuid(),
@@ -153,9 +147,17 @@ const importRowSchema = z.object({
 type ImportRow = z.infer<typeof importRowSchema>;
 
 function parseIsoDate(value: string | null | undefined): Date | null {
-  if (!value) return null;
-  const d = new Date(`${value}T00:00:00.000Z`);
+  if (!value || !isRealCalendarDate(value)) return null;
+  const d = dateOnlyToNoonUtc(value);
   return Number.isNaN(d.getTime()) ? null : d;
+}
+
+const IMPORT_CHUNK = 100;
+
+function chunks<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
 }
 
 type ContactSeed = {
@@ -342,26 +344,23 @@ export async function importEventCompaniesCsv(
     }
   }
 
-  let createdCompanies = 0;
-  let attached = 0;
-  for (let i = 0; i < rows.length; i += 1) {
-    const r = rows[i]!;
+  const newCompanies: Array<typeof companies.$inferInsert> = [];
+  const newContacts: Array<typeof contacts.$inferInsert> = [];
+  const newEventCompanies: Array<typeof eventCompanies.$inferInsert> = [];
+
+  for (const r of rows) {
     const lower = r.name.toLowerCase();
     let companyId = companyByLowerName.get(lower);
     if (!companyId) {
-      const [created] = await db
-        .insert(companies)
-        .values({
-          name: r.name,
-          website: r.website ?? null,
-          industry: r.industry ?? null,
-          hqLocation: r.hqLocation ?? null,
-        })
-        .returning({ id: companies.id });
-      if (!created) continue;
-      companyId = created.id;
+      companyId = crypto.randomUUID();
+      newCompanies.push({
+        id: companyId,
+        name: r.name,
+        website: r.website ?? null,
+        industry: r.industry ?? null,
+        hqLocation: r.hqLocation ?? null,
+      });
       companyByLowerName.set(lower, companyId);
-      createdCompanies += 1;
     }
 
     // Insert contacts (deduped by email or full name within the company).
@@ -371,7 +370,7 @@ export async function importEventCompaniesCsv(
       const dedupeKey = `${companyId}|${(seed.email ?? seed.fullName).toLowerCase()}`;
       if (contactKeys.has(dedupeKey)) continue;
       contactKeys.add(dedupeKey);
-      await db.insert(contacts).values({
+      newContacts.push({
         companyId,
         firstName: seed.firstName,
         lastName: seed.lastName,
@@ -385,6 +384,7 @@ export async function importEventCompaniesCsv(
     }
 
     if (alreadyAttached.has(companyId)) continue;
+    alreadyAttached.add(companyId);
     const ownerId = r.owner
       ? (ownerByToken.get(r.owner.trim().toLowerCase()) ?? null)
       : null;
@@ -394,50 +394,64 @@ export async function importEventCompaniesCsv(
     const customFields = r.subcategory
       ? { subcategory: r.subcategory }
       : undefined;
-    const inserted = await db
-      .insert(eventCompanies)
-      .values({
-        eventId,
-        companyId,
-        ownerId,
-        status: r.status ?? "prospect",
-        priority: (r.priority ?? "medium") as ProspectPriority,
-        targetTierId,
-        proposedAmount: r.proposedAmount ?? null,
-        confirmedAmount: r.confirmedAmount ?? null,
-        firstContactedAt: parseIsoDate(r.firstContactedAt),
-        lastContactedAt: parseIsoDate(r.lastContactedAt),
-        whyTheyShouldAttend: r.whyTheyShouldAttend ?? null,
-        keyTalkingPoints: r.keyTalkingPoints ?? null,
-        emailAngle: r.emailAngle ?? null,
-        sponsorshipHook: r.sponsorshipHook ?? null,
-        relationshipNotes: r.relationshipNotes ?? null,
-        ...(customFields ? { customFields } : {}),
-        createdBy: session.user.id,
-        updatedBy: session.user.id,
-      })
-      .onConflictDoNothing({
-        target: [eventCompanies.eventId, eventCompanies.companyId],
-      })
-      .returning({ id: eventCompanies.id });
-    if (inserted.length > 0) {
-      attached += 1;
-      alreadyAttached.add(companyId);
-    }
+    newEventCompanies.push({
+      eventId,
+      companyId,
+      ownerId,
+      status: r.status ?? "prospect",
+      priority: (r.priority ?? "medium") as ProspectPriority,
+      targetTierId,
+      proposedAmount: r.proposedAmount ?? null,
+      confirmedAmount: r.confirmedAmount ?? null,
+      firstContactedAt: parseIsoDate(r.firstContactedAt),
+      lastContactedAt: parseIsoDate(r.lastContactedAt),
+      whyTheyShouldAttend: r.whyTheyShouldAttend ?? null,
+      keyTalkingPoints: r.keyTalkingPoints ?? null,
+      emailAngle: r.emailAngle ?? null,
+      sponsorshipHook: r.sponsorshipHook ?? null,
+      relationshipNotes: r.relationshipNotes ?? null,
+      ...(customFields ? { customFields } : {}),
+      createdBy: session.user.id,
+      updatedBy: session.user.id,
+    });
   }
 
-  await recordAudit({
-    userId: session.user.id,
-    eventId,
-    action: "eventCompany.import_csv",
-    entityType: "eventCompany",
-    entityId: `bulk:${rows.length}`,
-    changes: {
-      totalRows: rows.length,
-      createdCompanies,
-      attached,
-    },
-  });
+  const createdCompanies = newCompanies.length;
+  const attached = newEventCompanies.length;
+  // One transaction: a timeout or a later statement failing leaves zero rows.
+  // Ids are pre-generated so contacts and prospects can reference new companies
+  // without reading RETURNING from an earlier statement.
+  const statements = [
+    ...chunks(newCompanies, IMPORT_CHUNK).map((chunk) =>
+      db.insert(companies).values(chunk),
+    ),
+    ...chunks(newContacts, IMPORT_CHUNK).map((chunk) =>
+      db.insert(contacts).values(chunk),
+    ),
+    ...chunks(newEventCompanies, IMPORT_CHUNK).map((chunk) =>
+      db
+        .insert(eventCompanies)
+        .values(chunk)
+        .onConflictDoNothing({
+          target: [eventCompanies.eventId, eventCompanies.companyId],
+        }),
+    ),
+    auditInsert(
+      await auditRows({
+        userId: session.user.id,
+        eventId,
+        action: "eventCompany.import_csv",
+        entityType: "eventCompany",
+        entityId: `bulk:${rows.length}`,
+        changes: {
+          totalRows: rows.length,
+          createdCompanies,
+          attached,
+        },
+      }),
+    ),
+  ];
+  await runAtomic(statements);
 
   revalidatePath("/companies");
   revalidatePath(`/admin/events/${eventId}/import`);
