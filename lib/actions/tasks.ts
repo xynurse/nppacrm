@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireSession } from "@/lib/auth";
@@ -230,18 +230,63 @@ export async function setTaskCompleted(
 
 const deleteSchema = z.object({ id: z.uuid() });
 
+const taskSnapshot = {
+  id: tasks.id,
+  eventId: tasks.eventId,
+  eventCompanyId: tasks.eventCompanyId,
+  title: tasks.title,
+  description: tasks.description,
+  descriptionDoc: tasks.descriptionDoc,
+  dueDate: tasks.dueDate,
+  priority: tasks.priority,
+  assignedTo: tasks.assignedTo,
+  createdBy: tasks.createdBy,
+  completedAt: tasks.completedAt,
+  completedBy: tasks.completedBy,
+  createdAt: tasks.createdAt,
+  updatedAt: tasks.updatedAt,
+};
+
 export async function deleteTask(raw: unknown): Promise<ActionResult> {
   const session = await requireSession();
   const parsed = deleteSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid input" };
 
-  await db.delete(tasks).where(eq(tasks.id, parsed.data.id));
+  const [existing] = await db
+    .select(taskSnapshot)
+    .from(tasks)
+    .where(eq(tasks.id, parsed.data.id))
+    .limit(1);
+  if (!existing) return { ok: false, error: "Task not found" };
+
+  const snapshot = JSON.parse(JSON.stringify(existing)) as Record<
+    string,
+    unknown
+  >;
+  const now = new Date();
+  let changes: Record<string, unknown> | undefined;
+
+  try {
+    const updated = await db
+      .update(tasks)
+      .set({ deletedAt: now, updatedAt: now })
+      .where(and(eq(tasks.id, parsed.data.id), isNull(tasks.deletedAt)))
+      .returning({ id: tasks.id });
+    if (updated.length === 0) return { ok: false, error: "Task not found" };
+    changes = { snapshot };
+  } catch (err) {
+    // Before migration 0015 the column does not exist. Keep today's hard delete.
+    if (!isUndefinedColumnError(err)) throw err;
+    await db.delete(tasks).where(eq(tasks.id, parsed.data.id));
+  }
 
   await recordAudit({
     userId: session.user.id,
+    eventId: existing.eventId,
     action: "task.delete",
     entityType: "task",
     entityId: parsed.data.id,
+    changes,
   });
 
   revalidatePath("/companies");

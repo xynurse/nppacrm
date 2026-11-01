@@ -66,6 +66,19 @@ async function withDocFallback(
 export async function listTasksForEventCompany(
   eventCompanyId: string,
 ): Promise<TaskRow[]> {
+  try {
+    return await queryTasksForEventCompany(eventCompanyId, true);
+  } catch (err) {
+    // Migration 0015 not applied yet — `deleted_at` does not exist.
+    if (!isUndefinedColumnError(err)) throw err;
+    return queryTasksForEventCompany(eventCompanyId, false);
+  }
+}
+
+function queryTasksForEventCompany(
+  eventCompanyId: string,
+  hideDeleted: boolean,
+): Promise<TaskRow[]> {
   return withDocFallback((select) =>
     db
       .select(select)
@@ -73,7 +86,14 @@ export async function listTasksForEventCompany(
       .leftJoin(eventCompanies, eq(eventCompanies.id, tasks.eventCompanyId))
       .leftJoin(companies, eq(companies.id, eventCompanies.companyId))
       .leftJoin(assignees, eq(assignees.id, tasks.assignedTo))
-      .where(eq(tasks.eventCompanyId, eventCompanyId))
+      .where(
+        hideDeleted
+          ? and(
+              eq(tasks.eventCompanyId, eventCompanyId),
+              isNull(tasks.deletedAt),
+            )
+          : eq(tasks.eventCompanyId, eventCompanyId),
+      )
       .orderBy(
         asc(tasks.completedAt),
         asc(tasks.dueDate),
@@ -86,7 +106,21 @@ export async function listTasksForEvent(
   eventId: string,
   options: { onlyOpen?: boolean; assigneeId?: string | null } = {},
 ): Promise<TaskRow[]> {
+  try {
+    return await queryTasksForEvent(eventId, options, true);
+  } catch (err) {
+    if (!isUndefinedColumnError(err)) throw err;
+    return queryTasksForEvent(eventId, options, false);
+  }
+}
+
+function queryTasksForEvent(
+  eventId: string,
+  options: { onlyOpen?: boolean; assigneeId?: string | null },
+  hideDeleted: boolean,
+): Promise<TaskRow[]> {
   const conditions = [eq(tasks.eventId, eventId)];
+  if (hideDeleted) conditions.push(isNull(tasks.deletedAt));
   if (options.onlyOpen) conditions.push(isNull(tasks.completedAt));
   if (options.assigneeId !== undefined && options.assigneeId !== null)
     conditions.push(eq(tasks.assignedTo, options.assigneeId));

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   restoreCompany,
   restoreEventCompany,
+  restoreTask,
 } from "@/lib/actions/restore";
 import type { AuditRow } from "@/lib/db/queries/audit";
 
@@ -14,6 +15,7 @@ const RESTORE_ACTIONS: Record<
 > = {
   "eventCompany.soft_delete": restoreEventCompany,
   "company.soft_delete": restoreCompany,
+  "task.delete": restoreTask,
 };
 
 export function AuditTable({ rows }: { rows: AuditRow[] }) {
@@ -71,6 +73,12 @@ function AuditRowItem({
   const [pending, startTransition] = useTransition();
   const [restored, setRestored] = useState(false);
   const restorer = RESTORE_ACTIONS[row.action];
+  // Hard-deleted tasks (before migration 0015) have no snapshot to restore.
+  const canRestore =
+    row.action !== "task.delete" ||
+    (row.changes != null &&
+      typeof row.changes === "object" &&
+      "snapshot" in row.changes);
   const hasChanges = useMemo(
     () => Object.keys(row.changes ?? {}).length > 0,
     [row.changes],
@@ -104,7 +112,7 @@ function AuditRowItem({
         </td>
         <td className="px-3 py-2 text-right">
           <div className="flex items-center justify-end gap-2">
-            {restorer && !restored ? (
+            {restorer && canRestore && !restored ? (
               <Button
                 size="sm"
                 variant="outline"

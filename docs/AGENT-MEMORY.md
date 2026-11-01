@@ -5,7 +5,7 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-10-31  
-**Branch:** `cursor/chunk-4-integrity-d147` @ `1e5c70b` (not on main yet). Prior main: Chunk 3 `39830a3`.  
+**Branches:** integrity `cursor/chunk-4-integrity-d147` @ `1e5c70b` (PR #4). Task soft-delete is `cursor/chunk-4-task-soft-delete-d147` (stacked on that). Prior main: Chunk 3 `39830a3`.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -30,7 +30,7 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Real calendar dates (`lib/dates.ts`) in cell validation, custom fields, and view filters (invalid date filters are dropped).
 - `lib/csv.ts` `escapeCsv` prefixes `'` on formula-like strings; real numbers like `-500` stay numbers.
 - Calendar overdue and proposal +7-day due date use `events.timezone` (default America/Chicago). Date-only cell writes store 12:00 UTC.
-- **Migration 0015** (`tasks.deleted_at` + index) is in the journal. Do **not** query the column until the user runs `pnpm db:migrate`. Task soft-delete code is the follow-up, not this commit.
+- **Migration 0015** (`tasks.deleted_at` + index) is in the journal. Soft-delete code is the follow-up branch: `deleteTask` sets `deletedAt` and stores a snapshot; lists hide deleted tasks; `restoreTask` + Restore on `task.delete` rows that have a snapshot. Until 0015 is applied, those queries catch `42703` and keep today's hard delete / unfiltered lists.
 
 **Chunk 3 — mobile nav + dead code (`39830a3`, 2026-10-25)**
 - Nav defined once in `components/app/nav-config.ts`; mobile bottom bar + `more-sheet.tsx`; `event-switcher.tsx` shared. `setDefaultView` deleted.
@@ -59,7 +59,7 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 **Security follow-up:** Neon `neondb_owner` password was exposed in a chat on 2026-09-27 — rotate it (Neon → Roles → reset), update Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED`, redeploy, update local `.env.local`.
 
 **Claude Code setup (2026-10-06):** `.claude/settings.json` denies db:migrate/seed/drizzle push and `.env*` reads; SessionStart hook installs deps; use `pnpm build:offline` where Google Fonts is unreachable.  
-**Next up:** After 0015 is migrated, task soft-delete (set `deletedAt`, snapshot in the `task.delete` audit, filter `isNull(deletedAt)` in task/dashboard/search queries, `restoreTask` + Restore on `task.delete` in `/admin/audit`). Then Chunk 5 (perf). Do not add `deletedAt` to the Drizzle schema until that follow-up — selects would break prod before the migration.
+**Next up:** User runs `pnpm db:migrate` for **0015**, then merge the soft-delete branch (it is safe before that too — missing-column fallback). Then Chunk 5 (perf).
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).

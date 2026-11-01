@@ -12,7 +12,7 @@
 
 **In this commit:** atomic batches for quick-add, prospectus replace, proposal+task+audit, status move+audit, cell writes, custom-field writes; chunked atomic CSV import; custom-field jsonb merge; real calendar-date checks; shared `escapeCsv`; event-timezone "today" for calendar overdue and the proposal follow-up; date-only values stored at 12:00 UTC. **Migration 0015** (`tasks.deleted_at`) is journaled only — schema and queries do not reference it yet.
 
-**Not in this commit (do this after the user runs `pnpm db:migrate`):** task soft-delete, audit snapshot, `isNull(deletedAt)` filters, `restoreTask`, Restore button on `task.delete`.
+**Follow-up branch `cursor/chunk-4-task-soft-delete-d147`:** `deleteTask` sets `deletedAt` and audits a full snapshot; task, dashboard, and search queries hide deleted tasks; `restoreTask` plus a Restore button on `task.delete` rows that include a snapshot. If `tasks.deleted_at` is missing (`42703`), lists stay unfiltered and delete stays a hard delete, so this can merge before or after `pnpm db:migrate`. Soft-delete only actually happens once 0015 is applied.
 
 **Prod still needs (user, manual):** `pnpm db:migrate` for **0015** before the soft-delete follow-up; rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`.
 
@@ -22,7 +22,7 @@
 - `db.batch` via `runAtomic` is the transaction. `auditInsert` is synchronous; `auditRows` loads ip/user-agent. An async function must not return the Drizzle builder.
 - Proposal fields, follow-up task, and `mark_proposal_sent` audit commit together, then `changeStatus` still owns the status write. Status stays out of the proposal update.
 - CSV audit counts are the rows queued, not `RETURNING` (later statements cannot see earlier ids). `onConflictDoNothing` remains the race safety.
-- Step 5 application code waits for 0015. Adding `deletedAt` to the Drizzle schema now would make every task query select a missing column.
+- Step 5 ships on the follow-up branch with the same `42703` fallback already used for `description_doc`, so a deploy before 0015 does not 500 task pages. The Drizzle schema includes `deletedAt` there; list queries name it only in a `WHERE` that is retried without the predicate when the column is absent. The snapshot select used by delete omits `deletedAt` so it still runs before the migration.
 
 **Earlier — 2026-10-26 — Handoff: Chunk 4 plan written, then approved 2026-10-31.** Previous session (2026-10-25): **Chunk 3: mobile "More" nav + dead-code pass 1 (SHIPPED, `39830a3`) + dep fix `94a009b`.** typecheck, lint, `build:offline`, CI green. **Not browser-verified** (no login here) — open the app on a phone once: More sheet opens/closes, Escape + backdrop, event switch, sign out, admin links for admins.
 
@@ -658,8 +658,8 @@ rotate Neon `neondb_owner` password → Vercel `DATABASE_URL`/`DATABASE_URL_UNPO
 ### 2. ~~Chunk 3 — mobile nav + dead code (Pass 1)~~ ✅ SHIPPED `39830a3`
 "More" sheet in `BottomNav` (Event, Calendar, Playbooks, Reports, admin, event switch, sign out); then Pass 1 dead-code removal + `listActiveEvents` `cache()`.
 
-### 3. Chunk 4 — integrity ← steps 1–4, 6, 7 committed `1e5c70b` (2026-10-31)
-Approved 2026-10-31 and implemented on `cursor/chunk-4-integrity-d147`. Steps 1–4, 6, and 7 are in that commit. **Step 5 application code is not.** Migration 0015 is in the journal; run `pnpm db:migrate` before writing queries against `tasks.deleted_at`.
+### 3. Chunk 4 — integrity ← steps 1–4, 6, 7 committed `1e5c70b`; step 5 on `cursor/chunk-4-task-soft-delete-d147`
+Approved 2026-10-31. Steps 1–4, 6, and 7 are in `1e5c70b`. Step 5 (task soft-delete, snapshot, restore) is the follow-up branch and no-ops into today's hard delete until migration 0015 is applied.
 
 Original plan (kept so the follow-up does not re-derive it):
 

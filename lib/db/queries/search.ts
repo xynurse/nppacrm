@@ -1,5 +1,6 @@
 import { and, eq, ilike, isNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { isUndefinedColumnError } from "@/lib/db/errors";
 import {
   companies,
   contacts,
@@ -87,24 +88,7 @@ export async function searchAll(
       )
       .orderBy(contacts.fullName)
       .limit(limit),
-    db
-      .select({
-        id: tasks.id,
-        title: tasks.title,
-        dueDate: tasks.dueDate,
-        companyName: companies.name,
-      })
-      .from(tasks)
-      .leftJoin(eventCompanies, eq(eventCompanies.id, tasks.eventCompanyId))
-      .leftJoin(companies, eq(companies.id, eventCompanies.companyId))
-      .where(
-        and(
-          eq(tasks.eventId, eventId),
-          ilike(tasks.title, `%${q}%`),
-        ),
-      )
-      .orderBy(tasks.dueDate)
-      .limit(limit),
+    searchTasks(eventId, q, limit),
   ]);
 
   const results: SearchResult[] = [];
@@ -138,4 +122,32 @@ export async function searchAll(
     });
   }
   return results;
+}
+
+function searchTasks(eventId: string, q: string, limit: number) {
+  const run = (hideDeleted: boolean) =>
+    db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        dueDate: tasks.dueDate,
+        companyName: companies.name,
+      })
+      .from(tasks)
+      .leftJoin(eventCompanies, eq(eventCompanies.id, tasks.eventCompanyId))
+      .leftJoin(companies, eq(companies.id, eventCompanies.companyId))
+      .where(
+        and(
+          eq(tasks.eventId, eventId),
+          ilike(tasks.title, `%${q}%`),
+          ...(hideDeleted ? [isNull(tasks.deletedAt)] : []),
+        ),
+      )
+      .orderBy(tasks.dueDate)
+      .limit(limit);
+
+  return run(true).catch((err: unknown) => {
+    if (!isUndefinedColumnError(err)) throw err;
+    return run(false);
+  });
 }

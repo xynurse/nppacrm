@@ -41,6 +41,8 @@ export const tasks = pgTable(
     completedBy: uuid("completed_by").references(() => users.id, {
       onDelete: "set null",
     }),
+    /** Set by soft-delete. Null until migration 0015; queries fall back if the column is missing. */
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
@@ -55,6 +57,7 @@ export const tasks = pgTable(
     index("tasks_event_open_idx")
       .on(table.eventId, table.dueDate)
       .where(sql`${table.completedAt} IS NULL`),
+    index("tasks_deleted_at_idx").on(table.deletedAt),
   ],
 );
 

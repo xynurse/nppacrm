@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, inArray, isNotNull, isNull, lt } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { isUndefinedColumnError } from "@/lib/db/errors";
 import {
   companies,
   eventCompanies,
@@ -267,6 +268,20 @@ export async function listMyOpenTasks(
   userId: string,
   limit = 10,
 ): Promise<MyTaskRow[]> {
+  try {
+    return await queryMyOpenTasks(eventId, userId, limit, true);
+  } catch (err) {
+    if (!isUndefinedColumnError(err)) throw err;
+    return queryMyOpenTasks(eventId, userId, limit, false);
+  }
+}
+
+function queryMyOpenTasks(
+  eventId: string,
+  userId: string,
+  limit: number,
+  hideDeleted: boolean,
+): Promise<MyTaskRow[]> {
   return db
     .select({
       id: tasks.id,
@@ -283,6 +298,7 @@ export async function listMyOpenTasks(
         eq(tasks.eventId, eventId),
         eq(tasks.assignedTo, userId),
         isNull(tasks.completedAt),
+        ...(hideDeleted ? [isNull(tasks.deletedAt)] : []),
       ),
     )
     .orderBy(asc(tasks.dueDate))

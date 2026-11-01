@@ -6,7 +6,8 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { db } from "@/lib/db";
-import { companies, eventCompanies } from "@/lib/db/schema";
+import { isUndefinedColumnError } from "@/lib/db/errors";
+import { companies, eventCompanies, tasks } from "@/lib/db/schema";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -74,6 +75,51 @@ export async function restoreCompany(raw: unknown): Promise<ActionResult> {
     entityId: parsed.data.id,
   });
 
+  revalidatePath("/companies");
+  revalidatePath("/admin/audit");
+  return { ok: true };
+}
+
+export async function restoreTask(raw: unknown): Promise<ActionResult> {
+  const session = await requireAdmin();
+  const parsed = idSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid input" };
+
+  try {
+    const [existing] = await db
+      .select({
+        id: tasks.id,
+        eventId: tasks.eventId,
+        deletedAt: tasks.deletedAt,
+      })
+      .from(tasks)
+      .where(eq(tasks.id, parsed.data.id))
+      .limit(1);
+    if (!existing) return { ok: false, error: "Not found" };
+    if (!existing.deletedAt) return { ok: false, error: "Not deleted" };
+
+    const now = new Date();
+    await db
+      .update(tasks)
+      .set({ deletedAt: null, updatedAt: now })
+      .where(eq(tasks.id, parsed.data.id));
+
+    await recordAudit({
+      userId: session.user.id,
+      eventId: existing.eventId,
+      action: "task.restore",
+      entityType: "task",
+      entityId: parsed.data.id,
+    });
+  } catch (err) {
+    if (!isUndefinedColumnError(err)) throw err;
+    return {
+      ok: false,
+      error: "Task restore is available after migration 0015 is applied",
+    };
+  }
+
+  revalidatePath("/tasks");
   revalidatePath("/companies");
   revalidatePath("/admin/audit");
   return { ok: true };

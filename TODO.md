@@ -17,7 +17,7 @@ Latest shipped: Chunk 4 integrity on `cursor/chunk-4-integrity-d147` (`1e5c70b`,
 - [x] **(user, manual)** `pnpm db:migrate` applied **0013 + 0014** (2026-10-20)
 - [x] Chunk 2 — shared status-change path + days-in-stage fix (`8cbddeb`, 2026-10-23)
 - [x] Chunk 3 — mobile "More" nav + dead-code Pass 1 (`39830a3`, 2026-10-25)
-- [x] Chunk 4 — transactions / data-integrity fixes (`1e5c70b`). Task soft-delete behavior still open until 0015 is migrated, then: soft-delete + audit snapshot + restore.
+- [x] Chunk 4 — transactions / data-integrity fixes (`1e5c70b`) plus task soft-delete on `cursor/chunk-4-task-soft-delete-d147` (active only after migration 0015; falls back to hard delete until then).
 - [ ] Chunk 5 — performance Pass 2
 
 ## Shipped 2026-10-06 (repo cleanup + Claude Code setup)
