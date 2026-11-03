@@ -5,7 +5,7 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-11-03  
-**main:** Chunk 5 perf + dashboard calm UX merged (PRs #6 + #7).  
+**main:** `bce3386` — Chunk 5 perf + dashboard calm UX (PRs #6 + #7).  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
