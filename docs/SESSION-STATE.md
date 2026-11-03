@@ -658,8 +658,8 @@ rotate Neon `neondb_owner` password → Vercel `DATABASE_URL`/`DATABASE_URL_UNPO
 ### 2. ~~Chunk 3 — mobile nav + dead code (Pass 1)~~ ✅ SHIPPED `39830a3`
 "More" sheet in `BottomNav` (Event, Calendar, Playbooks, Reports, admin, event switch, sign out); then Pass 1 dead-code removal + `listActiveEvents` `cache()`.
 
-### 3. Chunk 4 — integrity ← steps 1–4, 6, 7 committed `1e5c70b`; step 5 on `cursor/chunk-4-task-soft-delete-d147`
-Approved 2026-10-31. Steps 1–4, 6, and 7 are in `1e5c70b`. Step 5 (task soft-delete, snapshot, restore) is the follow-up branch and no-ops into today's hard delete until migration 0015 is applied.
+### 3. Chunk 4 — integrity ✅ ON MAIN `0046823` (2026-11-02)
+Steps 1–4, 6, and 7 are `1e5c70b`. Step 5 (task soft-delete, snapshot, restore) is `0046823`. Both are on `main`. Soft-delete stays a hard delete until migration 0015 is applied.
 
 Original plan (kept so the follow-up does not re-derive it):
 
