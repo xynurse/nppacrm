@@ -10,7 +10,11 @@ Latest on main: PRs #9 (renewal rollover) + #10 (mobile shell) merged 2026-11-03
 - [x] Light Attio/Twenty shell (merged PR #8, 2026-11-03)
 - [x] Renewal rollover — start next year from event (merged PR #9)
 - [x] Mobile shell fix — bottom nav + company cards (merged PR #10)
-- [ ] Tier inventory + weighted forecast/pace (next ranked backlog)
+- [x] Tier inventory + weighted forecast/pace (`cursor/forecast-fulfillment-dedupe-eed9`)
+- [x] Fulfillment board (`/fulfillment`)
+- [x] Duplicate detection/merge (`/admin/duplicates`)
+- [ ] **(user, manual)** `pnpm db:migrate` for **0015 + 0016**
+- [ ] Playbooks from drawer / email helpers / export pack (next)
 
 ## Shipped 2026-10-20 (Chunk 1 — security)
 

@@ -5,7 +5,8 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-11-03  
-**Branch:** `main` — PRs #9 (rollover) + #10 (mobile) merged.  
+**Branch:** `cursor/forecast-fulfillment-dedupe-eed9` — forecast + fulfillment + duplicates.  
+**main:** `e1313b2` — rollover + mobile merged.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -24,20 +25,18 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Home IA: Today → money pulse → Watch → thin activity (funnel/tier live on Reports).
 
 ## Shipped recently
-**Mobile shell fix (merged PR #10, 2026-11-03)**
-- Bottom nav was a horizontal flex sibling — crushed phone layout; now column + `h-dvh`.
-- Companies card list &lt; lg; full-screen drawer on phone; viewport-fit cover.
+**Forecast / fulfillment / duplicates (PR branch, 2026-11-03)**
+- Reports: weighted pipeline forecast + fundraising pace + tier inventory (sold/capacity/left).
+- `/fulfillment` board for confirmed sponsors (agreement/invoice/paid/booth/reps).
+- Admin `/admin/duplicates` — merge companies by normalized name.
+- Migration **0016** `sponsorship_tiers.inventory_limit` (needs manual migrate).
 
-**Renewal rollover (merged PR #9, 2026-11-03)**
-- Admin: “Start next year from this event” → tiers/fields/reviewers/companies.
-- Confirmed → `past_sponsor`; pipeline → `prospect`. No migration.
+**Mobile shell (PR #10)** · **Renewal rollover (PR #9)** · **Light Attio (PR #8)**
 
-**Light Attio shell (PR #8)** · **Dashboard calm UX** · **Chunk 5 perf**
+**Prod DB:** **0000–0014 applied**. **0015 + 0016 not applied** — user `pnpm db:migrate`.  
+**Still needed:** Vercel `CRON_SECRET` + AI keys; rotate Neon owner password.
 
-**Prod DB:** **0000–0014 applied**. **0015 not applied** — user `pnpm db:migrate`.  
-**Still needed:** Vercel `CRON_SECRET` + AI Gateway credits; rotate Neon owner password.
-
-**Next up:** Tier inventory + weighted forecast/pace. User migrates **0015**.
+**Next up:** User migrates **0015+0016**. Then playbooks-from-drawer / email helpers / export pack.
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).
