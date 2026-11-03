@@ -28,6 +28,8 @@ export const sponsorshipTiers = pgTable(
     color: text("color").notNull().default("#64748b"),
     displayOrder: integer("display_order").notNull().default(0),
     suggestedAmount: numeric("suggested_amount", { precision: 14, scale: 2 }),
+    /** Soft capacity — how many of this tier you intend to sell. Null = unlimited. */
+    inventoryLimit: integer("inventory_limit"),
     benefits: jsonb("benefits")
       .$type<TierBenefit[]>()
       .notNull()

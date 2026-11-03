@@ -178,9 +178,11 @@ export type TierMixRow = {
   tierName: string;
   tierColor: string | null;
   suggestedAmount: number | null;
+  inventoryLimit: number | null;
   confirmedCount: number;
   confirmedAmount: number;
   targetCount: number; // count of rows with targetTierId set to this tier
+  remainingSlots: number | null; // inventoryLimit - confirmed; null if unlimited
 };
 
 export async function getTierMix(eventId: string): Promise<TierMixRow[]> {
@@ -230,16 +232,205 @@ export async function getTierMix(eventId: string): Promise<TierMixRow[]> {
 
   return tiers.map((t) => {
     const c = confirmedMap.get(t.id);
+    const confirmedCount = c?.count ?? 0;
+    const limit = t.inventoryLimit ?? null;
     return {
       tierId: t.id,
       tierName: t.name,
       tierColor: t.color,
       suggestedAmount: t.suggestedAmount ? Number(t.suggestedAmount) : null,
-      confirmedCount: c?.count ?? 0,
+      inventoryLimit: limit,
+      confirmedCount,
       confirmedAmount: c?.amount ?? 0,
       targetCount: targetMap.get(t.id) ?? 0,
+      remainingSlots: limit === null ? null : Math.max(0, limit - confirmedCount),
     };
   });
+}
+
+/** Spec weights for pipeline forecast (confirmed = 100%). */
+export const FORECAST_WEIGHTS: Partial<Record<ProspectStatus, number>> = {
+  prospect: 0,
+  contacted: 0.1,
+  engaged: 0.25,
+  proposal_sent: 0.5,
+  negotiating: 0.75,
+  committed: 0.9,
+  confirmed: 1,
+  declined: 0,
+  past_sponsor: 0,
+};
+
+export type WeightedForecast = {
+  currency: string;
+  fundraisingGoal: number | null;
+  confirmedAmount: number;
+  weightedPipeline: number;
+  weightedTotal: number;
+  gapToWeightedGoal: number | null;
+  pctOfGoalWeighted: number | null;
+};
+
+export async function getWeightedForecast(
+  eventId: string,
+): Promise<WeightedForecast> {
+  const [evt] = await db
+    .select({
+      fundraisingGoal: events.fundraisingGoal,
+      currency: events.currency,
+    })
+    .from(events)
+    .where(eq(events.id, eventId))
+    .limit(1);
+
+  const tiers = await db
+    .select({
+      id: sponsorshipTiers.id,
+      suggestedAmount: sponsorshipTiers.suggestedAmount,
+    })
+    .from(sponsorshipTiers)
+    .where(eq(sponsorshipTiers.eventId, eventId));
+  const suggestedByTier = new Map(
+    tiers.map((t) => [
+      t.id,
+      t.suggestedAmount ? Number(t.suggestedAmount) : 0,
+    ]),
+  );
+
+  const rows = await db
+    .select({
+      status: eventCompanies.status,
+      proposed: eventCompanies.proposedAmount,
+      confirmed: eventCompanies.confirmedAmount,
+      targetTierId: eventCompanies.targetTierId,
+      confirmedTierId: eventCompanies.confirmedTierId,
+    })
+    .from(eventCompanies)
+    .where(
+      and(eq(eventCompanies.eventId, eventId), isNull(eventCompanies.deletedAt)),
+    );
+
+  let confirmedAmount = 0;
+  let weightedPipeline = 0;
+  for (const r of rows) {
+    const status = r.status as ProspectStatus;
+    const weight = FORECAST_WEIGHTS[status] ?? 0;
+    if (status === "confirmed") {
+      const amt = r.confirmed ? Number(r.confirmed) : 0;
+      confirmedAmount += amt;
+      continue;
+    }
+    if (weight <= 0) continue;
+    const ask =
+      (r.proposed ? Number(r.proposed) : 0) ||
+      (r.targetTierId ? (suggestedByTier.get(r.targetTierId) ?? 0) : 0) ||
+      (r.confirmedTierId ? (suggestedByTier.get(r.confirmedTierId) ?? 0) : 0);
+    weightedPipeline += ask * weight;
+  }
+
+  const weightedTotal = confirmedAmount + weightedPipeline;
+  const goal = evt?.fundraisingGoal ? Number(evt.fundraisingGoal) : null;
+
+  return {
+    currency: evt?.currency ?? "USD",
+    fundraisingGoal: goal,
+    confirmedAmount,
+    weightedPipeline,
+    weightedTotal,
+    gapToWeightedGoal: goal === null ? null : goal - weightedTotal,
+    pctOfGoalWeighted:
+      goal === null || goal === 0 ? null : weightedTotal / goal,
+  };
+}
+
+export type FundraisingPace = {
+  currency: string;
+  fundraisingGoal: number | null;
+  confirmedAmount: number;
+  pctOfGoal: number | null;
+  /** 0–1 share of the fundraising window that has elapsed. */
+  pctOfTime: number | null;
+  /** confirmed/goal ÷ elapsed/window — 1.0 = on pace. */
+  paceRatio: number | null;
+  daysElapsed: number | null;
+  daysRemaining: number | null;
+  windowLabel: string | null;
+};
+
+export async function getFundraisingPace(
+  eventId: string,
+): Promise<FundraisingPace> {
+  const [evt] = await db
+    .select({
+      fundraisingGoal: events.fundraisingGoal,
+      currency: events.currency,
+      startDate: events.startDate,
+      createdAt: events.createdAt,
+    })
+    .from(events)
+    .where(eq(events.id, eventId))
+    .limit(1);
+
+  const rollup = await getRevenueRollup(eventId);
+  if (!evt) {
+    return {
+      currency: "USD",
+      fundraisingGoal: null,
+      confirmedAmount: 0,
+      pctOfGoal: null,
+      pctOfTime: null,
+      paceRatio: null,
+      daysElapsed: null,
+      daysRemaining: null,
+      windowLabel: null,
+    };
+  }
+
+  const goal = evt.fundraisingGoal ? Number(evt.fundraisingGoal) : null;
+  const now = new Date();
+  const start = evt.createdAt;
+  const end = evt.startDate
+    ? new Date(`${evt.startDate}T12:00:00.000Z`)
+    : null;
+
+  let pctOfTime: number | null = null;
+  let daysElapsed: number | null = null;
+  let daysRemaining: number | null = null;
+  let windowLabel: string | null = null;
+
+  if (end && end.getTime() > start.getTime()) {
+    const totalMs = end.getTime() - start.getTime();
+    const elapsedMs = Math.min(
+      totalMs,
+      Math.max(0, now.getTime() - start.getTime()),
+    );
+    pctOfTime = elapsedMs / totalMs;
+    daysElapsed = Math.floor(elapsedMs / 86_400_000);
+    daysRemaining = Math.max(
+      0,
+      Math.ceil((end.getTime() - now.getTime()) / 86_400_000),
+    );
+    windowLabel = `Event created → ${evt.startDate}`;
+  }
+
+  const pctOfGoal =
+    goal === null || goal === 0 ? null : rollup.confirmedAmount / goal;
+  const paceRatio =
+    pctOfGoal !== null && pctOfTime !== null && pctOfTime > 0
+      ? pctOfGoal / pctOfTime
+      : null;
+
+  return {
+    currency: evt.currency,
+    fundraisingGoal: goal,
+    confirmedAmount: rollup.confirmedAmount,
+    pctOfGoal,
+    pctOfTime,
+    paceRatio,
+    daysElapsed,
+    daysRemaining,
+    windowLabel,
+  };
 }
 
 export type RevenueRollup = {

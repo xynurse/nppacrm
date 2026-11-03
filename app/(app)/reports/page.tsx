@@ -5,9 +5,11 @@ import {
   getAverageDaysInStage,
   getCadenceBreakdown,
   getConversionFunnel,
+  getFundraisingPace,
   getOwnerLeaderboard,
   getRevenueRollup,
   getTierMix,
+  getWeightedForecast,
 } from "@/lib/db/queries/reports";
 import { Button } from "@/components/ui/button";
 import { CsvDownloadButton } from "@/components/reports/csv-download-button";
@@ -39,14 +41,17 @@ export default async function ReportsPage() {
     );
   }
 
-  const [funnel, rollup, leaderboard, mix, cadence, days] = await Promise.all([
-    getConversionFunnel(activeEvent.id),
-    getRevenueRollup(activeEvent.id),
-    getOwnerLeaderboard(activeEvent.id),
-    getTierMix(activeEvent.id),
-    getCadenceBreakdown(activeEvent.id),
-    getAverageDaysInStage(activeEvent.id),
-  ]);
+  const [funnel, rollup, leaderboard, mix, cadence, days, forecast, pace] =
+    await Promise.all([
+      getConversionFunnel(activeEvent.id),
+      getRevenueRollup(activeEvent.id),
+      getOwnerLeaderboard(activeEvent.id),
+      getTierMix(activeEvent.id),
+      getCadenceBreakdown(activeEvent.id),
+      getAverageDaysInStage(activeEvent.id),
+      getWeightedForecast(activeEvent.id),
+      getFundraisingPace(activeEvent.id),
+    ]);
 
   const cadenceTotal = cadence.ok + cadence.amber + cadence.red;
   const maxLeaderboard = Math.max(
@@ -89,27 +94,39 @@ export default async function ReportsPage() {
           tone="emerald"
         />
         <Kpi
-          label="Expected (in proposal pipeline)"
-          value={formatCurrency(rollup.expectedAmount, rollup.currency)}
+          label="Weighted forecast"
+          value={formatCurrency(forecast.weightedTotal, forecast.currency)}
+          sublabel={`confirmed + weighted pipeline (${formatCurrency(forecast.weightedPipeline, forecast.currency)})`}
+          tone="amber"
         />
         <Kpi
-          label={rollup.gapToGoal !== null && rollup.gapToGoal < 0 ? "Over goal" : "Gap to goal"}
+          label={
+            pace.paceRatio === null
+              ? "Pace"
+              : pace.paceRatio >= 1
+                ? "Ahead of pace"
+                : "Behind pace"
+          }
           value={
-            rollup.gapToGoal === null
+            pace.paceRatio === null
               ? "—"
-              : formatCurrency(Math.abs(rollup.gapToGoal), rollup.currency)
+              : `${Math.round(pace.paceRatio * 100)}%`
           }
           sublabel={
-            rollup.pctOfGoal !== null
-              ? `${pctFmt.format(rollup.pctOfGoal)} of goal`
-              : undefined
+            pace.pctOfTime !== null && pace.pctOfGoal !== null
+              ? `${pctFmt.format(pace.pctOfGoal)} money · ${pctFmt.format(pace.pctOfTime)} time${
+                  pace.daysRemaining !== null
+                    ? ` · ${pace.daysRemaining}d left`
+                    : ""
+                }`
+              : pace.windowLabel ?? "Set an event start date to track pace"
           }
           tone={
-            rollup.pctOfGoal === null
+            pace.paceRatio === null
               ? "slate"
-              : rollup.pctOfGoal >= 1
+              : pace.paceRatio >= 1
                 ? "emerald"
-                : rollup.pctOfGoal >= 0.5
+                : pace.paceRatio >= 0.75
                   ? "amber"
                   : "red"
           }
@@ -209,10 +226,10 @@ export default async function ReportsPage() {
         )}
       </Section>
 
-      {/* Tier mix */}
+      {/* Tier inventory */}
       <Section
-        title="Tier mix"
-        subtitle="Confirmed sponsors by tier vs. how many prospects target each tier."
+        title="Tier inventory"
+        subtitle="Sold vs capacity (set Inventory on Admin → Tiers). Target count is open pipeline aiming at the tier."
         actions={<CsvDownloadButton eventId={activeEvent.id} kind="tier-mix" />}
       >
         {mix.length === 0 ? (
@@ -224,8 +241,10 @@ export default async function ReportsPage() {
                 <tr>
                   <th className="py-1 pr-2">Tier</th>
                   <th className="py-1 pr-2 text-right">Suggested</th>
-                  <th className="py-1 pr-2 text-right">Confirmed</th>
-                  <th className="py-1 pr-2 text-right">Target count</th>
+                  <th className="py-1 pr-2 text-right">Sold</th>
+                  <th className="py-1 pr-2 text-right">Capacity</th>
+                  <th className="py-1 pr-2 text-right">Left</th>
+                  <th className="py-1 pr-2 text-right">Targeting</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -246,10 +265,16 @@ export default async function ReportsPage() {
                         : "—"}
                     </td>
                     <td className="py-1.5 pr-2 text-right tabular-nums">
-                      {formatCurrency(r.confirmedAmount, rollup.currency)}
-                      <span className="ml-1 text-xs text-slate-400">
-                        ({r.confirmedCount})
+                      {r.confirmedCount}
+                      <span className="ml-1 text-xs text-zinc-400">
+                        ({formatCurrency(r.confirmedAmount, rollup.currency)})
                       </span>
+                    </td>
+                    <td className="py-1.5 pr-2 text-right tabular-nums">
+                      {r.inventoryLimit ?? "∞"}
+                    </td>
+                    <td className="py-1.5 pr-2 text-right tabular-nums">
+                      {r.remainingSlots === null ? "—" : r.remainingSlots}
                     </td>
                     <td className="py-1.5 pr-2 text-right tabular-nums">
                       {r.targetCount}

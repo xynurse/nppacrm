@@ -42,6 +42,7 @@ export default async function TiersPage({
           color: t.color,
           displayOrder: t.displayOrder,
           suggestedAmount: t.suggestedAmount,
+          inventoryLimit: t.inventoryLimit ?? null,
         }))}
       />
     </div>

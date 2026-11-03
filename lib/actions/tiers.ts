@@ -24,6 +24,7 @@ const createSchema = z.object({
     .regex(/^\d+(\.\d{1,2})?$/u)
     .optional()
     .or(z.literal("").transform(() => undefined)),
+  inventoryLimit: z.number().int().min(0).max(10_000).nullable().optional(),
 });
 
 const updateSchema = z.object({
@@ -36,6 +37,7 @@ const updateSchema = z.object({
     .regex(/^\d+(\.\d{1,2})?$/u)
     .nullable()
     .optional(),
+  inventoryLimit: z.number().int().min(0).max(10_000).nullable().optional(),
 });
 
 const deleteSchema = z.object({ id: z.uuid() });
@@ -96,6 +98,8 @@ export async function updateTier(raw: unknown): Promise<ActionResult> {
   if (rest.displayOrder !== undefined) updates.displayOrder = rest.displayOrder;
   if (rest.suggestedAmount !== undefined)
     updates.suggestedAmount = rest.suggestedAmount;
+  if (rest.inventoryLimit !== undefined)
+    updates.inventoryLimit = rest.inventoryLimit;
 
   await db
     .update(sponsorshipTiers)

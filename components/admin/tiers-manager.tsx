@@ -13,6 +13,7 @@ type Tier = {
   color: string;
   displayOrder: number;
   suggestedAmount: string | null;
+  inventoryLimit: number | null;
 };
 
 export function TiersManager({
@@ -64,6 +65,7 @@ export function TiersManager({
               <th className="px-3 py-2">Color</th>
               <th className="px-3 py-2">Name</th>
               <th className="px-3 py-2 text-right">Suggested $</th>
+              <th className="px-3 py-2 text-right">Inventory</th>
               <th className="px-3 py-2 text-right" />
             </tr>
           </thead>
@@ -71,7 +73,7 @@ export function TiersManager({
             {tiers.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-3 py-6 text-center text-sm text-slate-500 dark:text-slate-400"
                 >
                   No tiers yet.
@@ -131,6 +133,28 @@ export function TiersManager({
                               : t.suggestedAmount;
                         if (next !== t.suggestedAmount) {
                           handleSave(t.id, { suggestedAmount: next });
+                        }
+                      }}
+                    />
+                  </td>
+                  <td className="px-3">
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="∞"
+                      defaultValue={t.inventoryLimit ?? ""}
+                      className="h-7 w-20 text-right text-sm tabular-nums"
+                      title="How many of this tier you intend to sell (blank = unlimited)"
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        const next =
+                          v === ""
+                            ? null
+                            : Number.isFinite(Number(v))
+                              ? Math.max(0, Math.floor(Number(v)))
+                              : t.inventoryLimit;
+                        if (next !== t.inventoryLimit) {
+                          handleSave(t.id, { inventoryLimit: next });
                         }
                       }}
                     />

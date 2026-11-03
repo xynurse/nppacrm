@@ -4,6 +4,8 @@ import {
   Building2,
   CalendarDays,
   CheckSquare,
+  ClipboardCheck,
+  GitMerge,
   History,
   KanbanSquare,
   LayoutDashboard,
@@ -32,12 +34,14 @@ export const mainNav: NavItem[] = [
   { href: "/tasks", label: "Tasks", Icon: CheckSquare },
   { href: "/calendar", label: "Calendar", Icon: ListTodo },
   { href: "/pipeline", label: "Pipeline", Icon: KanbanSquare },
+  { href: "/fulfillment", label: "Fulfillment", Icon: ClipboardCheck },
   { href: "/playbooks", label: "Playbooks", Icon: BookOpen },
   { href: "/reports", label: "Reports", Icon: BarChart3 },
 ];
 
 export const adminNav: NavItem[] = [
   { href: "/admin/events", label: "Events", Icon: Settings },
+  { href: "/admin/duplicates", label: "Duplicates", Icon: GitMerge },
   { href: "/admin/users", label: "Users", Icon: Users },
   { href: "/admin/audit", label: "Audit Log", Icon: History },
 ];
