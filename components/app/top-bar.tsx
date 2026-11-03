@@ -13,7 +13,7 @@ export function TopBar({
   unreadCount?: number;
 }) {
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between gap-4 border-b border-zinc-200/80 bg-white/75 px-4 backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/75">
+    <header className="flex h-12 shrink-0 items-center justify-between gap-4 border-b border-zinc-200/70 bg-white/70 px-4 backdrop-blur-md sm:px-8 dark:border-zinc-800/70 dark:bg-zinc-950/70">
       <div className="min-w-0">
         <PageTitle />
       </div>

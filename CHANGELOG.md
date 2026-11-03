@@ -2,6 +2,9 @@
 
 ## Active build (committed to main)
 
+### Dashboard calm UX _(2026-11-03, `cursor/dashboard-calm-ux-eed9`)_
+Home page restructured so work comes first: greeting + Today tasks, a three-number money pulse with an inline goal bar, Hot/Stalled watch lists, and a thin activity feed. Removed the duplicate task card, funnel, tier mix, and four-KPI card strip from the dashboard (pipeline depth stays on Reports). AI quick update is quieter. Status badges drop inset rings; shell padding and zinc neutrals tighten the companies/pipeline headers.
+
 ### Chunk 4 — integrity _(2026-10-31, `1e5c70b` on `cursor/chunk-4-integrity-d147`)_
 Writes that could leave a half-finished row now commit together: quick-add (company + prospect + audit), prospectus replace, proposal fields + the 7-day follow-up task + audit, status changes and their audit rows, cell edits, and custom-field edits. CSV import inserts companies, contacts, and prospects in one batch instead of up to four round trips per row. Custom fields merge a single key in SQL, so two people editing different keys no longer wipe each other. Impossible dates such as 2026-13-45 are rejected, and a bad date filter is ignored instead of crashing the query. CSV export prefixes a quote on formula-like cells and leaves real numbers alone. Calendar overdue and the proposal follow-up use the event timezone, and date-only cells are stored at noon UTC so they do not show as the previous day in US timezones. Migration 0015 adds `tasks.deleted_at`. The follow-up branch soft-deletes tasks (snapshot in the audit, hidden from lists, Restore on the audit row) once that column exists, and keeps today's hard delete until the migration is applied.
 

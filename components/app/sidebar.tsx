@@ -121,7 +121,7 @@ export function Sidebar({ role, user, events, activeEventId }: SidebarProps) {
       {/* User footer */}
       <div className="border-t border-white/[0.06] px-3 py-3">
         <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-500/20 text-[11px] font-semibold text-brand-300 ring-1 ring-inset ring-brand-400/20">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-[11px] font-semibold text-zinc-200">
             {getInitials(user.name)}
           </div>
           <div className="min-w-0 flex-1">

@@ -187,27 +187,27 @@ export function KanbanBoard({ rows: initialRows, tiers }: Props) {
     <>
       <div className="flex items-center gap-2">
         <div className="relative w-full sm:w-72">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Filter cards by company, owner, tier, tag…"
-            className="h-8 w-full rounded-md border border-slate-200 bg-white pl-8 pr-7 text-sm shadow-[var(--shadow-card)] transition-[border-color,box-shadow] duration-150 placeholder:text-slate-400 hover:border-slate-300 focus-visible:border-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/25 dark:border-slate-700 dark:bg-zinc-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 [&::-webkit-search-cancel-button]:appearance-none"
+            className="h-8 w-full rounded-md border border-zinc-200 bg-white pl-8 pr-7 text-sm shadow-[var(--shadow-card)] transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 hover:border-zinc-300 focus-visible:border-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:hover:border-zinc-600 [&::-webkit-search-cancel-button]:appearance-none"
           />
           {query ? (
             <button
               type="button"
               onClick={() => setQuery("")}
               aria-label="Clear filter"
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           ) : null}
         </div>
         {q ? (
-          <span className="text-xs text-slate-500 dark:text-slate-400">
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
             {filteredRows.length} of {rows.length} shown
           </span>
         ) : null}

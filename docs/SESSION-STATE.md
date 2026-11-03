@@ -8,7 +8,9 @@
 ---
 
 ## Last updated
-2026-11-02 — **Chunk 4 is on `main` at `0046823`.** Fast-forward of integrity `1e5c70b` / docs `abe57c1` and task soft-delete `0046823`. PR #4 merged. PR #5 closed because those commits were already in the fast-forward. typecheck, lint, `pnpm audit --prod`, `build:offline` were green before the merge. **Not browser-verified** (no login in that session).
+2026-11-03 — **Dashboard calm UX on `cursor/dashboard-calm-ux-eed9`.** Home IA: Today → money pulse → Watch (Hot/Stalled) → activity. Funnel/tier/duplicate tasks/KPI cards removed from home. Quieter badges, shell padding, zinc headers. typecheck/lint/`build:offline` green. **Not browser-verified.** Separate open branch: Chunk 5 perf (`cursor/chunk-5-performance-eed9`).
+
+**Earlier — 2026-11-02 — Chunk 4 on `main` at `0046823`.** Fast-forward of integrity `1e5c70b` / docs `abe57c1` and task soft-delete `0046823`. PR #4 merged. PR #5 closed because those commits were already in the fast-forward. typecheck, lint, `pnpm audit --prod`, `build:offline` were green before the merge. **Not browser-verified** (no login in that session).
 
 **In this commit:** atomic batches for quick-add, prospectus replace, proposal+task+audit, status move+audit, cell writes, custom-field writes; chunked atomic CSV import; custom-field jsonb merge; real calendar-date checks; shared `escapeCsv`; event-timezone "today" for calendar overdue and the proposal follow-up; date-only values stored at 12:00 UTC. **Migration 0015** (`tasks.deleted_at`) is journaled only — schema and queries do not reference it yet.
 

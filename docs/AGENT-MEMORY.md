@@ -4,8 +4,9 @@
 > `SESSION-STATE.md` / `TODO.md` / `CHANGELOG.md` / the build prompt unless
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
-**Last updated:** 2026-11-02  
-**main:** `0046823` — chunk 4 integrity (`1e5c70b`) + task soft-delete. PR #4 merged; PR #5 closed (commits already on main).  
+**Last updated:** 2026-11-03  
+**Branches:** `cursor/dashboard-calm-ux-eed9` (dashboard IA + calm chrome); `cursor/chunk-5-performance-eed9` (perf Pass 2, separate PR).  
+**main:** `e525c53` — chunk 4 close-out.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -22,15 +23,13 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Commit policy: **Claude Code is the primary environment** — follow CLAUDE.md (commit + push to `main` after every green build). Any `cursor/*` or `claude/*` branch must be merged to `main` before the session ends.
 
 ## Shipped recently
-**Chunk 4 — integrity (`1e5c70b`, 2026-10-31) — awaiting merge + manual migrate**
-- `runAtomic` (`lib/db/batch.ts`) + `auditRows`/`auditInsert` (`lib/audit.ts`). Neon HTTP batch is one transaction. Async helpers must not return the query builder (it is thenable and would run early).
-- Atomic: quick-add, prospectus replace, proposal fields + follow-up task + audit (then `changeStatus`), status update + `move_status` audits, cell update + audit, custom-field update + audit.
-- CSV import: pre-generated company ids, chunked multi-row inserts, one batch, `onConflictDoNothing` kept. Preview/dedupe unchanged.
-- Custom fields: `lib/custom-fields/patch.ts` jsonb `||` / key delete. Deleted prospects rejected.
-- Real calendar dates (`lib/dates.ts`) in cell validation, custom fields, and view filters (invalid date filters are dropped).
-- `lib/csv.ts` `escapeCsv` prefixes `'` on formula-like strings; real numbers like `-500` stay numbers.
-- Calendar overdue and proposal +7-day due date use `events.timezone` (default America/Chicago). Date-only cell writes store 12:00 UTC.
-- **Migration 0015** (`tasks.deleted_at` + index) is in the journal. Soft-delete code is the follow-up branch: `deleteTask` sets `deletedAt` and stores a snapshot; lists hide deleted tasks; `restoreTask` + Restore on `task.delete` rows that have a snapshot. Until 0015 is applied, those queries catch `42703` and keep today's hard delete / unfiltered lists.
+**Dashboard calm UX (`cursor/dashboard-calm-ux-eed9`, 2026-11-03)**
+- Home is four beats: greeting + Today queue, money pulse (Confirmed / Pipeline / Goal), Watch (Hot + Stalled), thin activity feed. Funnel, tier mix, duplicate task card, and KPI card strip removed from home (reports still has depth).
+- Alerts are quiet text links, not colored pills. AI update sits under Today without gradient card chrome.
+- Platform: more main padding, quieter status badges (no rings), slate→zinc on home/companies/pipeline headers, softer card shadows, calmer sidebar avatar.
+
+**Chunk 4 — integrity + soft-delete on main (`1e5c70b` / `0046823`)**
+- Atomic writes, CSV batch, custom-field jsonb patch, real dates, CSV escape, event TZ. Migration **0015** still needs manual `pnpm db:migrate`.
 
 **Chunk 3 — mobile nav + dead code (`39830a3`, 2026-10-25)**
 - Nav defined once in `components/app/nav-config.ts`; mobile bottom bar + `more-sheet.tsx`; `event-switcher.tsx` shared. `setDefaultView` deleted.
@@ -59,7 +58,7 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 **Security follow-up:** Neon `neondb_owner` password was exposed in a chat on 2026-09-27 — rotate it (Neon → Roles → reset), update Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED`, redeploy, update local `.env.local`.
 
 **Claude Code setup (2026-10-06):** `.claude/settings.json` denies db:migrate/seed/drizzle push and `.env*` reads; SessionStart hook installs deps; use `pnpm build:offline` where Google Fonts is unreachable.  
-**Next up:** User runs `pnpm db:migrate` for **0015** (soft-delete stays a hard delete until then). Then Chunk 5 (perf).
+**Next up:** Merge UI + Chunk 5 PRs. User runs `pnpm db:migrate` for **0015**. Optional follow-up: deeper companies/pipeline visual polish; `/companies` FL JS still high until Chunk 5 merges.
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).

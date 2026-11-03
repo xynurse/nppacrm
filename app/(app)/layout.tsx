@@ -46,7 +46,7 @@ export default async function AppLayout({
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar notifications={notifications} unreadCount={unreadCount} />
-        <main className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
+        <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
           {children}
         </main>
       </div>
