@@ -158,13 +158,13 @@ export async function runDiscovery(opts: {
     ];
 
     type SearchHit = { title: string; url: string; content: string };
-    let allHits: SearchHit[] = [];
-    let searchCalls = 0;
-    for (const query of searchQueries) {
-      const result = await valyuSearch({ query, maxResults: 4, searchType: "web" });
-      allHits = [...allHits, ...result.hits];
-      searchCalls += result.callCount;
-    }
+    const searchResults = await Promise.all(
+      searchQueries.map((query) =>
+        valyuSearch({ query, maxResults: 4, searchType: "web" }),
+      ),
+    );
+    let allHits: SearchHit[] = searchResults.flatMap((r) => r.hits);
+    const searchCalls = searchResults.reduce((n, r) => n + r.callCount, 0);
     // Deduplicate by URL
     const seenUrls = new Set<string>();
     allHits = allHits.filter((h) => {

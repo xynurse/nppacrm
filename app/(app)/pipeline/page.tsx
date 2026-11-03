@@ -1,30 +1,14 @@
 import Link from "next/link";
-import {
-  getActiveProspectus,
-  listRecentJobsForEventCompany,
-  listSuggestionsForEventCompany,
-} from "@/lib/db/queries/ai";
-import { listBenefitsForEventCompany } from "@/lib/db/queries/benefits";
 import { listActiveEvents } from "@/lib/db/queries/events";
 import {
   listEventCompanies,
   listTiersForEvent,
 } from "@/lib/db/queries/companies";
-import {
-  listContactsForCompany,
-  listEmailHistoryForCompany,
-} from "@/lib/db/queries/contacts";
 import { listFieldDefinitionsForEvent } from "@/lib/db/queries/custom-fields";
-import { listInteractionsForEventCompany } from "@/lib/db/queries/interactions";
-import { listTasksForEventCompany } from "@/lib/db/queries/tasks";
 import { listUsers } from "@/lib/db/queries/users";
 import { requireSession } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import {
-  CompanyDrawer,
-  type DrawerData,
-} from "@/components/companies/company-drawer";
-import { KanbanBoard } from "@/components/pipeline/kanban-board";
+import { PipelineWorkspace } from "@/components/pipeline/pipeline-workspace";
 
 type SearchParams = Promise<{ record?: string }>;
 
@@ -33,7 +17,10 @@ export default async function PipelinePage({
 }: {
   searchParams: SearchParams;
 }) {
-  const session = await requireSession();
+  const [session, params] = await Promise.all([
+    requireSession(),
+    searchParams,
+  ]);
   const events = await listActiveEvents();
   const activeEvent =
     events.find((e) => e.id === session.user.activeEventId) ?? events[0] ?? null;
@@ -52,8 +39,6 @@ export default async function PipelinePage({
     );
   }
 
-  const params = await searchParams;
-
   const [rows, tiers, users, fieldDefinitions] = await Promise.all([
     listEventCompanies(activeEvent.id),
     listTiersForEvent(activeEvent.id),
@@ -71,45 +56,6 @@ export default async function PipelinePage({
     .map((u) => ({ id: u.id, name: u.name, email: u.email }));
 
   const recordId = typeof params.record === "string" ? params.record : null;
-  const drawerRow = recordId
-    ? (rows.find((r) => r.id === recordId) ?? null)
-    : null;
-
-  let drawerData: DrawerData | null = null;
-  if (drawerRow) {
-    const [
-      contacts,
-      emailHistory,
-      interactions,
-      tasks,
-      suggestions,
-      jobs,
-      prospectus,
-      benefits,
-    ] = await Promise.all([
-      listContactsForCompany(drawerRow.companyId),
-      listEmailHistoryForCompany(drawerRow.companyId),
-      listInteractionsForEventCompany(drawerRow.id),
-      listTasksForEventCompany(drawerRow.id),
-      listSuggestionsForEventCompany(drawerRow.id),
-      listRecentJobsForEventCompany(drawerRow.id, 5),
-      getActiveProspectus(activeEvent.id),
-      listBenefitsForEventCompany(drawerRow.id),
-    ]);
-    drawerData = {
-      contacts,
-      emailHistory,
-      interactions,
-      tasks,
-      ai: {
-        suggestions,
-        jobs,
-        hasProspectus: !!prospectus,
-        prospectusFileName: prospectus?.fileName ?? null,
-      },
-      benefits,
-    };
-  }
 
   return (
     <div className="space-y-4">
@@ -120,18 +66,14 @@ export default async function PipelinePage({
           its stage
         </p>
       </div>
-      <KanbanBoard rows={rows} tiers={tierOptions} />
-
-      <CompanyDrawer
-        row={drawerRow}
+      <PipelineWorkspace
+        rows={rows}
         owners={owners}
         tiers={tierOptions}
-        data={drawerData}
+        initialRecordId={recordId}
         currentUserId={session.user.id}
         isAdmin={session.user.role === "admin"}
         fieldDefinitions={fieldDefinitions}
-        closeHref="/pipeline"
-        recordIds={rows.map((r) => r.id)}
       />
     </div>
   );

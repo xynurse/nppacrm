@@ -12,7 +12,6 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { Search, X } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { formatRelativeDate } from "@/lib/format";
@@ -45,9 +44,10 @@ const COLUMN_ORDER: ProspectStatus[] = [...PROSPECT_STATUS_VALUES];
 type Props = {
   rows: EventCompanyRow[];
   tiers: TierOption[];
+  onOpenRecord: (id: string) => void;
 };
 
-export function KanbanBoard({ rows: initialRows, tiers }: Props) {
+export function KanbanBoard({ rows: initialRows, tiers, onOpenRecord }: Props) {
   const router = useRouter();
   const [rows, setRows] = useState(initialRows);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -229,13 +229,16 @@ export function KanbanBoard({ rows: initialRows, tiers }: Props) {
                 cards={cards}
                 count={total.count}
                 amount={total.amount}
+                onOpenRecord={onOpenRecord}
               />
             );
           })}
         </div>
 
         <DragOverlay>
-          {draggingRow ? <Card row={draggingRow} dragging /> : null}
+          {draggingRow ? (
+            <Card row={draggingRow} dragging onOpenRecord={onOpenRecord} />
+          ) : null}
         </DragOverlay>
       </DndContext>
 
@@ -256,11 +259,13 @@ function Column({
   cards,
   count,
   amount,
+  onOpenRecord,
 }: {
   status: ProspectStatus;
   cards: EventCompanyRow[];
   count: number;
   amount: number;
+  onOpenRecord: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `col:${status}` });
   return (
@@ -289,14 +294,22 @@ function Column({
             Drop a card here
           </p>
         ) : (
-          cards.map((row) => <DraggableCard key={row.id} row={row} />)
+          cards.map((row) => (
+            <DraggableCard key={row.id} row={row} onOpenRecord={onOpenRecord} />
+          ))
         )}
       </div>
     </div>
   );
 }
 
-function DraggableCard({ row }: { row: EventCompanyRow }) {
+function DraggableCard({
+  row,
+  onOpenRecord,
+}: {
+  row: EventCompanyRow;
+  onOpenRecord: (id: string) => void;
+}) {
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
     id: row.id,
   });
@@ -310,7 +323,7 @@ function DraggableCard({ row }: { row: EventCompanyRow }) {
         isDragging && "opacity-40",
       )}
     >
-      <Card row={row} />
+      <Card row={row} onOpenRecord={onOpenRecord} />
     </div>
   );
 }
@@ -318,9 +331,11 @@ function DraggableCard({ row }: { row: EventCompanyRow }) {
 function Card({
   row,
   dragging,
+  onOpenRecord,
 }: {
   row: EventCompanyRow;
   dragging?: boolean;
+  onOpenRecord: (id: string) => void;
 }) {
   const amount = row.confirmedAmount ?? row.proposedAmount;
   const tierName = row.confirmedTierName ?? row.targetTierName;
@@ -342,15 +357,17 @@ function Card({
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-1.5">
             <PriorityDot priority={row.priority} />
-            <Link
-              href={`/pipeline?record=${row.id}`}
-              scroll={false}
-              className="flex-1 font-medium text-zinc-900 hover:underline dark:text-zinc-50"
-              onClick={(e) => e.stopPropagation()}
+            <button
+              type="button"
+              className="flex-1 text-left font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenRecord(row.id);
+              }}
               onPointerDown={(e) => e.stopPropagation()}
             >
               {row.companyName}
-            </Link>
+            </button>
           </div>
           <div className="mt-0.5 flex flex-wrap gap-1">
             {hasBouncedTag(row.tagsCache) ? <BouncedBadge /> : null}

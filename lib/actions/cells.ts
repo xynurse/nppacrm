@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin, requireSession } from "@/lib/auth";
@@ -158,31 +158,28 @@ export async function bulkRemoveTag(raw: unknown): Promise<ActionResult> {
     .safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid input" };
 
-  const rows = await db
-    .select({ id: eventCompanies.id, tagsCache: eventCompanies.tagsCache })
-    .from(eventCompanies)
-    .where(inArray(eventCompanies.id, parsed.data.ids));
-
-  const tag = parsed.data.tag;
-  for (const row of rows) {
-    const next = (row.tagsCache ?? []).filter((t) => t !== tag);
-    if (next.length === (row.tagsCache ?? []).length) continue;
-    await db
-      .update(eventCompanies)
-      .set({
-        tagsCache: next,
-        updatedAt: new Date(),
-        updatedBy: session.user.id,
-      })
-      .where(eq(eventCompanies.id, row.id));
-  }
+  const { ids, tag } = parsed.data;
+  await db
+    .update(eventCompanies)
+    .set({
+      tagsCache: sql`array_remove(${eventCompanies.tagsCache}, ${tag})`,
+      updatedAt: new Date(),
+      updatedBy: session.user.id,
+    })
+    .where(
+      and(
+        inArray(eventCompanies.id, ids),
+        isNull(eventCompanies.deletedAt),
+        sql`${tag} = any(${eventCompanies.tagsCache})`,
+      ),
+    );
 
   await recordAudit({
     userId: session.user.id,
     action: "eventCompany.bulk_remove_tag",
     entityType: "eventCompany",
-    entityId: parsed.data.ids[0]!,
-    changes: { ids: parsed.data.ids, tag },
+    entityId: ids[0]!,
+    changes: { ids, tag },
   });
 
   revalidatePath("/companies");

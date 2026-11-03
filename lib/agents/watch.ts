@@ -19,6 +19,7 @@ import {
   resolveModel,
 } from "@/lib/ai/gateway";
 import { formatHitsForPrompt, valyuSearch } from "@/lib/ai/search";
+import { mapPool } from "@/lib/async/map-pool";
 import { db } from "@/lib/db";
 import {
   agentRuns,
@@ -32,6 +33,7 @@ import {
 const WATCH_MODEL = "anthropic/claude-haiku-4-5";
 const MAX_COMPANIES = 10; // cap per run to control costs
 const SKIP_RECENT_DAYS = 7; // skip companies contacted this recently
+const PROSPECT_CONCURRENCY = 3;
 
 // ---------------------------------------------------------------------------
 // Signal assessment schema
@@ -70,8 +72,10 @@ export async function runWatch(opts: {
   eventId: string;
   triggeredBy: string | null;
   maxCompanies?: number;
+  signal?: AbortSignal;
 }): Promise<{ runId: string; count: number; totalCostUsd: number }> {
   const maxCompanies = opts.maxCompanies ?? MAX_COMPANIES;
+  const signal = opts.signal;
 
   // Create run record immediately so the UI reflects "running" state.
   const [run] = await db
@@ -143,7 +147,8 @@ export async function runWatch(opts: {
     const model = await resolveModel(WATCH_MODEL);
     const year = new Date().getFullYear();
 
-    for (const prospect of prospects) {
+    await mapPool(prospects, PROSPECT_CONCURRENCY, async (prospect) => {
+      if (signal?.aborted) return;
       try {
         // ── Valyu search ──────────────────────────────────────────────────
         const query = [
@@ -161,7 +166,8 @@ export async function runWatch(opts: {
         });
         totalSearchCalls += search.callCount;
 
-        if (search.hits.length === 0) continue;
+        if (search.hits.length === 0) return;
+        if (signal?.aborted) return;
 
         // ── Signal assessment ────────────────────────────────────────────
         const systemPrompt = buildWatchSystemPrompt(event.name);
@@ -177,6 +183,7 @@ export async function runWatch(opts: {
           schema: signalSchema,
           system: systemPrompt,
           prompt: userPrompt,
+          abortSignal: signal,
           providerOptions: {
             anthropic: { cacheControl: { type: "ephemeral" } },
           },
@@ -206,12 +213,12 @@ export async function runWatch(opts: {
 
         // ── Create task if signal found ──────────────────────────────────
         if (object.hasSignal && object.summary) {
-          const signal = object as SignalResult;
-          const taskTitle = `📡 Watch signal: ${signal.signalType.replace("_", " ")} — ${prospect.companyName}`;
+          const watchSignal = object as SignalResult;
+          const taskTitle = `📡 Watch signal: ${watchSignal.signalType.replace("_", " ")} — ${prospect.companyName}`;
           const taskDescription = [
-            signal.summary,
-            signal.outreachAngle
-              ? `\nOutreach angle: ${signal.outreachAngle}`
+            watchSignal.summary,
+            watchSignal.outreachAngle
+              ? `\nOutreach angle: ${watchSignal.outreachAngle}`
               : "",
             `\nSource: automated watch agent run ${new Date().toLocaleDateString()}`,
           ]
@@ -229,9 +236,11 @@ export async function runWatch(opts: {
             title: taskTitle,
             description: taskDescription,
             dueDate: dueDateStr,
-            priority: signal.signalType === "funding" || signal.signalType === "leadership"
-              ? "high"
-              : "medium",
+            priority:
+              watchSignal.signalType === "funding" ||
+              watchSignal.signalType === "leadership"
+                ? "high"
+                : "medium",
             assignedTo: prospect.ownerId ?? opts.triggeredBy,
             createdBy: opts.triggeredBy,
           });
@@ -240,8 +249,11 @@ export async function runWatch(opts: {
         }
       } catch {
         // Per-company errors shouldn't abort the whole run
-        continue;
       }
+    });
+
+    if (signal?.aborted) {
+      throw new Error("Watch run aborted");
     }
 
     // ── Update run record ────────────────────────────────────────────────────

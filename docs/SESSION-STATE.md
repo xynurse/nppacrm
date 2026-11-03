@@ -8,15 +8,23 @@
 ---
 
 ## Last updated
-2026-11-02 — **Chunk 4 is on `main` at `0046823`.** Fast-forward of integrity `1e5c70b` / docs `abe57c1` and task soft-delete `0046823`. PR #4 merged. PR #5 closed because those commits were already in the fast-forward. typecheck, lint, `pnpm audit --prod`, `build:offline` were green before the merge. **Not browser-verified** (no login in that session).
+2026-11-03 — **Chunk 5 performance Pass 2 on `cursor/chunk-5-performance-eed9`.** typecheck, lint, `build:offline` green. **Not browser-verified** (no login). Merge to `main` after review.
 
-**In this commit:** atomic batches for quick-add, prospectus replace, proposal+task+audit, status move+audit, cell writes, custom-field writes; chunked atomic CSV import; custom-field jsonb merge; real calendar-date checks; shared `escapeCsv`; event-timezone "today" for calendar overdue and the proposal follow-up; date-only values stored at 12:00 UTC. **Migration 0015** (`tasks.deleted_at`) is journaled only — schema and queries do not reference it yet.
+**In this branch:** drawer data via server action + shallow `?record=` (no table RSC refetch on open); `notesDoc` dropped from list rows; `/companies` fetch parallelisation; lazy ⌘K / drawer tabs / cell editors / drawer shell; edge auth config (middleware **85.5 kB**); cron `maxDuration` + concurrency + spend cap (`agent_runs` + NL audit) + stale-run cleanup; single-statement `bulkRemoveTag`. Fixed agents spend-cap check (`!spend.ok`).
 
-**Follow-up branch `cursor/chunk-4-task-soft-delete-d147`:** `deleteTask` sets `deletedAt` and audits a full snapshot; task, dashboard, and search queries hide deleted tasks; `restoreTask` plus a Restore button on `task.delete` rows that include a snapshot. If `tasks.deleted_at` is missing (`42703`), lists stay unfiltered and delete stays a hard delete, so this can merge before or after `pnpm db:migrate`. Soft-delete only actually happens once 0015 is applied.
+**Bundle after Pass 2:** middleware 85.5 kB; `/pipeline` First Load ~155 kB; `/companies` still ~228 kB (table shell; 160 target deferred).
 
-**Prod still needs (user, manual):** `pnpm db:migrate` for **0015** (code is already on main and falls back until the column exists); rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`.
+**Prod still needs (user, manual):** `pnpm db:migrate` for **0015**; rotate Neon `neondb_owner` password; set `CRON_SECRET`.
 
-**In progress:** nothing uncommitted on this branch after the docs commit.
+**In progress:** nothing uncommitted after the docs commit on this branch.
+
+**Decisions made (chunk 5):**
+- Shallow `history.pushState` for `?record=` instead of App Router navigation — only way to avoid re-running `listEventCompanies` when opening the drawer.
+- Middleware uses `edgeAuthConfig` only; Credentials/bcrypt stay in Node `authConfig`.
+- Spend cap sums enrichment jobs + agent runs + NL propose audit `costUsd`.
+- `/companies` 160 kB First Load target not met this pass; further cuts need splitting the table itself.
+
+**Earlier — 2026-11-02 — Chunk 4 on `main` at `0046823`.** Integrity `1e5c70b` + task soft-delete. PR #4 merged. Soft-delete falls back until migration 0015.
 
 **Decisions made (chunk 4):**
 - `db.batch` via `runAtomic` is the transaction. `auditInsert` is synchronous; `auditRows` loads ip/user-agent. An async function must not return the Drizzle builder.
@@ -675,8 +683,8 @@ Original plan (kept so the follow-up does not re-derive it):
 
 **Verify:** `pnpm audit --prod --audit-level=high && pnpm typecheck && pnpm lint && pnpm build:offline`; PGlite scratch tests (install `@electric-sql/pglite` in the session scratchpad, NOT the repo) for: CSV batch import incl. a forced mid-batch failure leaving zero rows, concurrent custom-field key merges, date validators. ~14 files, 1 migration, no new deps.
 
-### 4. Chunk 5 — performance (Pass 2)
-Drawer data split, drop `notesDoc` from list rows, parallelise `/companies` fetches, lazy-load ⌘K palette + drawer tabs, edge-safe middleware auth config (middleware is ~600 KB), cron `maxDuration` + concurrency + spend cap on agents.
+### 4. Chunk 5 — performance (Pass 2) ✅ on `cursor/chunk-5-performance-eed9` (2026-11-03)
+Shipped on the feature branch — merge to main. Remaining: `/companies` First Load still ~228 kB vs 160 target.
 
 ### Feature backlog (ranked, from the audit)
 Renewal rollover ("start next year from…") · tier inventory + weighted forecast/pace · fulfillment board · duplicate detection/merge · playbooks from the drawer · email "open in mail / mark sent" · export pack · sponsor self-service link · vitest for `compile.ts`/serializer/reports.

@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type ComponentType,
   type ReactNode,
 } from "react";
 import { Pencil } from "lucide-react";
@@ -24,7 +25,7 @@ export type CellShellProps<V> = {
   entityId: string;
   value: V;
   display: ReactNode;
-  Editor: (props: CellEditorProps<V>) => ReactNode;
+  Editor: ComponentType<CellEditorProps<V>>;
   onLocalChange?: (next: V) => void;
   /**
    * Return true to take over a save (e.g. open a dialog instead of writing

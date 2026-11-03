@@ -74,8 +74,8 @@ export async function runDiscoveryAgent(
   if (!aiStatus.ok) return { ok: false, error: aiStatus.reason! };
 
   // Gate on daily spend cap
-  const spendOk = await checkSpendCap();
-  if (!spendOk)
+  const spend = await checkSpendCap();
+  if (!spend.ok)
     return {
       ok: false,
       error: "Daily AI spend cap reached. Try again tomorrow.",
@@ -129,8 +129,8 @@ export async function runWatchAgent(
   if (!aiStatus.ok) return { ok: false, error: aiStatus.reason! };
 
   // Gate on daily spend cap
-  const spendOk = await checkSpendCap();
-  if (!spendOk)
+  const spend = await checkSpendCap();
+  if (!spend.ok)
     return {
       ok: false,
       error: "Daily AI spend cap reached. Try again tomorrow.",

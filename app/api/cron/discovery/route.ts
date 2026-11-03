@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { aiConfigurationStatus } from "@/lib/ai/gateway";
+import { checkSpendCap } from "@/lib/ai/spend";
+import { runDiscovery } from "@/lib/agents/discovery";
+import { failStaleAgentRuns } from "@/lib/agents/stale";
+import { mapPool } from "@/lib/async/map-pool";
 import { db } from "@/lib/db";
 import { agentSchedules, events } from "@/lib/db/schema";
-import { runDiscovery } from "@/lib/agents/discovery";
 import { env } from "@/lib/env";
+
+/** Vercel hobby/pro allow up to 300s; leave headroom before the hard kill. */
+export const maxDuration = 300;
+
+const EVENT_CONCURRENCY = 2;
 
 // Vercel cron jobs send a GET request.
 // We authenticate via a shared secret in the Authorization header.
@@ -25,12 +33,26 @@ export async function GET(req: Request) {
     );
   }
 
+  await failStaleAgentRuns();
+
   // ── Gate on AI config ───────────────────────────────────────────────────────
   const aiStatus = aiConfigurationStatus();
   if (!aiStatus.ok) {
     return NextResponse.json(
       { error: "AI not configured", reason: aiStatus.reason },
       { status: 503 },
+    );
+  }
+
+  const spend = await checkSpendCap();
+  if (!spend.ok) {
+    return NextResponse.json(
+      {
+        error: "Daily AI spend cap reached",
+        spentUsd: spend.spentUsd,
+        capUsd: spend.capUsd,
+      },
+      { status: 429 },
     );
   }
 
@@ -53,11 +75,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ message: "No events with discovery enabled", ran: 0 });
   }
 
-  // ── Run discovery for each event ────────────────────────────────────────────
   const results: Array<{ eventId: string; runId: string; count: number }> = [];
   const errors: Array<{ eventId: string; error: string }> = [];
 
-  for (const { eventId } of schedules) {
+  await mapPool(schedules, EVENT_CONCURRENCY, async ({ eventId }) => {
     try {
       const result = await runDiscovery({ eventId, triggeredBy: null });
       results.push({ eventId, ...result });
@@ -67,7 +88,7 @@ export async function GET(req: Request) {
         error: err instanceof Error ? err.message : String(err),
       });
     }
-  }
+  });
 
   return NextResponse.json({
     message: `Discovery cron complete`,

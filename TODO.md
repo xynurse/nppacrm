@@ -3,7 +3,7 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped: Chunk 4 on `main` (`0046823`, merged 2026-11-02). Prod migrations are still 0000–0014 until a manual `pnpm db:migrate` applies **0015**. Soft-delete activates after that.
+Latest shipped on main: Chunk 4 (`0046823`, 2026-11-02). Chunk 5 performance Pass 2 is on `cursor/chunk-5-performance-eed9` awaiting merge. Prod migrations still 0000–0014 until manual `pnpm db:migrate` for **0015**.
 
 ## Shipped 2026-10-20 (Chunk 1 — security)
 
@@ -18,7 +18,7 @@ Latest shipped: Chunk 4 on `main` (`0046823`, merged 2026-11-02). Prod migration
 - [x] Chunk 2 — shared status-change path + days-in-stage fix (`8cbddeb`, 2026-10-23)
 - [x] Chunk 3 — mobile "More" nav + dead-code Pass 1 (`39830a3`, 2026-10-25)
 - [x] Chunk 4 — transactions / data-integrity fixes (`1e5c70b`) plus task soft-delete on `cursor/chunk-4-task-soft-delete-d147` (active only after migration 0015; falls back to hard delete until then).
-- [ ] Chunk 5 — performance Pass 2
+- [x] Chunk 5 — performance Pass 2 (`cursor/chunk-5-performance-eed9`, 2026-11-03) — merge to main
 
 ## Shipped 2026-10-06 (repo cleanup + Claude Code setup)
 
@@ -32,7 +32,7 @@ Latest shipped: Chunk 4 on `main` (`0046823`, merged 2026-11-02). Prod migration
 ## Cleanup / optimization passes (from 2026-10-06 audit — see SESSION-STATE "Next sessions queue")
 
 - [x] **Pass 1 — dead code (low risk) — done in Chunk 3:** delete unused `components/app/event-switcher.tsx`, `components/app/user-menu.tsx`, `components/cells/checkbox-cell.tsx`; drop deps `@dnd-kit/sortable`, `@dnd-kit/utilities`, `@types/pdf-parse`; prune ~38 unused exports (knip); wrap `listActiveEvents` in React `cache()`
-- [ ] **Pass 2 — performance:** drawer data loaded separately from the table; drop `companyNotesDoc` from `listEventCompanies`; event-scope + DB-side "days in stage"; single-statement `bulkRemoveTag`; `maxDuration` + bounded concurrency on cron agents
+- [x] **Pass 2 — performance:** drawer data split + shallow record; drop `companyNotesDoc` from lists; single-statement `bulkRemoveTag`; cron `maxDuration` + concurrency + spend cap; edge middleware. (Days-in-stage was already fixed in Chunk 2.)
 - [ ] **Pass 3 — housekeeping:** trim SESSION-STATE (history → CHANGELOG); Neon dev branch for local `.env.local`; migration to drop unused `tags` / `company_tags` tables (user applies)
 
 ## Shipped 2026-07-22 (chunk 15a — TipTap rich notes)
@@ -309,7 +309,7 @@ From the original spec's "v2 (later)" list, never chunked:
 
 ## Bundle / perf debt (carried over from the lost build)
 
-- [ ] `/companies` is 240 kB First Load JS — 40 kB over target
+- [ ] `/companies` First Load JS still ~228 kB after Chunk 5 (target 160) — table shell remains
   - Biggest weight: the cell editor module (~12 cells loaded eagerly)
   - Remediation: `next/dynamic` import per cell type so only used cells load
 - [ ] Re-enable `experimental.typedRoutes` in `next.config.ts` after

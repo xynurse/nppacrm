@@ -1,31 +1,27 @@
 "use client";
 
 import { Gift, Sparkles, ChevronLeft, ChevronRight, X } from "lucide-react";
-import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
 import { CellShell } from "@/components/cells/cell-shell";
-import { CurrencyEditor } from "@/components/cells/currency-cell";
-import { DateEditor } from "@/components/cells/date-cell";
-import { PersonEditor } from "@/components/cells/person-cell";
-import { TierEditor } from "@/components/cells/relation-cell";
-import { SingleSelectEditor } from "@/components/cells/single-select-cell";
-import { LongTextEditor, TextEditor } from "@/components/cells/text-cell";
-import { UrlDisplay, UrlEditor } from "@/components/cells/url-cell";
+import {
+  CurrencyEditor,
+  DateEditor,
+  LongTextEditor,
+  PersonEditor,
+  SingleSelectEditor,
+  TextEditor,
+  TierEditor,
+  UrlEditor,
+} from "@/components/cells/lazy-editors";
+import { UrlDisplay } from "@/components/cells/url-cell";
 import type { PersonOption, TierOption } from "@/components/cells/types";
-import { AiTab } from "@/components/companies/ai-tab";
-import { BenefitsTab } from "@/components/companies/benefits-tab";
 import { CompanyAvatar } from "@/components/companies/company-avatar";
-import { EmailDraftButton } from "@/components/companies/email-draft-dialog";
-import { ProposalDialog } from "@/components/companies/proposal-dialog";
-import { ContactsTab } from "@/components/contacts/contacts-tab";
+import type { DrawerData } from "@/components/companies/drawer-types";
 import { CustomFieldsSection } from "@/components/custom-fields/custom-fields-section";
-import { ActivityTab } from "@/components/interactions/activity-tab";
-import { TasksTab } from "@/components/tasks/tasks-tab";
-import { AutosaveRichEditor } from "@/components/tiptap/autosave-rich-editor";
+import { loadCompanyDrawerData } from "@/lib/actions/drawer";
 import { updateCompanyNotes } from "@/lib/actions/notes";
 import type { CustomFieldDefinition } from "@/lib/db/schema";
-import type { JobRow, SuggestionRow } from "@/lib/db/queries/ai";
-import type { BenefitRow } from "@/lib/db/queries/benefits";
 import { PriorityDot } from "./priority-dot";
 import {
   BouncedBadge,
@@ -36,17 +32,67 @@ import {
   StatusBadge,
 } from "./status-badge";
 import { PROSPECT_PRIORITY_VALUES } from "@/lib/db/schema";
-import type {
-  ArchivedEmailRow,
-  ContactRow,
-} from "@/lib/db/queries/contacts";
 import type { EventCompanyRow } from "@/lib/db/queries/companies";
-import type { InteractionRow } from "@/lib/db/queries/interactions";
-import type { TaskRow } from "@/lib/db/queries/tasks";
 import type { RichDoc } from "@/lib/tiptap/types";
 import { formatCurrency, formatRelativeDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { StatusCell } from "./status-cell";
+
+export type { DrawerData };
+
+const ContactsTab = dynamic(
+  () =>
+    import("@/components/contacts/contacts-tab").then((m) => m.ContactsTab),
+  { loading: () => <TabLoading /> },
+);
+const ActivityTab = dynamic(
+  () =>
+    import("@/components/interactions/activity-tab").then((m) => m.ActivityTab),
+  { loading: () => <TabLoading /> },
+);
+const TasksTab = dynamic(
+  () => import("@/components/tasks/tasks-tab").then((m) => m.TasksTab),
+  { loading: () => <TabLoading /> },
+);
+const BenefitsTab = dynamic(
+  () =>
+    import("@/components/companies/benefits-tab").then((m) => m.BenefitsTab),
+  { loading: () => <TabLoading /> },
+);
+const AiTab = dynamic(
+  () => import("@/components/companies/ai-tab").then((m) => m.AiTab),
+  { loading: () => <TabLoading /> },
+);
+const EmailDraftButton = dynamic(
+  () =>
+    import("@/components/companies/email-draft-dialog").then(
+      (m) => m.EmailDraftButton,
+    ),
+  { ssr: false },
+);
+const ProposalDialog = dynamic(
+  () =>
+    import("@/components/companies/proposal-dialog").then(
+      (m) => m.ProposalDialog,
+    ),
+  { ssr: false },
+);
+const AutosaveRichEditor = dynamic(
+  () =>
+    import("@/components/tiptap/autosave-rich-editor").then(
+      (m) => m.AutosaveRichEditor,
+    ),
+  { ssr: false, loading: () => <TabLoading /> },
+);
+
+function TabLoading() {
+  return (
+    <div className="space-y-3 py-2">
+      <div className="h-4 w-1/3 animate-pulse rounded bg-zinc-100 dark:bg-zinc-800" />
+      <div className="h-24 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-800" />
+    </div>
+  );
+}
 
 const PRIORITY_LABELS = {
   high: "High",
@@ -63,54 +109,71 @@ type DrawerTab =
   | "benefits"
   | "ai";
 
-export type DrawerData = {
-  contacts: ContactRow[];
-  emailHistory: ArchivedEmailRow[];
-  interactions: InteractionRow[];
-  tasks: TaskRow[];
-  ai: {
-    suggestions: SuggestionRow[];
-    jobs: JobRow[];
-    hasProspectus: boolean;
-    prospectusFileName: string | null;
-  };
-  benefits: BenefitRow[];
-};
-
 export function CompanyDrawer({
   row,
   owners,
   tiers,
-  data,
   currentUserId,
   isAdmin,
   fieldDefinitions,
-  closeHref = "/companies",
   recordIds,
+  onClose,
+  onNavigateRecord,
 }: {
   row: EventCompanyRow | null;
   owners: PersonOption[];
   tiers: TierOption[];
-  data: DrawerData | null;
   currentUserId: string;
   isAdmin: boolean;
   fieldDefinitions: CustomFieldDefinition[];
-  /** Where the backdrop/close control navigates. Lets the drawer close
-   * in-place on whatever page it is rendered on (e.g. /pipeline). */
-  closeHref?: string;
   /** Ordered IDs of the current filtered list — enables prev/next. */
   recordIds?: string[];
+  onClose: () => void;
+  onNavigateRecord: (id: string) => void;
 }) {
+  const [data, setData] = useState<DrawerData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" && row) {
-        const btn = document.getElementById("close-drawer");
-        btn?.click();
-      }
+      if (e.key === "Escape" && row) onClose();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [row]);
+  }, [row, onClose]);
+
+  const rowId = row?.id ?? null;
+
+  useEffect(() => {
+    if (!rowId) {
+      setData(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    setData(null);
+
+    void loadCompanyDrawerData({ eventCompanyId: rowId }).then((result) => {
+      if (cancelled) return;
+      if (!result.ok) {
+        setError(result.error);
+        setData(null);
+      } else {
+        setData(result.data);
+        setError(null);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [rowId]);
 
   const idx = row && recordIds ? recordIds.indexOf(row.id) : -1;
   const prevId = idx > 0 ? recordIds![idx - 1]! : null;
@@ -119,30 +182,18 @@ export function CompanyDrawer({
       ? recordIds[idx + 1]!
       : null;
 
-  function withRecord(id: string) {
-    const path = closeHref.split("?")[0] ?? closeHref;
-    const qs = new URLSearchParams(
-      closeHref.includes("?") ? closeHref.slice(closeHref.indexOf("?") + 1) : "",
-    );
-    qs.delete("record");
-    qs.set("record", id);
-    return `${path}?${qs.toString()}`;
-  }
-
-  const prevHref = prevId ? withRecord(prevId) : null;
-  const nextHref = nextId ? withRecord(nextId) : null;
-
   return (
     <>
-      <Link
+      <button
+        type="button"
         id="close-drawer"
-        href={closeHref}
-        scroll={false}
+        onClick={onClose}
         className={cn(
           "fixed inset-0 z-30 bg-slate-900/30 backdrop-blur-sm transition-opacity",
           row ? "opacity-100" : "pointer-events-none opacity-0",
         )}
-        aria-hidden
+        aria-label="Close drawer"
+        tabIndex={row ? 0 : -1}
       />
       <aside
         className={cn(
@@ -160,15 +211,26 @@ export function CompanyDrawer({
             currentUserId={currentUserId}
             isAdmin={isAdmin}
             fieldDefinitions={fieldDefinitions}
-            closeHref={closeHref}
-            prevHref={prevHref}
-            nextHref={nextHref}
+            onClose={onClose}
+            onNavigateRecord={onNavigateRecord}
+            prevId={prevId}
+            nextId={nextId}
             positionLabel={
               idx >= 0 && recordIds
                 ? `${idx + 1} / ${recordIds.length}`
                 : null
             }
           />
+        ) : row && loading ? (
+          <div className="space-y-4 p-6">
+            <div className="h-8 w-2/3 animate-pulse rounded bg-zinc-100 dark:bg-zinc-800" />
+            <div className="h-4 w-1/3 animate-pulse rounded bg-zinc-100 dark:bg-zinc-800" />
+            <div className="mt-8 h-40 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-800" />
+          </div>
+        ) : row && error ? (
+          <div className="p-6 text-sm text-red-600 dark:text-red-400">
+            {error}
+          </div>
         ) : null}
       </aside>
     </>
@@ -183,9 +245,10 @@ function DrawerContent({
   currentUserId,
   isAdmin,
   fieldDefinitions,
-  closeHref,
-  prevHref,
-  nextHref,
+  onClose,
+  onNavigateRecord,
+  prevId,
+  nextId,
   positionLabel,
 }: {
   row: EventCompanyRow;
@@ -195,14 +258,16 @@ function DrawerContent({
   currentUserId: string;
   isAdmin: boolean;
   fieldDefinitions: CustomFieldDefinition[];
-  closeHref: string;
-  prevHref: string | null;
-  nextHref: string | null;
+  onClose: () => void;
+  onNavigateRecord: (id: string) => void;
+  prevId: string | null;
+  nextId: string | null;
   positionLabel: string | null;
 }) {
   const [row, setRow] = useState(initial);
   const [tab, setTab] = useState<DrawerTab>("overview");
   useEffect(() => setRow(initial), [initial]);
+  useEffect(() => setTab("overview"), [initial.id]);
 
   const update = <K extends keyof EventCompanyRow>(
     key: K,
@@ -262,17 +327,17 @@ function DrawerContent({
             </div>
           </div>
           <div className="flex shrink-0 items-start gap-1.5">
-            {(prevHref || nextHref) && (
+            {(prevId || nextId) && (
               <div className="mr-1 flex items-center gap-0.5 rounded-lg border border-zinc-200 p-0.5 dark:border-zinc-700">
-                {prevHref ? (
-                  <Link
-                    href={prevHref}
-                    scroll={false}
+                {prevId ? (
+                  <button
+                    type="button"
+                    onClick={() => onNavigateRecord(prevId)}
                     className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
                     title="Previous"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                  </Link>
+                  </button>
                 ) : (
                   <span className="p-1.5 text-zinc-300 dark:text-zinc-700">
                     <ChevronLeft className="h-4 w-4" />
@@ -283,15 +348,15 @@ function DrawerContent({
                     {positionLabel}
                   </span>
                 ) : null}
-                {nextHref ? (
-                  <Link
-                    href={nextHref}
-                    scroll={false}
+                {nextId ? (
+                  <button
+                    type="button"
+                    onClick={() => onNavigateRecord(nextId)}
                     className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
                     title="Next"
                   >
                     <ChevronRight className="h-4 w-4" />
-                  </Link>
+                  </button>
                 ) : (
                   <span className="p-1.5 text-zinc-300 dark:text-zinc-700">
                     <ChevronRight className="h-4 w-4" />
@@ -311,14 +376,14 @@ function DrawerContent({
               existingProposalSentAt={row.proposalSentAt}
               existingProposalValidUntil={row.proposalValidUntil}
             />
-            <Link
-              href={closeHref}
-              scroll={false}
+            <button
+              type="button"
+              onClick={onClose}
               className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
               title="Close"
             >
               <X className="h-4 w-4" />
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -435,7 +500,7 @@ function DrawerContent({
           <NotesTab
             companyId={row.companyId}
             companyName={row.companyName}
-            notesDoc={row.companyNotesDoc}
+            notesDoc={data.notesDoc}
           />
         ) : tab === "benefits" ? (
           <BenefitsTab

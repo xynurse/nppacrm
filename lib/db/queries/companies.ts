@@ -79,7 +79,6 @@ export type EventCompanyRow = {
   companyCategory: string | null;
   companySubcategory: string | null;
   companyHqLocation: string | null;
-  companyNotesDoc: RichDoc | null;
   status: typeof eventCompanies.$inferSelect.status;
   priority: typeof eventCompanies.$inferSelect.priority;
   proposedAmount: string | null;
@@ -157,7 +156,6 @@ export async function listEventCompanies(
       companyCategory: companies.category,
       companySubcategory: companies.subcategory,
       companyHqLocation: companies.hqLocation,
-      companyNotesDoc: companies.notesDoc,
       status: eventCompanies.status,
       priority: eventCompanies.priority,
       proposedAmount: eventCompanies.proposedAmount,
@@ -204,6 +202,18 @@ export async function listEventCompanies(
     : await baseQuery.orderBy(asc(companies.name));
 
   return rows;
+}
+
+/** TipTap notes for one company — drawer-only; never selected on list rows. */
+export async function getCompanyNotesDoc(
+  companyId: string,
+): Promise<RichDoc | null> {
+  const [row] = await db
+    .select({ notesDoc: companies.notesDoc })
+    .from(companies)
+    .where(and(eq(companies.id, companyId), isNull(companies.deletedAt)))
+    .limit(1);
+  return row?.notesDoc ?? null;
 }
 
 export async function listTiersForEvent(eventId: string) {

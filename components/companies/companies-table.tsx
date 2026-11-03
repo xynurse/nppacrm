@@ -7,19 +7,20 @@ import {
   type ColumnDef,
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown, Building2 } from "lucide-react";
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { encodeToParam } from "@/lib/views/schema";
 import type { SortSpec } from "@/lib/views/types";
 import { COMPANY_FIELDS_BY_KEY } from "@/lib/views/fields";
 import { CellShell } from "@/components/cells/cell-shell";
-import { CurrencyEditor } from "@/components/cells/currency-cell";
-import { DateEditor } from "@/components/cells/date-cell";
-import { PersonEditor } from "@/components/cells/person-cell";
-import { TierEditor } from "@/components/cells/relation-cell";
-import { SingleSelectEditor } from "@/components/cells/single-select-cell";
-import { TextEditor } from "@/components/cells/text-cell";
+import {
+  CurrencyEditor,
+  DateEditor,
+  PersonEditor,
+  SingleSelectEditor,
+  TextEditor,
+  TierEditor,
+} from "@/components/cells/lazy-editors";
 import { CustomFieldCell } from "@/components/custom-fields/custom-fields-section";
 import type { PersonOption, TierOption } from "@/components/cells/types";
 import {
@@ -68,6 +69,7 @@ export function CompaniesTable({
   sort: externalSort,
   visibleColumns,
   fieldDefinitions = [],
+  onOpenRecord,
 }: {
   rows: EventCompanyRow[];
   activeRecordId: string | null;
@@ -80,6 +82,7 @@ export function CompaniesTable({
   sort?: SortSpec;
   visibleColumns?: string[];
   fieldDefinitions?: CustomFieldDefinition[];
+  onOpenRecord: (id: string) => void;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -235,14 +238,16 @@ export function CompaniesTable({
               size="sm"
             />
             <span className="flex min-w-0 flex-wrap items-center gap-1.5">
-              <Link
-                href={`/companies?record=${row.original.id}`}
-                scroll={false}
+              <button
+                type="button"
                 className="truncate font-medium text-zinc-900 hover:underline dark:text-zinc-50"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenRecord(row.original.id);
+                }}
               >
                 {row.original.companyName}
-              </Link>
+              </button>
               {hasBouncedTag(row.original.tagsCache) ? <BouncedBadge /> : null}
               {hasDeferredTag(row.original.tagsCache) ? (
                 <DeferredBadge />
@@ -654,6 +659,7 @@ export function CompaniesTable({
       isReviewer,
       sortHeader,
       fieldDefinitions,
+      onOpenRecord,
     ],
   );
 

@@ -1,10 +1,19 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { CommandPalette } from "./command-palette";
 import { ShortcutsCheatSheet } from "./shortcuts-cheat-sheet";
-import { NlUpdateDialog } from "@/components/ai/nl-update-dialog";
+
+const CommandPalette = dynamic(
+  () => import("./command-palette").then((m) => m.CommandPalette),
+  { ssr: false },
+);
+const NlUpdateDialog = dynamic(
+  () =>
+    import("@/components/ai/nl-update-dialog").then((m) => m.NlUpdateDialog),
+  { ssr: false },
+);
 
 type Props = {
   eventId: string | null;
@@ -89,15 +98,22 @@ export function CommandProvider({ eventId, isAdmin }: Props) {
 
   return (
     <>
-      <CommandPalette
-        open={paletteOpen}
-        onOpenChange={setPaletteOpen}
-        eventId={eventId}
-        isAdmin={isAdmin}
-        onAiQuickUpdate={() => setNlOpen(true)}
-      />
+      {paletteOpen ? (
+        <CommandPalette
+          open={paletteOpen}
+          onOpenChange={setPaletteOpen}
+          eventId={eventId}
+          isAdmin={isAdmin}
+          onAiQuickUpdate={() => {
+            setPaletteOpen(false);
+            setNlOpen(true);
+          }}
+        />
+      ) : null}
       <ShortcutsCheatSheet open={cheatOpen} onClose={() => setCheatOpen(false)} />
-      <NlUpdateDialog open={nlOpen} onOpenChange={setNlOpen} />
+      {nlOpen ? (
+        <NlUpdateDialog open={nlOpen} onOpenChange={setNlOpen} />
+      ) : null}
     </>
   );
 }

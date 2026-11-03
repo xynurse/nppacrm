@@ -2,6 +2,9 @@
 
 ## Active build (committed to main)
 
+### Chunk 5 — performance Pass 2 _(2026-11-03, `cursor/chunk-5-performance-eed9`)_
+Opening a company no longer re-fetches the whole companies/pipeline table: drawer data loads through a server action, and `?record=` updates with shallow history. List queries no longer select TipTap `notes_doc`. `/companies` runs event-scoped fetches in parallel. The ⌘K palette, drawer tabs, cell editors, and drawer shell are lazy-loaded. Middleware uses an edge-only Auth.js config (~85 kB). Cron routes set `maxDuration`, run with bounded concurrency, enforce the AI spend cap (now including agent runs and NL proposes), and mark stale `running` agent rows failed. Bulk tag remove is one `array_remove` update. Agents spend-cap check fixed to read `.ok`.
+
 ### Chunk 4 — integrity _(2026-10-31, `1e5c70b` on `cursor/chunk-4-integrity-d147`)_
 Writes that could leave a half-finished row now commit together: quick-add (company + prospect + audit), prospectus replace, proposal fields + the 7-day follow-up task + audit, status changes and their audit rows, cell edits, and custom-field edits. CSV import inserts companies, contacts, and prospects in one batch instead of up to four round trips per row. Custom fields merge a single key in SQL, so two people editing different keys no longer wipe each other. Impossible dates such as 2026-13-45 are rejected, and a bad date filter is ignored instead of crashing the query. CSV export prefixes a quote on formula-like cells and leaves real numbers alone. Calendar overdue and the proposal follow-up use the event timezone, and date-only cells are stored at noon UTC so they do not show as the previous day in US timezones. Migration 0015 adds `tasks.deleted_at`. The follow-up branch soft-deletes tasks (snapshot in the audit, hidden from lists, Restore on the audit row) once that column exists, and keeps today's hard delete until the migration is applied.
 

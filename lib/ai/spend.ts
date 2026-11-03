@@ -1,28 +1,55 @@
-import { and, gte, sql } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { enrichmentJobs } from "@/lib/db/schema";
+import { agentRuns, auditLog, enrichmentJobs } from "@/lib/db/schema";
 import { env } from "@/lib/env";
 
 /**
- * Sum cost_usd for jobs created since the start of today (UTC).
+ * Sum AI spend since the start of today (UTC) across enrichment jobs, agent
+ * runs, and NL-update proposes (cost lives in the audit row).
  */
 async function spendToday(): Promise<number> {
   const startOfDay = new Date();
   startOfDay.setUTCHours(0, 0, 0, 0);
 
-  const [row] = await db
-    .select({
-      total: sql<string>`coalesce(sum(${enrichmentJobs.costUsd}), 0)`,
-    })
-    .from(enrichmentJobs)
-    .where(
-      and(
-        gte(enrichmentJobs.createdAt, startOfDay),
-        sql`${enrichmentJobs.status} in ('running', 'succeeded')`,
+  const [[jobs], [agents], [nl]] = await Promise.all([
+    db
+      .select({
+        total: sql<string>`coalesce(sum(${enrichmentJobs.costUsd}), 0)`,
+      })
+      .from(enrichmentJobs)
+      .where(
+        and(
+          gte(enrichmentJobs.createdAt, startOfDay),
+          sql`${enrichmentJobs.status} in ('running', 'succeeded')`,
+        ),
       ),
-    );
+    db
+      .select({
+        total: sql<string>`coalesce(sum(${agentRuns.costUsd}), 0)`,
+      })
+      .from(agentRuns)
+      .where(
+        and(
+          gte(agentRuns.createdAt, startOfDay),
+          sql`${agentRuns.status} in ('running', 'completed')`,
+        ),
+      ),
+    db
+      .select({
+        total: sql<string>`coalesce(sum((${auditLog.changes}->>'costUsd')::numeric), 0)`,
+      })
+      .from(auditLog)
+      .where(
+        and(
+          eq(auditLog.action, "ai.nl_update_propose"),
+          gte(auditLog.createdAt, startOfDay),
+        ),
+      ),
+  ]);
 
-  return Number(row?.total ?? 0);
+  return (
+    Number(jobs?.total ?? 0) + Number(agents?.total ?? 0) + Number(nl?.total ?? 0)
+  );
 }
 
 /**

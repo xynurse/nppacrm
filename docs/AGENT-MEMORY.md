@@ -4,8 +4,9 @@
 > `SESSION-STATE.md` / `TODO.md` / `CHANGELOG.md` / the build prompt unless
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
-**Last updated:** 2026-11-02  
-**main:** `0046823` — chunk 4 integrity (`1e5c70b`) + task soft-delete. PR #4 merged; PR #5 closed (commits already on main).  
+**Last updated:** 2026-11-03  
+**Branch:** `cursor/chunk-5-performance-eed9` (Chunk 5 perf Pass 2) — merge to `main` after review.  
+**Prior main:** `e525c53` — chunk 4 on main.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -22,62 +23,43 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Commit policy: **Claude Code is the primary environment** — follow CLAUDE.md (commit + push to `main` after every green build). Any `cursor/*` or `claude/*` branch must be merged to `main` before the session ends.
 
 ## Shipped recently
-**Chunk 4 — integrity (`1e5c70b`, 2026-10-31) — awaiting merge + manual migrate**
-- `runAtomic` (`lib/db/batch.ts`) + `auditRows`/`auditInsert` (`lib/audit.ts`). Neon HTTP batch is one transaction. Async helpers must not return the query builder (it is thenable and would run early).
-- Atomic: quick-add, prospectus replace, proposal fields + follow-up task + audit (then `changeStatus`), status update + `move_status` audits, cell update + audit, custom-field update + audit.
-- CSV import: pre-generated company ids, chunked multi-row inserts, one batch, `onConflictDoNothing` kept. Preview/dedupe unchanged.
-- Custom fields: `lib/custom-fields/patch.ts` jsonb `||` / key delete. Deleted prospects rejected.
-- Real calendar dates (`lib/dates.ts`) in cell validation, custom fields, and view filters (invalid date filters are dropped).
-- `lib/csv.ts` `escapeCsv` prefixes `'` on formula-like strings; real numbers like `-500` stay numbers.
-- Calendar overdue and proposal +7-day due date use `events.timezone` (default America/Chicago). Date-only cell writes store 12:00 UTC.
-- **Migration 0015** (`tasks.deleted_at` + index) is in the journal. Soft-delete code is the follow-up branch: `deleteTask` sets `deletedAt` and stores a snapshot; lists hide deleted tasks; `restoreTask` + Restore on `task.delete` rows that have a snapshot. Until 0015 is applied, those queries catch `42703` and keep today's hard delete / unfiltered lists.
+**Chunk 5 — performance Pass 2 (this branch, 2026-11-03)**
+- Drawer data via `loadCompanyDrawerData` + shallow `?record=` (`useShallowRecord`) so opening a row does not re-fetch the table RSC payload.
+- Dropped `companyNotesDoc` from `listEventCompanies`; notes load only in the drawer.
+- `/companies` parallelises event-scoped fetches; lazy ⌘K palette, drawer tabs, cell editors, drawer shell.
+- Edge-only `lib/auth/edge-config.ts` for middleware (**~85 kB**, was ~Node/bcrypt pull).
+- Cron `maxDuration=300`, event concurrency, watch prospect pool (3), spend cap includes `agent_runs` + NL audit; `failStaleAgentRuns`; fixed agents `checkSpendCap().ok` bug.
+- `bulkRemoveTag` → one `array_remove` UPDATE.
+- Bundle: middleware 85.5 kB; `/pipeline` First Load ~155 kB; `/companies` still ~228 kB (table+TanStack; 160 target deferred).
 
-**Chunk 3 — mobile nav + dead code (`39830a3`, 2026-10-25)**
-- Nav defined once in `components/app/nav-config.ts`; mobile bottom bar + `more-sheet.tsx`; `event-switcher.tsx` shared. `setDefaultView` deleted.
+**Chunk 4 — integrity (`1e5c70b` + soft-delete `0046823`, 2026-11-02)**
+- `runAtomic` + audit-in-batch; CSV atomic import; custom-field jsonb patch; real dates; CSV formula escape; event TZ "today".
+- **Migration 0015** journaled; soft-delete active after manual migrate (falls back to hard delete on `42703`).
 
-**Chunk 2 — status-change path (`8cbddeb`, 2026-10-23)**
-- `lib/pipeline/change-status.ts` is the ONLY writer of prospect status (confirm gate, `move_status` audit w/ source, owner notify, benefits, skips deleted). Inline Confirmed → `StatusCell` opens `ConfirmModal`.
-- Days-in-stage = event-scoped SQL in `lib/db/queries/reports.ts` (also reads legacy audit actions — keep them).
+**Chunk 3 — mobile nav (`39830a3`)** · **Chunk 2 — status path (`8cbddeb`)** · **Chunk 1 — security (`7e48a0f`)**
 
-**Chunk 1 — dependency security + auth hardening (`7e48a0f`, 2026-10-20)**
-- Next 15.5.28 / next-auth beta.32 / @auth/core 0.41.3 / TipTap 3.31 + `pnpm-workspace.yaml` overrides → `pnpm audit --prod` clean; CI audit step.
-- `requireSession` re-reads role + isActive from DB (`getVerifiedSession`). Login throttle in `authorize()` (`lib/auth/throttle.ts`, table `login_attempts`). 12-char passwords. Upload cap/prefix + own-Blob-host checks (`lib/blob.ts`).
-- "viewer" = normal teammate, labelled **Member** (decided — don't gate mutations by role).
+**Prod DB:** migrations **0000–0014 applied**. **0015 committed, not applied** — user `pnpm db:migrate`. Next free: **0016**.  
+**Still needed in prod:** Vercel `CRON_SECRET` + AI Gateway credits; rotate exposed Neon owner password.
 
-**On main — PR #1 (Phases 2→3→4→1), merged 2026-09-26**
-- UI polish, notifications, fulfillment + category fields, `/calendar`, `/playbooks`, Today queue, bounced/deferred chips.
-- CI: drop the duplicate pnpm pin; build-only `DATABASE_URL` so `next build` can collect cron routes.
-
-**On main — PR #2 (Phase 5 spreadsheet columns), merged 2026-10-06**
-- Optional companies columns: category, subcategory, agreement, invoice, paid, booth, reps. Inline edit via existing cells.
-- Custom fields as opt-in table columns (`custom:<key>`), plus filter + sort. File fields are columns only.
-- Saved views persist columns. New shared views: Unassigned, Bounced, By category.
-- **0013** rewrites the inverted "Stale (no contact 14+ days)" view to older-than-14-days and renames it when the new name is free.
-
-**Prod DB:** migrations **0000–0014 applied**. **0015 is committed, not applied** — user must run `pnpm db:migrate` before any code reads `tasks.deleted_at`. Next free number after that: **0016**.  
-**Still needed in prod:** Vercel `CRON_SECRET` + AI Gateway credits.  
-**Security follow-up:** Neon `neondb_owner` password was exposed in a chat on 2026-09-27 — rotate it (Neon → Roles → reset), update Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED`, redeploy, update local `.env.local`.
-
-**Claude Code setup (2026-10-06):** `.claude/settings.json` denies db:migrate/seed/drizzle push and `.env*` reads; SessionStart hook installs deps; use `pnpm build:offline` where Google Fonts is unreachable.  
-**Next up:** User runs `pnpm db:migrate` for **0015** (soft-delete stays a hard delete until then). Then Chunk 5 (perf).
+**Next up:** Merge Chunk 5 → main. User migrates **0015**. Then feature backlog (renewal rollover, etc.) or further `/companies` FL JS trim.
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).
 - New custom-field types (multiSelect, datetime, rating, person, relation).
 - Gallery view. Real-time Pusher presence.
 - Sequences as DB objects (playbooks are client templates only).
-- `/companies` dynamic cell imports (First Load JS ~215 kB; target 160).
+- `/companies` First Load still ~228 kB vs 160 target (drawer/editors already lazy; remaining is table shell).
 
 ## High-traffic paths (edit here first)
 | Area | Path |
 |---|---|
 | Tokens / look | `app/globals.css`, `app/layout.tsx` |
 | Shell | `components/app/{sidebar,top-bar,page-title,notification-bell}.tsx` |
-| Table / drawer | `components/companies/{companies-table,company-drawer,company-avatar,status-badge}.tsx` |
-| Pipeline | `components/pipeline/kanban-board.tsx` |
+| Table / drawer | `components/companies/{companies-table,company-drawer,companies-workspace}.tsx` |
+| Pipeline | `components/pipeline/{kanban-board,pipeline-workspace}.tsx` |
+| Auth edge | `lib/auth/edge-config.ts`, `middleware.ts` |
 | Queries | `lib/db/queries/companies.ts` |
-| Cells registry | `lib/cells/registry.ts` |
-| Views/filters | `lib/views/{fields,compile}.ts`, `components/views/views-toolbar.tsx` |
+| Cells registry | `lib/cells/registry.ts` · lazy editors `components/cells/lazy-editors.tsx` |
 | Schema | `lib/db/schema/` · migrations `lib/db/migrations/` |
 
 ## Ops / known gaps
