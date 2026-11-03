@@ -3,7 +3,7 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped: Chunk 4 integrity on `cursor/chunk-4-integrity-d147` (`1e5c70b`, 2026-10-31), not merged. Prod migrations are still 0000–0014. **0015 needs a manual `pnpm db:migrate` before task soft-delete code.**
+Latest shipped: Chunk 4 on `main` (`0046823`, merged 2026-11-02). Prod migrations are still 0000–0014 until a manual `pnpm db:migrate` applies **0015**. Soft-delete activates after that.
 
 ## Shipped 2026-10-20 (Chunk 1 — security)
 

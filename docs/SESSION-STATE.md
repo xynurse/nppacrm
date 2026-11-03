@@ -8,13 +8,13 @@
 ---
 
 ## Last updated
-2026-10-31 — **Chunk 4 integrity code committed on `cursor/chunk-4-integrity-d147` (`1e5c70b`), not merged.** typecheck, lint, `pnpm audit --prod`, `build:offline` green. PGlite scratch tests (not in the repo) covered date validators, CSV formula escaping, jsonb key merges, and a mid-transaction import failure leaving zero rows. **Not browser-verified** (no login here).
+2026-11-02 — **Chunk 4 is on `main` at `0046823`.** Fast-forward of integrity `1e5c70b` / docs `abe57c1` and task soft-delete `0046823`. PR #4 merged. PR #5 closed because those commits were already in the fast-forward. typecheck, lint, `pnpm audit --prod`, `build:offline` were green before the merge. **Not browser-verified** (no login in that session).
 
 **In this commit:** atomic batches for quick-add, prospectus replace, proposal+task+audit, status move+audit, cell writes, custom-field writes; chunked atomic CSV import; custom-field jsonb merge; real calendar-date checks; shared `escapeCsv`; event-timezone "today" for calendar overdue and the proposal follow-up; date-only values stored at 12:00 UTC. **Migration 0015** (`tasks.deleted_at`) is journaled only — schema and queries do not reference it yet.
 
 **Follow-up branch `cursor/chunk-4-task-soft-delete-d147`:** `deleteTask` sets `deletedAt` and audits a full snapshot; task, dashboard, and search queries hide deleted tasks; `restoreTask` plus a Restore button on `task.delete` rows that include a snapshot. If `tasks.deleted_at` is missing (`42703`), lists stay unfiltered and delete stays a hard delete, so this can merge before or after `pnpm db:migrate`. Soft-delete only actually happens once 0015 is applied.
 
-**Prod still needs (user, manual):** `pnpm db:migrate` for **0015** before the soft-delete follow-up; rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`.
+**Prod still needs (user, manual):** `pnpm db:migrate` for **0015** (code is already on main and falls back until the column exists); rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`.
 
 **In progress:** nothing uncommitted on this branch after the docs commit.
 

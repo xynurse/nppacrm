@@ -4,8 +4,8 @@
 > `SESSION-STATE.md` / `TODO.md` / `CHANGELOG.md` / the build prompt unless
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
-**Last updated:** 2026-10-31  
-**Branches:** integrity `cursor/chunk-4-integrity-d147` @ `1e5c70b` (PR #4). Task soft-delete is `cursor/chunk-4-task-soft-delete-d147` (stacked on that). Prior main: Chunk 3 `39830a3`.  
+**Last updated:** 2026-11-02  
+**main:** `0046823` — chunk 4 integrity (`1e5c70b`) + task soft-delete. PR #4 merged; PR #5 closed (commits already on main).  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -59,7 +59,7 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 **Security follow-up:** Neon `neondb_owner` password was exposed in a chat on 2026-09-27 — rotate it (Neon → Roles → reset), update Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED`, redeploy, update local `.env.local`.
 
 **Claude Code setup (2026-10-06):** `.claude/settings.json` denies db:migrate/seed/drizzle push and `.env*` reads; SessionStart hook installs deps; use `pnpm build:offline` where Google Fonts is unreachable.  
-**Next up:** User runs `pnpm db:migrate` for **0015**, then merge the soft-delete branch (it is safe before that too — missing-column fallback). Then Chunk 5 (perf).
+**Next up:** User runs `pnpm db:migrate` for **0015** (soft-delete stays a hard delete until then). Then Chunk 5 (perf).
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).
