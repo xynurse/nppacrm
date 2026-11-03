@@ -37,5 +37,16 @@ export const setActiveEventSchema = z.object({
   eventId: z.uuid().nullable(),
 });
 
+/** Clone an event year: tiers, fields, reviewers, and selected prospects. */
+export const rolloverEventSchema = createEventSchema.extend({
+  sourceEventId: z.uuid(),
+  includeConfirmed: z.boolean().default(true),
+  includePastSponsors: z.boolean().default(true),
+  includePipeline: z.boolean().default(true),
+  includeDeclined: z.boolean().default(false),
+  archiveSource: z.boolean().default(false),
+});
+
 export type CreateEventInput = z.infer<typeof createEventSchema>;
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;
+export type RolloverEventInput = z.infer<typeof rolloverEventSchema>;

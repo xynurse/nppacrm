@@ -687,7 +687,7 @@ Original plan (kept so the follow-up does not re-derive it):
 Shipped on the feature branch — merge to main. Remaining: `/companies` First Load still ~228 kB vs 160 target.
 
 ### Feature backlog (ranked, from the audit)
-Renewal rollover ("start next year from…") · tier inventory + weighted forecast/pace · fulfillment board · duplicate detection/merge · playbooks from the drawer · email "open in mail / mark sent" · export pack · sponsor self-service link · vitest for `compile.ts`/serializer/reports.
+~~Renewal rollover ("start next year from…")~~ — shipped on `cursor/renewal-rollover-eed9` · **tier inventory + weighted forecast/pace** · fulfillment board · duplicate detection/merge · playbooks from the drawer · email "open in mail / mark sent" · export pack · sponsor self-service link · vitest for `compile.ts`/serializer/reports.
 
 ### Considerations — Bonsai (hellobonsai.com), not scheduled
 Agency all-in-one CRM. Relevant for **after Confirmed**, not for spreadsheet outreach. Candidates: sponsor portal · proposal view tracking · fulfillment handoff · intake forms · fixed automations · meeting→CRM. Skip: time tracking, Gantt, payments product, e-sign suite. Stay on current build plan until ops (0015 migrate, CRON_SECRET, Neon rotate) + browser verify; then pick from the ranked backlog above.

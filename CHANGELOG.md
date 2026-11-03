@@ -2,7 +2,10 @@
 
 ## Active build (committed to main)
 
-### Light Attio/Twenty shell _(2026-11-03, `cursor/light-attio-shell-eed9`)_
+### Renewal rollover _("start next year from…", 2026-11-03, `cursor/renewal-rollover-eed9`)_
+From an event’s admin page, admins can create the next conference year in one step. Copies sponsorship tiers (with remapped IDs), custom field definitions, and reviewers. Selected companies carry over: confirmed and past sponsors become `past_sponsor` renewal targets (prior confirmed amount becomes the proposed ask); open pipeline resets to `prospect`; declined is opt-in. Year-specific data (tasks, interactions, proposals, fulfillment, benefits) is left on the source event. Optional archive of the source. Audited as `event.rollover`. No migration.
+
+### Light Attio/Twenty shell _(2026-11-03, merged to main as `9207604`, PR #8)_
 Drops the black sidebar and dark theme. Shell, login, and theme provider are light-only (Attio/Twenty). Theme toggle and ⌘K theme action removed. Bonsai CRM ideas logged as considerations; build plan unchanged.
 
 ### Dashboard calm UX _(2026-11-03, merged to main)_
