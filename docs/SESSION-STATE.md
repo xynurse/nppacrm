@@ -8,7 +8,7 @@
 ---
 
 ## Last updated
-2026-11-03 — **Chunk 5 + dashboard calm UX merged to `main`** (PRs #6 and #7). Docs conflict resolved in the merge commit. **Not browser-verified** (no login).
+2026-11-03 — **Light Attio/Twenty shell on `cursor/light-attio-shell-eed9`.** Removed black sidebar + dark theme (forced light). Bonsai ideas added as Considerations only. Prior: Chunk 5 + calm dashboard on main (`c2d1f13`). **Not browser-verified.**
 
 **On main now:** drawer split + shallow `?record=`; no `notesDoc` on list rows; edge middleware; cron bounds/spend cap; calm home (Today → pulse → Watch → activity); quieter badges/shell.
 
@@ -688,6 +688,9 @@ Shipped on the feature branch — merge to main. Remaining: `/companies` First L
 
 ### Feature backlog (ranked, from the audit)
 Renewal rollover ("start next year from…") · tier inventory + weighted forecast/pace · fulfillment board · duplicate detection/merge · playbooks from the drawer · email "open in mail / mark sent" · export pack · sponsor self-service link · vitest for `compile.ts`/serializer/reports.
+
+### Considerations — Bonsai (hellobonsai.com), not scheduled
+Agency all-in-one CRM. Relevant for **after Confirmed**, not for spreadsheet outreach. Candidates: sponsor portal · proposal view tracking · fulfillment handoff · intake forms · fixed automations · meeting→CRM. Skip: time tracking, Gantt, payments product, e-sign suite. Stay on current build plan until ops (0015 migrate, CRON_SECRET, Neon rotate) + browser verify; then pick from the ranked backlog above.
 
 ---
 

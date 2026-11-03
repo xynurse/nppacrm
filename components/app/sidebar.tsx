@@ -40,21 +40,24 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
     <Link
       href={item.href}
       className={cn(
-        "relative flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors duration-150",
+        "relative flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors duration-150",
         active
-          ? "bg-white/[0.08] font-medium text-white"
-          : "text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-100",
+          ? "bg-zinc-100 font-medium text-zinc-900"
+          : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900",
       )}
     >
       <span
         className={cn(
-          "absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-brand-400 transition-opacity duration-150",
+          "absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-brand-600 transition-opacity duration-150",
           active ? "opacity-100" : "opacity-0",
         )}
         aria-hidden
       />
       <item.Icon
-        className={cn("h-4 w-4 shrink-0", active && "text-brand-400")}
+        className={cn(
+          "h-4 w-4 shrink-0",
+          active ? "text-brand-600" : "text-zinc-400",
+        )}
       />
       <span>{item.label}</span>
     </Link>
@@ -66,15 +69,18 @@ export function Sidebar({ role, user, events, activeEventId }: SidebarProps) {
   const discover = discoverNavItem(activeEventId);
 
   return (
-    <aside className="hidden w-60 shrink-0 flex-col border-r border-white/[0.06] bg-zinc-950 lg:flex">
+    <aside className="hidden w-60 shrink-0 flex-col border-r border-zinc-200/80 bg-white lg:flex">
       {/* Brand header */}
-      <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-4 py-4">
-        <LogoMark className="h-8 w-8 rounded-[9px] shadow-sm" glyphClassName="h-[18px] w-[18px]" />
+      <div className="flex items-center gap-2.5 border-b border-zinc-100 px-4 py-4">
+        <LogoMark
+          className="h-8 w-8 rounded-[9px] shadow-sm"
+          glyphClassName="h-[18px] w-[18px]"
+        />
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold leading-none tracking-tight text-white">
+          <p className="truncate text-sm font-semibold leading-none tracking-tight text-zinc-900">
             LPD Sponsor CRM
           </p>
-          <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+          <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-zinc-400">
             NPs &amp; PAs
           </p>
         </div>
@@ -82,14 +88,14 @@ export function Sidebar({ role, user, events, activeEventId }: SidebarProps) {
 
       {/* Event switcher */}
       {events.length > 0 && (
-        <div className="border-b border-white/[0.06] px-3 py-2.5">
-          <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+        <div className="border-b border-zinc-100 px-3 py-2.5">
+          <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
             Active Event
           </p>
           <EventSwitcher
             events={events}
             activeEventId={activeEventId}
-            tone="dark"
+            tone="light"
           />
         </div>
       )}
@@ -103,8 +109,8 @@ export function Sidebar({ role, user, events, activeEventId }: SidebarProps) {
 
       {/* Admin section */}
       {role === "admin" && (
-        <div className="border-t border-white/[0.06] px-3 pb-2">
-          <p className="px-2 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+        <div className="border-t border-zinc-100 px-3 pb-2">
+          <p className="px-2 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
             Admin
           </p>
           <div className="space-y-0.5">
@@ -119,13 +125,13 @@ export function Sidebar({ role, user, events, activeEventId }: SidebarProps) {
       )}
 
       {/* User footer */}
-      <div className="border-t border-white/[0.06] px-3 py-3">
+      <div className="border-t border-zinc-100 px-3 py-3">
         <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-[11px] font-semibold text-zinc-200">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[11px] font-semibold text-zinc-600">
             {getInitials(user.name)}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium leading-none text-white">
+            <p className="truncate text-xs font-medium leading-none text-zinc-900">
               {user.name}
             </p>
             <p className="mt-0.5 truncate text-[10px] text-zinc-400">
@@ -136,7 +142,7 @@ export function Sidebar({ role, user, events, activeEventId }: SidebarProps) {
             <button
               type="submit"
               title="Sign out"
-              className="flex h-6 w-6 items-center justify-center rounded text-zinc-500 transition-colors hover:text-zinc-200"
+              className="flex h-6 w-6 items-center justify-center rounded text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
             >
               <LogOut className="h-3.5 w-3.5" />
             </button>

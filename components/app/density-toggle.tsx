@@ -14,7 +14,7 @@ const opts: { value: Density; Icon: typeof Rows2; label: string }[] = [
 export function DensityToggle() {
   const { density, setDensity } = useDensity();
   return (
-    <div className="flex items-center gap-1 rounded-md border border-slate-200 p-0.5 dark:border-slate-700">
+    <div className="flex items-center gap-1 rounded-md border border-zinc-200 p-0.5">
       {opts.map(({ value, Icon, label }) => (
         <Button
           key={value}
@@ -23,8 +23,7 @@ export function DensityToggle() {
           title={label}
           className={cn(
             "h-7 w-7 rounded-sm",
-            density === value &&
-              "bg-slate-100 text-slate-900 dark:bg-zinc-800 dark:text-slate-100",
+            density === value && "bg-zinc-100 text-zinc-900",
           )}
           onClick={() => setDensity(value)}
         >

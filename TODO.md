@@ -3,7 +3,9 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest on main: Chunk 5 perf + dashboard calm UX (merged 2026-11-03). Prod migrations still 0000–0014 until manual `pnpm db:migrate` for **0015**.
+Latest on main: Chunk 5 perf + dashboard calm UX (merged 2026-11-03). Light Attio/Twenty shell in flight (`cursor/light-attio-shell-eed9`). Prod migrations still 0000–0014 until manual `pnpm db:migrate` for **0015**.
+
+**Considerations (Bonsai — not scheduled):** sponsor portal · proposal view tracking · fulfillment board handoff · intake forms · fixed automations · meeting→CRM. See AGENT-MEMORY.
 
 ## Shipped 2026-10-20 (Chunk 1 — security)
 

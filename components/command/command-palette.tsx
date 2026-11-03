@@ -7,15 +7,12 @@ import {
   CheckSquare,
   KanbanSquare,
   LayoutDashboard,
-  Moon,
   Search,
   Settings,
   Sparkles,
-  Sun,
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { searchPalette } from "@/lib/actions/search";
 import type { SearchResult } from "@/lib/db/queries/search";
@@ -37,7 +34,6 @@ export function CommandPalette({
   onAiQuickUpdate,
 }: Props) {
   const router = useRouter();
-  const { resolvedTheme, setTheme } = useTheme();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [, startTransition] = useTransition();
@@ -236,24 +232,6 @@ export function CommandPalette({
                   onSelect={() => {
                     onOpenChange(false);
                     onAiQuickUpdate();
-                  }}
-                />
-                <Item
-                  icon={
-                    resolvedTheme === "dark" ? (
-                      <Sun className="h-3.5 w-3.5" />
-                    ) : (
-                      <Moon className="h-3.5 w-3.5" />
-                    )
-                  }
-                  label={
-                    resolvedTheme === "dark"
-                      ? "Switch to light theme"
-                      : "Switch to dark theme"
-                  }
-                  onSelect={() => {
-                    setTheme(resolvedTheme === "dark" ? "light" : "dark");
-                    onOpenChange(false);
                   }}
                 />
               </Command.Group>

@@ -5,7 +5,8 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-11-03  
-**main:** `bce3386` — Chunk 5 perf + dashboard calm UX (PRs #6 + #7).  
+**Branch:** `cursor/light-attio-shell-eed9` — light Attio/Twenty shell (no dark/black theme).  
+**main:** `c2d1f13` — Chunk 5 + calm dashboard merged.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -16,6 +17,7 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 
 ## Design decisions (don't re-debate)
 - Brand: **indigo on zinc**, Plus Jakarta Sans (not Inter). Status colors stay semantic.
+- **Light-only UI** (Attio/Twenty) — no dark theme, no black sidebar. Forced `light` in ThemeProvider.
 - Rich text: additive `*_doc` jsonb + plain-text mirror (not convert columns).
 - BOUNCED / DEFERRED = **tags**, not pipeline statuses.
 - Mutations → Server Actions + `auditLog`. Soft deletes via `deletedAt`.
@@ -23,6 +25,10 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Home IA: Today → money pulse → Watch → thin activity (funnel/tier live on Reports).
 
 ## Shipped recently
+**Light Attio/Twenty shell (`cursor/light-attio-shell-eed9`, 2026-11-03)**
+- White sidebar (was zinc-950), light login, forced light theme; theme toggle removed.
+- Bonsai ideas logged under Considerations — stay on current build plan.
+
 **Dashboard calm UX (merged 2026-11-03)**
 - Home: greeting + Today queue, Confirmed/Pipeline/Goal pulse, Hot + Stalled, activity feed.
 - Quieter badges (no rings), shell padding, zinc headers, softer AI update chrome.
@@ -50,6 +56,16 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Gallery view. Real-time Pusher presence.
 - Sequences as DB objects (playbooks are client templates only).
 - `/companies` First Load still ~228 kB vs 160 target.
+
+## Considerations (not scheduled — Bonsai / post-commit UX)
+From hellobonsai.com review (agency CRM, not sponsorship-native). Steal post-commit ideas only; keep Attio/Twenty for outreach UX.
+1. Sponsor self-service portal (narrow: docs + invoice/booth status)
+2. Proposal view/accept tracking (beyond “sent”)
+3. Confirmed → fulfillment board handoff
+4. Interest/intake forms → new prospect
+5. Fixed automations (few triggers, not a rules engine)
+6. Meeting → interaction/tasks (AI path) — larger lift  
+Skip for us: time tracking, Gantt, full Stripe invoicing, e-sign product.
 
 ## High-traffic paths (edit here first)
 | Area | Path |

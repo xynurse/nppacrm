@@ -42,9 +42,10 @@
 :root {
   color-scheme: light;
 
+  /* Attio/Twenty light surface: soft page, white chrome */
   --surface: #ffffff;
-  --surface-muted: #f4f4f5; /* zinc-100 — slightly more structure than zinc-50 */
-  --page: #f4f4f5;
+  --surface-muted: #f4f4f5; /* zinc-100 */
+  --page: #fafafa; /* zinc-50 — airier than zinc-100 */
   --hairline: #e4e4e7; /* zinc-200 */
   --hairline-strong: #d4d4d8; /* zinc-300 */
   --ink: #18181b; /* zinc-900 */
@@ -165,23 +166,13 @@ body {
   color: #e0e7ff; /* brand-100 */
 }
 
-/* Subtle page atmosphere — soft radial wash, not flat gray */
+/* Soft page atmosphere — light Attio/Twenty canvas */
 .app-canvas {
   background:
     radial-gradient(
-      1200px 600px at 0% -10%,
-      color-mix(in srgb, var(--accent) 6%, transparent),
+      1100px 520px at 8% -12%,
+      color-mix(in srgb, var(--accent) 5%, transparent),
       transparent 55%
-    ),
-    var(--page);
-}
-
-.dark .app-canvas {
-  background:
-    radial-gradient(
-      1000px 500px at 0% -10%,
-      color-mix(in srgb, var(--accent) 10%, transparent),
-      transparent 50%
     ),
     var(--page);
 }

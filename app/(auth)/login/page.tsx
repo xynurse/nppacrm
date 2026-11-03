@@ -10,24 +10,22 @@ export default async function LoginPage() {
   if (session) redirect("/");
 
   return (
-    <div className="w-full max-w-sm">
-      {/* Brand mark */}
+    <div className="mx-auto w-full max-w-sm">
       <div className="mb-8 text-center">
         <LogoMark
-          className="mx-auto mb-4 h-14 w-14 rounded-2xl shadow-lg shadow-brand-950/40"
-          glyphClassName="h-8 w-8"
+          className="mx-auto mb-4 h-12 w-12 rounded-2xl shadow-[var(--shadow-raised)]"
+          glyphClassName="h-7 w-7"
         />
-        <h1 className="font-display text-xl font-bold tracking-tight text-white">
+        <h1 className="font-display text-xl font-semibold tracking-tight text-zinc-900">
           LPD Sponsor CRM
         </h1>
-        <p className="mt-1 text-sm text-zinc-400">
+        <p className="mt-1 text-sm text-zinc-500">
           Leadership &amp; Professional Development
         </p>
-        <p className="text-xs text-zinc-500">for NPs &amp; PAs</p>
+        <p className="text-xs text-zinc-400">for NPs &amp; PAs</p>
       </div>
 
-      {/* Login card */}
-      <div className="rounded-xl border border-white/10 bg-white px-6 py-6 shadow-2xl">
+      <div className="rounded-xl border border-zinc-200 bg-white px-6 py-6 shadow-[var(--shadow-card)]">
         <h2 className="mb-1 text-sm font-semibold text-zinc-900">
           Sign in to your account
         </h2>

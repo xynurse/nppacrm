@@ -2,6 +2,9 @@
 
 ## Active build (committed to main)
 
+### Light Attio/Twenty shell _(2026-11-03, `cursor/light-attio-shell-eed9`)_
+Drops the black sidebar and dark theme. Shell, login, and theme provider are light-only (Attio/Twenty). Theme toggle and ⌘K theme action removed. Bonsai CRM ideas logged as considerations; build plan unchanged.
+
 ### Dashboard calm UX _(2026-11-03, merged to main)_
 Home page restructured so work comes first: greeting + Today tasks, a three-number money pulse with an inline goal bar, Hot/Stalled watch lists, and a thin activity feed. Removed the duplicate task card, funnel, tier mix, and four-KPI card strip from the dashboard (pipeline depth stays on Reports). AI quick update is quieter. Status badges drop inset rings; shell padding and zinc neutrals tighten the companies/pipeline headers.
 

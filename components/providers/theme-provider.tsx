@@ -3,6 +3,11 @@
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import type { ComponentProps } from "react";
 
+/**
+ * Light-only. Attio/Twenty-style product surface — no dark theme.
+ * `forcedTheme` keeps next-themes consumers (⌘K, legacy toggles) consistent
+ * if any remain, without applying a `.dark` class.
+ */
 export function ThemeProvider({
   children,
   ...props
@@ -10,8 +15,9 @@ export function ThemeProvider({
   return (
     <NextThemesProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
+      forcedTheme="light"
+      defaultTheme="light"
+      enableSystem={false}
       disableTransitionOnChange
       {...props}
     >

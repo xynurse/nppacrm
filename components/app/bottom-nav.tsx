@@ -26,8 +26,8 @@ const tabClass =
   "flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors";
 const tabColor = (active: boolean) =>
   active
-    ? "text-brand-600 dark:text-brand-400"
-    : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200";
+    ? "text-brand-600"
+    : "text-zinc-500 hover:text-zinc-800";
 
 export function BottomNav({
   role,
@@ -61,7 +61,7 @@ export function BottomNav({
   return (
     <>
       <nav
-        className="sticky bottom-0 z-30 grid grid-cols-5 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] dark:border-slate-800 dark:bg-zinc-900 lg:hidden"
+        className="sticky bottom-0 z-30 grid grid-cols-5 border-t border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden"
         aria-label="Primary"
       >
         {barItems.map((item) => {
