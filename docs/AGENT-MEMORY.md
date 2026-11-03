@@ -5,8 +5,7 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-11-03  
-**Branch:** `cursor/renewal-rollover-eed9` — start next year from an event.  
-**main:** `9207604` — light Attio shell merged (PR #8).  
+**Branch:** `main` — PRs #9 (rollover) + #10 (mobile) merged.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -25,21 +24,20 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Home IA: Today → money pulse → Watch → thin activity (funnel/tier live on Reports).
 
 ## Shipped recently
-**Renewal rollover (in PR — `cursor/renewal-rollover-eed9`, 2026-11-03)**
-- Admin event detail: “Start next year from this event” → `rolloverEvent`.
-- Copies tiers (remapped), custom fields, reviewers, selected companies.
-- Confirmed → `past_sponsor`; pipeline → `prospect`; no tasks/interactions/fulfillment.
-- No new migration.
+**Mobile shell fix (merged PR #10, 2026-11-03)**
+- Bottom nav was a horizontal flex sibling — crushed phone layout; now column + `h-dvh`.
+- Companies card list &lt; lg; full-screen drawer on phone; viewport-fit cover.
 
-**Light Attio/Twenty shell (merged to main, PR #8, 2026-11-03)**
-- White sidebar, light login, forced light theme; theme toggle removed.
+**Renewal rollover (merged PR #9, 2026-11-03)**
+- Admin: “Start next year from this event” → tiers/fields/reviewers/companies.
+- Confirmed → `past_sponsor`; pipeline → `prospect`. No migration.
 
-**Dashboard calm UX · Chunk 5 perf · Chunk 4 integrity** (merged earlier 2026-11-03 / Oct)
+**Light Attio shell (PR #8)** · **Dashboard calm UX** · **Chunk 5 perf**
 
 **Prod DB:** **0000–0014 applied**. **0015 not applied** — user `pnpm db:migrate`.  
-**Still needed:** Vercel `CRON_SECRET` + AI Gateway credits; rotate exposed Neon owner password.
+**Still needed:** Vercel `CRON_SECRET` + AI Gateway credits; rotate Neon owner password.
 
-**Next up:** Merge rollover PR → tier inventory + weighted forecast/pace. User migrates **0015**.
+**Next up:** Tier inventory + weighted forecast/pace. User migrates **0015**.
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).

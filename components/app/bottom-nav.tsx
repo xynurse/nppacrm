@@ -61,7 +61,7 @@ export function BottomNav({
   return (
     <>
       <nav
-        className="sticky bottom-0 z-30 grid grid-cols-5 border-t border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden"
+        className="z-30 grid shrink-0 grid-cols-5 border-t border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden"
         aria-label="Primary"
       >
         {barItems.map((item) => {

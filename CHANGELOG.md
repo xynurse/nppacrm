@@ -2,7 +2,10 @@
 
 ## Active build (committed to main)
 
-### Renewal rollover _("start next year from…", 2026-11-03, `cursor/renewal-rollover-eed9`)_
+### Mobile shell fix _(2026-11-03, merged PR #10)_
+Bottom nav lived as a horizontal flex sibling of main content, so phones got crushed side-by-side chrome instead of a bottom tab bar. Shell is column on small screens (`h-dvh`, nav inside the content column), with `viewport-fit=cover`. Companies use a tappable card list below `lg` (spreadsheet table stays desktop). Company drawer is full-screen on phone. Density toggle and More sheet cleaned up for light/mobile.
+
+### Renewal rollover _("start next year from…", 2026-11-03, merged PR #9)_
 From an event’s admin page, admins can create the next conference year in one step. Copies sponsorship tiers (with remapped IDs), custom field definitions, and reviewers. Selected companies carry over: confirmed and past sponsors become `past_sponsor` renewal targets (prior confirmed amount becomes the proposed ask); open pipeline resets to `prospect`; declined is opt-in. Year-specific data (tasks, interactions, proposals, fulfillment, benefits) is left on the source event. Optional archive of the source. Audited as `event.rollover`. No migration.
 
 ### Light Attio/Twenty shell _(2026-11-03, merged to main as `9207604`, PR #8)_
