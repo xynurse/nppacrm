@@ -2,7 +2,10 @@
 
 ## Active build (committed to main)
 
-### Light Attio/Twenty shell _(2026-11-03, `cursor/light-attio-shell-eed9`)_
+### Mobile shell fix _(2026-11-03, `cursor/mobile-shell-fix-eed9`)_
+Bottom nav lived as a horizontal flex sibling of main content, so phones got crushed side-by-side chrome instead of a bottom tab bar. Shell is column on small screens (`h-dvh`, nav inside the content column), with `viewport-fit=cover`. Companies use a tappable card list below `lg` (spreadsheet table stays desktop). Company drawer is full-screen on phone. Density toggle and More sheet cleaned up for light/mobile.
+
+### Light Attio/Twenty shell _(2026-11-03, merged to main as `9207604`, PR #8)_
 Drops the black sidebar and dark theme. Shell, login, and theme provider are light-only (Attio/Twenty). Theme toggle and ⌘K theme action removed. Bonsai CRM ideas logged as considerations; build plan unchanged.
 
 ### Dashboard calm UX _(2026-11-03, merged to main)_

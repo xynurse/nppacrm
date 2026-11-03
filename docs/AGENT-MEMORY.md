@@ -5,8 +5,9 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-11-03  
-**Branch:** `cursor/light-attio-shell-eed9` — light Attio/Twenty shell (no dark/black theme).  
-**main:** `c2d1f13` — Chunk 5 + calm dashboard merged.  
+**Branch:** `cursor/mobile-shell-fix-eed9` — mobile layout + company cards.  
+**Also open:** `cursor/renewal-rollover-eed9` (PR #9).  
+**main:** `9207604` — light Attio shell.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -25,30 +26,20 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Home IA: Today → money pulse → Watch → thin activity (funnel/tier live on Reports).
 
 ## Shipped recently
-**Light Attio/Twenty shell (`cursor/light-attio-shell-eed9`, 2026-11-03)**
-- White sidebar (was zinc-950), light login, forced light theme; theme toggle removed.
-- Bonsai ideas logged under Considerations — stay on current build plan.
+**Mobile shell fix (`cursor/mobile-shell-fix-eed9`, 2026-11-03)**
+- Root cause: bottom nav was a horizontal flex sibling → crushed layout on phone.
+- Shell `flex-col` + `h-dvh` on mobile; nav inside column; `viewport-fit=cover`.
+- Companies: card list &lt; lg, table ≥ lg; drawer full-screen on phone.
+- Density toggle hidden on xs; tighter home spacing; More sheet light cleanup.
 
-**Dashboard calm UX (merged 2026-11-03)**
-- Home: greeting + Today queue, Confirmed/Pipeline/Goal pulse, Hot + Stalled, activity feed.
-- Quieter badges (no rings), shell padding, zinc headers, softer AI update chrome.
+**Renewal rollover (PR #9)** — start next year from event (no migration).
 
-**Chunk 5 — performance Pass 2 (merged 2026-11-03)**
-- Drawer via `loadCompanyDrawerData` + shallow `?record=`; no `notesDoc` on list rows.
-- Lazy ⌘K / drawer tabs / cell editors / drawer shell; edge auth middleware (~85 kB).
-- Cron `maxDuration` + concurrency + spend cap (`agent_runs` + NL); `bulkRemoveTag` one-shot.
-- `/companies` First Load still ~228 kB (table shell; 160 target deferred).
+**Light Attio shell (merged PR #8)** · **Dashboard calm UX** · **Chunk 5 perf**
 
-**Chunk 4 — integrity + soft-delete (`1e5c70b` / `0046823`)**
-- Atomic writes, CSV batch, custom-field jsonb patch, real dates, CSV escape, event TZ.
-- **Migration 0015** journaled; soft-delete active after manual migrate (`42703` fallback until then).
+**Prod DB:** **0000–0014 applied**. **0015 not applied** — user `pnpm db:migrate`.  
+**Still needed:** Vercel `CRON_SECRET` + AI Gateway credits; rotate Neon owner password.
 
-**Chunk 3 — mobile nav** · **Chunk 2 — status path** · **Chunk 1 — security**
-
-**Prod DB:** **0000–0014 applied**. **0015 not applied** — user `pnpm db:migrate`. Next: **0016**.  
-**Still needed:** Vercel `CRON_SECRET` + AI Gateway credits; rotate exposed Neon owner password.
-
-**Next up:** User migrates **0015**. Optional: deeper companies/pipeline polish; `/companies` FL JS trim.
+**Next up:** Merge mobile + rollover PRs → tier inventory + weighted forecast. User migrates **0015**.
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).
