@@ -2,7 +2,10 @@
 
 ## Active build (committed to main)
 
-### Chunk 5 — performance Pass 2 _(2026-11-03, `cursor/chunk-5-performance-eed9`)_
+### Dashboard calm UX _(2026-11-03, merged to main)_
+Home page restructured so work comes first: greeting + Today tasks, a three-number money pulse with an inline goal bar, Hot/Stalled watch lists, and a thin activity feed. Removed the duplicate task card, funnel, tier mix, and four-KPI card strip from the dashboard (pipeline depth stays on Reports). AI quick update is quieter. Status badges drop inset rings; shell padding and zinc neutrals tighten the companies/pipeline headers.
+
+### Chunk 5 — performance Pass 2 _(2026-11-03, merged to main)_
 Opening a company no longer re-fetches the whole companies/pipeline table: drawer data loads through a server action, and `?record=` updates with shallow history. List queries no longer select TipTap `notes_doc`. `/companies` runs event-scoped fetches in parallel. The ⌘K palette, drawer tabs, cell editors, and drawer shell are lazy-loaded. Middleware uses an edge-only Auth.js config (~85 kB). Cron routes set `maxDuration`, run with bounded concurrency, enforce the AI spend cap (now including agent runs and NL proposes), and mark stale `running` agent rows failed. Bulk tag remove is one `array_remove` update. Agents spend-cap check fixed to read `.ok`.
 
 ### Chunk 4 — integrity _(2026-10-31, `1e5c70b` on `cursor/chunk-4-integrity-d147`)_

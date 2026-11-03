@@ -1,14 +1,5 @@
 import Link from "next/link";
-import {
-  AlertTriangle,
-  Building2,
-  CheckSquare,
-  DollarSign,
-  Flame,
-  Target,
-  TrendingUp,
-  Zap,
-} from "lucide-react";
+import { CheckSquare, Flame } from "lucide-react";
 import { requireSession } from "@/lib/auth";
 import { listActiveEvents } from "@/lib/db/queries/events";
 import {
@@ -17,14 +8,10 @@ import {
   listMyOpenTasks,
   listRecentActivity,
   listStalledProspects,
-  listTierMix,
 } from "@/lib/db/queries/dashboard";
 import {
   BOUNCED_TAG,
-  BouncedBadge,
   DEFERRED_TAG,
-  DeferredBadge,
-  PROSPECT_STATUS_LABELS,
   StatusBadge,
 } from "@/components/companies/status-badge";
 import { Button } from "@/components/ui/button";
@@ -33,12 +20,6 @@ import { encodeToParam } from "@/lib/views/schema";
 import type { FilterCondition } from "@/lib/views/types";
 import { formatCurrency, formatRelativeDate } from "@/lib/format";
 
-const STATUS_ORDER = Object.keys(PROSPECT_STATUS_LABELS) as Array<
-  keyof typeof PROSPECT_STATUS_LABELS
->;
-
-// Stages the dashboard treats as "active / in-flight" (mirrors the queries in
-// lib/db/queries/dashboard.ts for hot + stalled prospects).
 const ACTIVE_STATUSES = [
   "contacted",
   "engaged",
@@ -46,9 +27,7 @@ const ACTIVE_STATUSES = [
   "negotiating",
 ];
 
-/** Build a /companies link pre-filtered with the given conditions. Uses the
- * same `f` param the companies view decodes, so the drill-down lands on a
- * real filtered table (not just the unfiltered list). */
+/** Build a /companies link pre-filtered with the given conditions. */
 function companiesHref(conditions: FilterCondition[]): string {
   return `/companies?f=${encodeToParam({ op: "and", conditions })}`;
 }
@@ -74,8 +53,10 @@ export default async function DashboardPage() {
   if (!activeEvent) {
     return (
       <div className="space-y-3">
-        <h1 className="font-display text-xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <h1 className="font-display text-xl font-semibold tracking-tight">
+          Dashboard
+        </h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
           No event yet. Create one to start tracking sponsors.
         </p>
         <Link href="/admin/events">
@@ -85,112 +66,129 @@ export default async function DashboardPage() {
     );
   }
 
-  const [metrics, stalled, recent, myTasks, hotProspects, tierMix] =
-    await Promise.all([
-      getDashboardMetrics(activeEvent.id),
-      listStalledProspects(activeEvent.id),
-      listRecentActivity(activeEvent.id),
-      listMyOpenTasks(activeEvent.id, session.user.id),
-      listHotProspects(activeEvent.id),
-      listTierMix(activeEvent.id),
-    ]);
+  const [metrics, stalled, recent, myTasks, hotProspects] = await Promise.all([
+    getDashboardMetrics(activeEvent.id),
+    listStalledProspects(activeEvent.id),
+    listRecentActivity(activeEvent.id),
+    listMyOpenTasks(activeEvent.id, session.user.id),
+    listHotProspects(activeEvent.id),
+  ]);
 
   const goal = activeEvent.fundraisingGoal
     ? Number(activeEvent.fundraisingGoal)
     : null;
   const goalProgress =
     goal && goal > 0 ? Math.min(100, (metrics.confirmedAmount / goal) * 100) : 0;
-
   const pipelineAmount = metrics.proposedAmount + metrics.confirmedAmount;
 
-  // Build funnel data with conversion % between stages
-  const funnelStages = STATUS_ORDER.map((s) => ({
-    status: s,
-    count: metrics.byStatus[s] ?? 0,
-  }));
-  const maxCount = Math.max(
-    ...funnelStages.map((f) => f.count),
-    metrics.bouncedCount,
-    1,
-  );
+  const firstName =
+    session.user.name?.trim().split(/\s+/)[0] ??
+    session.user.email?.split("@")[0] ??
+    "there";
+
+  const alertLinks: { href: string; label: string }[] = [];
+  if (stalled.length > 0) {
+    alertLinks.push({
+      href: STALLED_HREF,
+      label: `${stalled.length} stalled`,
+    });
+  }
+  if (metrics.bouncedCount > 0) {
+    alertLinks.push({
+      href: companiesHref([
+        { field: "tags", op: "contains", value: BOUNCED_TAG },
+      ]),
+      label: `${metrics.bouncedCount} bounced`,
+    });
+  }
+  if (metrics.deferredCount > 0) {
+    alertLinks.push({
+      href: companiesHref([
+        { field: "tags", op: "contains", value: DEFERRED_TAG },
+      ]),
+      label: `${metrics.deferredCount} deferred`,
+    });
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="font-display text-xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+    <div className="mx-auto max-w-5xl space-y-10">
+      {/* ── Do this next ─────────────────────────────────────────────── */}
+      <header className="space-y-1">
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          Good {greetingHour()}, {firstName}
+        </h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
           {activeEvent.name}
           {activeEvent.startDate ? ` · starts ${activeEvent.startDate}` : ""}
+          {alertLinks.length > 0 ? (
+            <>
+              {" · "}
+              {alertLinks.map((a, i) => (
+                <span key={a.href}>
+                  {i > 0 ? " · " : null}
+                  <Link
+                    href={a.href}
+                    className="text-zinc-600 underline-offset-2 hover:underline dark:text-zinc-300"
+                  >
+                    {a.label}
+                  </Link>
+                </span>
+              ))}
+            </>
+          ) : null}
         </p>
-      </div>
+      </header>
 
-      {/* Today — primary work queue */}
-      <section className="surface-card p-4 dark:bg-zinc-900">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-sm font-semibold">Today</h2>
-          <div className="flex flex-wrap gap-2 text-xs">
-            <Link
-              href={STALLED_HREF}
-              className="rounded-md bg-amber-50 px-2 py-1 font-medium text-amber-800 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300"
-            >
-              {stalled.length} stalled
-            </Link>
-            {metrics.bouncedCount > 0 ? (
-              <Link
-                href={companiesHref([
-                  { field: "tags", op: "contains", value: BOUNCED_TAG },
-                ])}
-                className="rounded-md bg-red-50 px-2 py-1 font-medium text-red-700 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300"
-              >
-                {metrics.bouncedCount} bounced
-              </Link>
-            ) : null}
-            {metrics.deferredCount > 0 ? (
-              <Link
-                href={companiesHref([
-                  { field: "tags", op: "contains", value: DEFERRED_TAG },
-                ])}
-                className="rounded-md bg-violet-50 px-2 py-1 font-medium text-violet-700 hover:bg-violet-100 dark:bg-violet-950/40 dark:text-violet-300"
-              >
-                {metrics.deferredCount} deferred
-              </Link>
-            ) : null}
-            <Link href="/calendar" className="rounded-md bg-zinc-100 px-2 py-1 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300">
-              Calendar
-            </Link>
-          </div>
+      <section className="space-y-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="font-display text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Today
+          </h2>
+          <Link
+            href="/tasks"
+            className="text-xs text-zinc-500 underline-offset-2 hover:text-zinc-800 hover:underline dark:hover:text-zinc-200"
+          >
+            All tasks
+          </Link>
         </div>
+
         {myTasks.length === 0 ? (
-          <p className="text-sm text-zinc-500">No open tasks assigned to you. You’re clear.</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            No open tasks assigned to you. You’re clear.
+          </p>
         ) : (
-          <ul className="space-y-1.5 text-sm">
+          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
             {myTasks.slice(0, 8).map((t) => {
               const inner = (
                 <>
-                  <CheckSquare className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
-                  <span className="truncate">{t.title}</span>
-                  {t.companyName ? (
-                    <span className="shrink-0 text-xs text-zinc-500">
-                      · {t.companyName}
-                    </span>
-                  ) : null}
+                  <CheckSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                  <span className="min-w-0 flex-1 truncate text-zinc-800 dark:text-zinc-100">
+                    {t.title}
+                    {t.companyName ? (
+                      <span className="text-zinc-400"> · {t.companyName}</span>
+                    ) : null}
+                  </span>
                 </>
               );
               return (
-                <li key={t.id} className="flex items-center justify-between gap-2">
+                <li
+                  key={t.id}
+                  className="flex items-center justify-between gap-3 py-2.5 text-sm first:pt-0"
+                >
                   {t.eventCompanyId ? (
                     <Link
                       href={`/companies?record=${t.eventCompanyId}`}
                       scroll={false}
-                      className="flex min-w-0 items-center gap-2 hover:underline"
+                      className="flex min-w-0 flex-1 items-start gap-2 hover:underline"
                     >
                       {inner}
                     </Link>
                   ) : (
-                    <span className="flex min-w-0 items-center gap-2">{inner}</span>
+                    <span className="flex min-w-0 flex-1 items-start gap-2">
+                      {inner}
+                    </span>
                   )}
-                  <span className="shrink-0 text-xs text-zinc-500">
+                  <span className="shrink-0 tabular-nums text-xs text-zinc-400">
                     {t.dueDate ?? "—"}
                   </span>
                 </li>
@@ -199,383 +197,138 @@ export default async function DashboardPage() {
           </ul>
         )}
         {myTasks.length > 8 ? (
-          <Link href="/tasks" className="mt-2 inline-block text-xs text-brand-600 hover:underline dark:text-brand-400">
-            +{myTasks.length - 8} more tasks →
+          <Link
+            href="/tasks"
+            className="inline-block text-xs text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
+          >
+            +{myTasks.length - 8} more →
           </Link>
+        ) : null}
+
+        <NlUpdateBox />
+      </section>
+
+      {/* ── Money & pulse ────────────────────────────────────────────── */}
+      <section className="space-y-3">
+        <div className="grid gap-6 sm:grid-cols-3">
+          <PulseStat
+            label="Confirmed"
+            value={formatCurrency(metrics.confirmedAmount)}
+            hint={`${metrics.confirmedCount} sponsor${metrics.confirmedCount !== 1 ? "s" : ""}`}
+            href={CONFIRMED_HREF}
+          />
+          <PulseStat
+            label="Pipeline"
+            value={formatCurrency(pipelineAmount)}
+            hint="proposed + confirmed"
+            href="/pipeline"
+          />
+          {goal ? (
+            <PulseStat
+              label="Goal"
+              value={`${Math.round(goalProgress)}%`}
+              hint={`${formatCurrency(metrics.confirmedAmount)} of ${formatCurrency(goal)}`}
+              href="/reports"
+            />
+          ) : (
+            <PulseStat
+              label="Prospects"
+              value={String(metrics.totalProspects)}
+              hint="across the pipeline"
+              href="/companies"
+            />
+          )}
+        </div>
+        {goal ? (
+          <div className="h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+            <div
+              className="h-full rounded-full bg-brand-500 transition-all duration-500 dark:bg-brand-400"
+              style={{ width: `${goalProgress}%` }}
+              role="progressbar"
+              aria-valuenow={Math.round(goalProgress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Fundraising goal progress"
+            />
+          </div>
         ) : null}
       </section>
 
-      {/* AI quick update */}
-      <NlUpdateBox />
-
-      {/* KPI strip */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi
-          icon={<Building2 className="h-4 w-4" />}
-          label="Total prospects"
-          value={String(metrics.totalProspects)}
-          href="/companies"
-          accent="default"
+      {/* ── Watch ────────────────────────────────────────────────────── */}
+      <section className="grid gap-8 lg:grid-cols-2">
+        <WatchList
+          title="Hot prospects"
+          icon={<Flame className="h-3.5 w-3.5 text-orange-500" />}
+          href={HOT_HREF}
+          empty="No high-priority active prospects."
+          items={hotProspects.map((p) => ({
+            id: p.id,
+            href: `/companies?record=${p.id}`,
+            title: p.companyName,
+            meta: formatRelativeDate(p.lastContactedAt),
+            badge: <StatusBadge status={p.status} />,
+            swatch: p.targetTierColor,
+          }))}
         />
-        <Kpi
-          icon={<DollarSign className="h-4 w-4" />}
-          label="Confirmed revenue"
-          value={formatCurrency(metrics.confirmedAmount)}
-          sublabel={`${metrics.confirmedCount} sponsor${metrics.confirmedCount !== 1 ? "s" : ""}`}
-          href={CONFIRMED_HREF}
-          accent="green"
-        />
-        <Kpi
-          icon={<TrendingUp className="h-4 w-4" />}
-          label="Pipeline value"
-          value={formatCurrency(pipelineAmount)}
-          sublabel="proposed + confirmed"
-          href="/pipeline"
-          accent="blue"
-        />
-        <Kpi
-          icon={<AlertTriangle className="h-4 w-4" />}
-          label="Stalled (30+ days)"
-          value={String(stalled.length)}
-          sublabel={stalled.length > 0 ? "Needs follow-up" : "All good"}
+        <WatchList
+          title="Stalled"
           href={STALLED_HREF}
-          accent={stalled.length > 0 ? "amber" : "default"}
+          empty="Nothing stalled — keep it up."
+          items={stalled.map((s) => ({
+            id: s.id,
+            href: `/companies?record=${s.id}`,
+            title: s.companyName,
+            meta: formatRelativeDate(s.lastContactedAt),
+          }))}
         />
-      </div>
-
-      {/* Goal progress */}
-      {goal ? (
-        <section className="surface-card p-4 dark:bg-zinc-900">
-          <div className="mb-3 flex items-center justify-between text-sm">
-            <Link
-              href="/reports"
-              className="flex items-center gap-2 hover:underline"
-            >
-              <Target className="h-4 w-4 text-slate-400" />
-              <span className="font-semibold">Fundraising goal</span>
-            </Link>
-            <span className="tabular-nums text-slate-500 dark:text-slate-400">
-              {formatCurrency(metrics.confirmedAmount)} /{" "}
-              {formatCurrency(goal)}
-              <span className="ml-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                {Math.round(goalProgress)}%
-              </span>
-            </span>
-          </div>
-          <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800">
-            <div
-              className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-              style={{ width: `${goalProgress}%` }}
-            />
-          </div>
-          {goal - metrics.confirmedAmount > 0 ? (
-            <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-              {formatCurrency(goal - metrics.confirmedAmount)} remaining to goal
-            </p>
-          ) : (
-            <p className="mt-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-              Goal reached!
-            </p>
-          )}
-        </section>
-      ) : null}
-
-      {/* Funnel bar chart */}
-      <section className="surface-card p-4 dark:bg-zinc-900">
-        <h2 className="mb-4 text-sm font-semibold">Pipeline funnel</h2>
-        <div className="space-y-2">
-          {funnelStages
-            .filter((f) => f.count > 0)
-            .map((f) => {
-              const pct = Math.round((f.count / maxCount) * 100);
-              return (
-                <div key={f.status} className="flex items-center gap-3">
-                  <Link
-                    href={companiesHref([
-                      { field: "status", op: "is", value: f.status },
-                    ])}
-                    className="w-28 shrink-0"
-                  >
-                    <StatusBadge status={f.status} />
-                  </Link>
-                  <div className="flex flex-1 items-center gap-2">
-                    <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-slate-100 dark:bg-zinc-800">
-                      <div
-                        className="absolute inset-y-0 left-0 rounded-sm bg-brand-500/70 transition-all duration-300"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="w-8 text-right text-xs tabular-nums font-medium text-slate-700 dark:text-slate-300">
-                      {f.count}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-
-          {/* Bounced overlay — a data-quality flag, not a funnel stage */}
-          {metrics.bouncedCount > 0 ? (
-            <div className="mt-1 flex items-center gap-3 border-t border-slate-100 pt-2 dark:border-slate-800">
-              <Link
-                href={companiesHref([
-                  { field: "tags", op: "contains", value: BOUNCED_TAG },
-                ])}
-                className="w-28 shrink-0"
-              >
-                <BouncedBadge />
-              </Link>
-              <div className="flex flex-1 items-center gap-2">
-                <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-slate-100 dark:bg-zinc-800">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-sm bg-red-500/70 transition-all duration-300"
-                    style={{
-                      width: `${Math.round((metrics.bouncedCount / maxCount) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <span className="w-8 text-right text-xs tabular-nums font-medium text-slate-700 dark:text-slate-300">
-                  {metrics.bouncedCount}
-                </span>
-              </div>
-            </div>
-          ) : null}
-
-          {/* Deferred overlay — held-for-later prospects, not a funnel stage */}
-          {metrics.deferredCount > 0 ? (
-            <div className="mt-1 flex items-center gap-3 border-t border-slate-100 pt-2 dark:border-slate-800">
-              <Link
-                href={companiesHref([
-                  { field: "tags", op: "contains", value: DEFERRED_TAG },
-                ])}
-                className="w-28 shrink-0"
-              >
-                <DeferredBadge />
-              </Link>
-              <div className="flex flex-1 items-center gap-2">
-                <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-slate-100 dark:bg-zinc-800">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-sm bg-violet-500/70 transition-all duration-300"
-                    style={{
-                      width: `${Math.round((metrics.deferredCount / maxCount) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <span className="w-8 text-right text-xs tabular-nums font-medium text-slate-700 dark:text-slate-300">
-                  {metrics.deferredCount}
-                </span>
-              </div>
-            </div>
-          ) : null}
-        </div>
       </section>
 
-      {/* Tier mix + Hot prospects */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Tier mix */}
-        <section className="surface-card p-4 dark:bg-zinc-900">
-          <div className="mb-3 flex items-center gap-2">
-            <Zap className="h-4 w-4 text-slate-400" />
-            <h2 className="text-sm font-semibold">Confirmed by tier</h2>
-            <Link
-              href="/reports"
-              className="ml-auto text-xs text-slate-500 hover:underline dark:text-slate-400"
-            >
-              View report →
-            </Link>
-          </div>
-          {tierMix.length === 0 ? (
-            <p className="text-sm text-slate-500">No confirmed sponsors yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {tierMix.map((t) => (
-                <div key={t.tierName} className="flex items-center gap-3 text-sm">
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: t.tierColor ?? "#94a3b8" }}
-                  />
-                  <span className="flex-1 font-medium">{t.tierName}</span>
-                  <span className="tabular-nums text-slate-500">
-                    {t.confirmedCount}×
-                  </span>
-                  <span className="w-20 text-right tabular-nums text-emerald-700 dark:text-emerald-400">
-                    {formatCurrency(t.confirmedAmount)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Hot prospects */}
-        <section className="surface-card p-4 dark:bg-zinc-900">
-          <div className="mb-3 flex items-center gap-2">
-            <Flame className="h-4 w-4 text-orange-400" />
-            <h2 className="text-sm font-semibold">Hot prospects</h2>
-            <Link
-              href={HOT_HREF}
-              className="ml-auto text-xs text-slate-500 hover:underline dark:text-slate-400"
-            >
-              View all →
-            </Link>
-          </div>
-          {hotProspects.length === 0 ? (
-            <p className="text-sm text-slate-500">
-              No high-priority active prospects.
-            </p>
-          ) : (
-            <ul className="space-y-2 text-sm">
-              {hotProspects.map((p) => (
-                <li key={p.id} className="flex items-center gap-2">
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: p.targetTierColor ?? "#94a3b8" }}
-                  />
-                  <Link
-                    href={`/companies?record=${p.id}`}
-                    scroll={false}
-                    className="flex-1 truncate font-medium hover:underline"
-                  >
-                    {p.companyName}
-                  </Link>
-                  <StatusBadge status={p.status} />
-                  <span className="shrink-0 text-xs text-slate-500">
-                    {formatRelativeDate(p.lastContactedAt)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-
-      {/* Stalled + My tasks */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="surface-card p-4 dark:bg-zinc-900">
-          <header className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Stalled prospects</h2>
-            <Link
-              href={STALLED_HREF}
-              className="text-xs text-slate-500 hover:underline dark:text-slate-400"
-            >
-              View all →
-            </Link>
-          </header>
-          {stalled.length === 0 ? (
-            <p className="text-sm text-slate-500">Nothing stalled — keep it up.</p>
-          ) : (
-            <ul className="space-y-1.5 text-sm">
-              {stalled.map((s) => (
-                <li
-                  key={s.id}
-                  className="flex items-center justify-between gap-2"
-                >
-                  <Link
-                    href={`/companies?record=${s.id}`}
-                    scroll={false}
-                    className="truncate font-medium hover:underline"
-                  >
-                    {s.companyName}
-                  </Link>
-                  <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">
-                    {formatRelativeDate(s.lastContactedAt)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="surface-card p-4 dark:bg-zinc-900">
-          <header className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">My open tasks</h2>
-            <Link
-              href="/tasks"
-              className="text-xs text-slate-500 hover:underline dark:text-slate-400"
-            >
-              All tasks →
-            </Link>
-          </header>
-          {myTasks.length === 0 ? (
-            <p className="text-sm text-slate-500">No open tasks assigned to you.</p>
-          ) : (
-            <ul className="space-y-1.5 text-sm">
-              {myTasks.map((t) => {
-                const inner = (
-                  <>
-                    <CheckSquare className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                    <span className="truncate">{t.title}</span>
-                    {t.companyName ? (
-                      <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">
-                        · {t.companyName}
-                      </span>
-                    ) : null}
-                  </>
-                );
-                return (
-                  <li
-                    key={t.id}
-                    className="flex items-center justify-between gap-2"
-                  >
-                    {t.eventCompanyId ? (
-                      <Link
-                        href={`/companies?record=${t.eventCompanyId}`}
-                        scroll={false}
-                        className="flex min-w-0 items-center gap-2 hover:underline"
-                      >
-                        {inner}
-                      </Link>
-                    ) : (
-                      <span className="flex min-w-0 items-center gap-2">
-                        {inner}
-                      </span>
-                    )}
-                    <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">
-                      {t.dueDate ?? "—"}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-      </div>
-
-      {/* Recent activity */}
-      <section className="surface-card p-4 dark:bg-zinc-900">
-        <h2 className="mb-3 text-sm font-semibold">Recent activity</h2>
+      {/* ── Activity feed ────────────────────────────────────────────── */}
+      <section className="space-y-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="font-display text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Recent activity
+          </h2>
+          <Link
+            href="/reports"
+            className="text-xs text-zinc-500 underline-offset-2 hover:text-zinc-800 hover:underline dark:hover:text-zinc-200"
+          >
+            Reports
+          </Link>
+        </div>
         {recent.length === 0 ? (
-          <p className="text-sm text-slate-500">No activity yet.</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            No activity yet.
+          </p>
         ) : (
-          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
             {recent.map((a) => (
               <li
                 key={a.id}
-                className="flex items-center gap-3 py-2 text-sm"
+                className="flex items-baseline gap-3 py-2.5 text-sm first:pt-0"
               >
-                {/* User avatar */}
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[10px] font-semibold uppercase text-brand-700 dark:bg-brand-900 dark:text-brand-300">
-                  {a.userName ? a.userName.slice(0, 2) : "??"}
-                </div>
+                <span className="w-16 shrink-0 text-[11px] uppercase tracking-wide text-zinc-400">
+                  {a.type}
+                </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="inline-block rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600 dark:bg-zinc-800 dark:text-slate-300">
-                      {a.type}
+                  <Link
+                    href={`/companies?record=${a.eventCompanyId}`}
+                    scroll={false}
+                    className="font-medium text-zinc-800 hover:underline dark:text-zinc-100"
+                  >
+                    {a.companyName}
+                  </Link>
+                  {a.subject ? (
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      {" "}
+                      — {a.subject}
                     </span>
-                    <Link
-                      href={`/companies?record=${a.eventCompanyId}`}
-                      scroll={false}
-                      className="truncate font-medium hover:underline"
-                    >
-                      {a.companyName}
-                    </Link>
-                    {a.subject ? (
-                      <span className="truncate text-slate-500 dark:text-slate-400">
-                        — {a.subject}
-                      </span>
-                    ) : null}
-                  </div>
+                  ) : null}
+                  {a.userName ? (
+                    <span className="text-zinc-400"> · {a.userName}</span>
+                  ) : null}
                 </div>
-                <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">
+                <span className="shrink-0 tabular-nums text-xs text-zinc-400">
                   {formatRelativeDate(a.occurredAt)}
                 </span>
               </li>
@@ -587,51 +340,113 @@ export default async function DashboardPage() {
   );
 }
 
-function Kpi({
-  icon,
+function greetingHour(): string {
+  // Server-rendered; America/Chicago is the product default timezone.
+  const hour = Number(
+    new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      hour12: false,
+      timeZone: "America/Chicago",
+    }).format(new Date()),
+  );
+  if (hour < 12) return "morning";
+  if (hour < 17) return "afternoon";
+  return "evening";
+}
+
+function PulseStat({
   label,
   value,
-  sublabel,
+  hint,
   href,
-  accent = "default",
 }: {
-  icon: React.ReactNode;
   label: string;
   value: string;
-  sublabel?: string;
-  href?: string;
-  accent?: "default" | "green" | "blue" | "amber";
+  hint?: string;
+  href: string;
 }) {
-  const accentCls = {
-    default: "text-slate-500",
-    green: "text-emerald-600 dark:text-emerald-400",
-    blue: "text-blue-600 dark:text-blue-400",
-    amber: "text-amber-600 dark:text-amber-400",
-  }[accent];
-
-  const body = (
-    <div
-      className={`surface-card p-4 dark:bg-zinc-900 ${href ? "surface-card-hover" : ""}`}
-    >
-      <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-        <span>{icon}</span>
-        <span>{label}</span>
-      </div>
-      <p
-        className={`mt-1.5 text-2xl font-semibold tracking-tight tabular-nums ${accentCls}`}
-      >
+  return (
+    <Link href={href} className="group block space-y-1">
+      <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        {label}
+      </p>
+      <p className="font-display text-2xl font-semibold tracking-tight tabular-nums text-zinc-900 transition-colors group-hover:text-brand-700 dark:text-zinc-50 dark:group-hover:text-brand-300">
         {value}
       </p>
-      {sublabel ? (
-        <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{sublabel}</p>
+      {hint ? (
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">{hint}</p>
       ) : null}
-    </div>
-  );
-  return href ? (
-    <Link href={href} className="block">
-      {body}
     </Link>
-  ) : (
-    body
+  );
+}
+
+function WatchList({
+  title,
+  icon,
+  href,
+  empty,
+  items,
+}: {
+  title: string;
+  icon?: React.ReactNode;
+  href: string;
+  empty: string;
+  items: {
+    id: string;
+    href: string;
+    title: string;
+    meta?: string | null;
+    badge?: React.ReactNode;
+    swatch?: string | null;
+  }[];
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="flex items-center gap-1.5 font-display text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          {icon}
+          {title}
+        </h2>
+        <Link
+          href={href}
+          className="text-xs text-zinc-500 underline-offset-2 hover:text-zinc-800 hover:underline dark:hover:text-zinc-200"
+        >
+          View all
+        </Link>
+      </div>
+      {items.length === 0 ? (
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">{empty}</p>
+      ) : (
+        <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+          {items.map((item) => (
+            <li
+              key={item.id}
+              className="flex items-center gap-2 py-2.5 text-sm first:pt-0"
+            >
+              {item.swatch ? (
+                <span
+                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: item.swatch }}
+                  aria-hidden
+                />
+              ) : null}
+              <Link
+                href={item.href}
+                scroll={false}
+                className="min-w-0 flex-1 truncate font-medium text-zinc-800 hover:underline dark:text-zinc-100"
+              >
+                {item.title}
+              </Link>
+              {item.badge}
+              {item.meta ? (
+                <span className="shrink-0 tabular-nums text-xs text-zinc-400">
+                  {item.meta}
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

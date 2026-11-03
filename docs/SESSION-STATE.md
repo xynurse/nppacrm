@@ -8,15 +8,15 @@
 ---
 
 ## Last updated
-2026-11-03 — **Chunk 5 performance Pass 2 on `cursor/chunk-5-performance-eed9`.** typecheck, lint, `build:offline` green. **Not browser-verified** (no login). Merge to `main` after review.
+2026-11-03 — **Chunk 5 + dashboard calm UX merged to `main`** (PRs #6 and #7). Docs conflict resolved in the merge commit. **Not browser-verified** (no login).
 
-**In this branch:** drawer data via server action + shallow `?record=` (no table RSC refetch on open); `notesDoc` dropped from list rows; `/companies` fetch parallelisation; lazy ⌘K / drawer tabs / cell editors / drawer shell; edge auth config (middleware **85.5 kB**); cron `maxDuration` + concurrency + spend cap (`agent_runs` + NL audit) + stale-run cleanup; single-statement `bulkRemoveTag`. Fixed agents spend-cap check (`!spend.ok`).
+**On main now:** drawer split + shallow `?record=`; no `notesDoc` on list rows; edge middleware; cron bounds/spend cap; calm home (Today → pulse → Watch → activity); quieter badges/shell.
 
-**Bundle after Pass 2:** middleware 85.5 kB; `/pipeline` First Load ~155 kB; `/companies` still ~228 kB (table shell; 160 target deferred).
+**Bundle (Chunk 5 build):** middleware ~85.5 kB; `/pipeline` First Load ~155 kB; `/companies` still ~228 kB.
 
 **Prod still needs (user, manual):** `pnpm db:migrate` for **0015**; rotate Neon `neondb_owner` password; set `CRON_SECRET`.
 
-**In progress:** nothing uncommitted after the docs commit on this branch.
+**In progress:** nothing uncommitted after this merge.
 
 **Decisions made (chunk 5):**
 - Shallow `history.pushState` for `?record=` instead of App Router navigation — only way to avoid re-running `listEventCompanies` when opening the drawer.

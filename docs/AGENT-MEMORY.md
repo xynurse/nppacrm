@@ -5,8 +5,7 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-11-03  
-**Branch:** `cursor/chunk-5-performance-eed9` (Chunk 5 perf Pass 2) — merge to `main` after review.  
-**Prior main:** `e525c53` — chunk 4 on main.  
+**main:** Chunk 5 perf + dashboard calm UX merged (PRs #6 + #7).  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -21,45 +20,48 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - BOUNCED / DEFERRED = **tags**, not pipeline statuses.
 - Mutations → Server Actions + `auditLog`. Soft deletes via `deletedAt`.
 - Commit policy: **Claude Code is the primary environment** — follow CLAUDE.md (commit + push to `main` after every green build). Any `cursor/*` or `claude/*` branch must be merged to `main` before the session ends.
+- Home IA: Today → money pulse → Watch → thin activity (funnel/tier live on Reports).
 
 ## Shipped recently
-**Chunk 5 — performance Pass 2 (this branch, 2026-11-03)**
-- Drawer data via `loadCompanyDrawerData` + shallow `?record=` (`useShallowRecord`) so opening a row does not re-fetch the table RSC payload.
-- Dropped `companyNotesDoc` from `listEventCompanies`; notes load only in the drawer.
-- `/companies` parallelises event-scoped fetches; lazy ⌘K palette, drawer tabs, cell editors, drawer shell.
-- Edge-only `lib/auth/edge-config.ts` for middleware (**~85 kB**, was ~Node/bcrypt pull).
-- Cron `maxDuration=300`, event concurrency, watch prospect pool (3), spend cap includes `agent_runs` + NL audit; `failStaleAgentRuns`; fixed agents `checkSpendCap().ok` bug.
-- `bulkRemoveTag` → one `array_remove` UPDATE.
-- Bundle: middleware 85.5 kB; `/pipeline` First Load ~155 kB; `/companies` still ~228 kB (table+TanStack; 160 target deferred).
+**Dashboard calm UX (merged 2026-11-03)**
+- Home: greeting + Today queue, Confirmed/Pipeline/Goal pulse, Hot + Stalled, activity feed.
+- Quieter badges (no rings), shell padding, zinc headers, softer AI update chrome.
 
-**Chunk 4 — integrity (`1e5c70b` + soft-delete `0046823`, 2026-11-02)**
-- `runAtomic` + audit-in-batch; CSV atomic import; custom-field jsonb patch; real dates; CSV formula escape; event TZ "today".
-- **Migration 0015** journaled; soft-delete active after manual migrate (falls back to hard delete on `42703`).
+**Chunk 5 — performance Pass 2 (merged 2026-11-03)**
+- Drawer via `loadCompanyDrawerData` + shallow `?record=`; no `notesDoc` on list rows.
+- Lazy ⌘K / drawer tabs / cell editors / drawer shell; edge auth middleware (~85 kB).
+- Cron `maxDuration` + concurrency + spend cap (`agent_runs` + NL); `bulkRemoveTag` one-shot.
+- `/companies` First Load still ~228 kB (table shell; 160 target deferred).
 
-**Chunk 3 — mobile nav (`39830a3`)** · **Chunk 2 — status path (`8cbddeb`)** · **Chunk 1 — security (`7e48a0f`)**
+**Chunk 4 — integrity + soft-delete (`1e5c70b` / `0046823`)**
+- Atomic writes, CSV batch, custom-field jsonb patch, real dates, CSV escape, event TZ.
+- **Migration 0015** journaled; soft-delete active after manual migrate (`42703` fallback until then).
 
-**Prod DB:** migrations **0000–0014 applied**. **0015 committed, not applied** — user `pnpm db:migrate`. Next free: **0016**.  
-**Still needed in prod:** Vercel `CRON_SECRET` + AI Gateway credits; rotate exposed Neon owner password.
+**Chunk 3 — mobile nav** · **Chunk 2 — status path** · **Chunk 1 — security**
 
-**Next up:** Merge Chunk 5 → main. User migrates **0015**. Then feature backlog (renewal rollover, etc.) or further `/companies` FL JS trim.
+**Prod DB:** **0000–0014 applied**. **0015 not applied** — user `pnpm db:migrate`. Next: **0016**.  
+**Still needed:** Vercel `CRON_SECRET` + AI Gateway credits; rotate exposed Neon owner password.
+
+**Next up:** User migrates **0015**. Optional: deeper companies/pipeline polish; `/companies` FL JS trim.
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).
 - New custom-field types (multiSelect, datetime, rating, person, relation).
 - Gallery view. Real-time Pusher presence.
 - Sequences as DB objects (playbooks are client templates only).
-- `/companies` First Load still ~228 kB vs 160 target (drawer/editors already lazy; remaining is table shell).
+- `/companies` First Load still ~228 kB vs 160 target.
 
 ## High-traffic paths (edit here first)
 | Area | Path |
 |---|---|
 | Tokens / look | `app/globals.css`, `app/layout.tsx` |
 | Shell | `components/app/{sidebar,top-bar,page-title,notification-bell}.tsx` |
+| Home | `app/(app)/page.tsx` |
 | Table / drawer | `components/companies/{companies-table,company-drawer,companies-workspace}.tsx` |
 | Pipeline | `components/pipeline/{kanban-board,pipeline-workspace}.tsx` |
 | Auth edge | `lib/auth/edge-config.ts`, `middleware.ts` |
 | Queries | `lib/db/queries/companies.ts` |
-| Cells registry | `lib/cells/registry.ts` · lazy editors `components/cells/lazy-editors.tsx` |
+| Cells | `lib/cells/registry.ts` · `components/cells/lazy-editors.tsx` |
 | Schema | `lib/db/schema/` · migrations `lib/db/migrations/` |
 
 ## Ops / known gaps

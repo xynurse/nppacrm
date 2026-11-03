@@ -58,7 +58,7 @@ export default async function CompaniesPage({
     return (
       <div className="space-y-3">
         <h1 className="font-display text-xl font-semibold tracking-tight">Companies</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
           No event yet. Create one to start tracking sponsors.
         </p>
         <Link href="/admin/events">
@@ -167,8 +167,10 @@ export default async function CompaniesPage({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-xl font-semibold tracking-tight">Companies</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <h1 className="font-display text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Companies
+          </h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
             {activeEvent.name} · {rows.length} prospects
             {keyword ? ` matching “${keyword}”` : ""}
           </p>
@@ -193,7 +195,7 @@ export default async function CompaniesPage({
         }))}
       />
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
+      <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
         <QuickAddRow eventId={activeEvent.id} />
       </div>
 

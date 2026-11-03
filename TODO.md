@@ -3,7 +3,7 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest shipped on main: Chunk 4 (`0046823`, 2026-11-02). Chunk 5 performance Pass 2 is on `cursor/chunk-5-performance-eed9` awaiting merge. Prod migrations still 0000–0014 until manual `pnpm db:migrate` for **0015**.
+Latest on main: Chunk 5 perf + dashboard calm UX (merged 2026-11-03). Prod migrations still 0000–0014 until manual `pnpm db:migrate` for **0015**.
 
 ## Shipped 2026-10-20 (Chunk 1 — security)
 
@@ -18,7 +18,8 @@ Latest shipped on main: Chunk 4 (`0046823`, 2026-11-02). Chunk 5 performance Pas
 - [x] Chunk 2 — shared status-change path + days-in-stage fix (`8cbddeb`, 2026-10-23)
 - [x] Chunk 3 — mobile "More" nav + dead-code Pass 1 (`39830a3`, 2026-10-25)
 - [x] Chunk 4 — transactions / data-integrity fixes (`1e5c70b`) plus task soft-delete on `cursor/chunk-4-task-soft-delete-d147` (active only after migration 0015; falls back to hard delete until then).
-- [x] Chunk 5 — performance Pass 2 (`cursor/chunk-5-performance-eed9`, 2026-11-03) — merge to main
+- [x] Chunk 5 — performance Pass 2 (merged to main 2026-11-03)
+- [x] Dashboard calm UX — Today / pulse / Watch / activity; quieter chrome (merged to main 2026-11-03)
 
 ## Shipped 2026-10-06 (repo cleanup + Claude Code setup)
 
