@@ -8,15 +8,13 @@
 ---
 
 ## Last updated
-2026-11-03 — **Light Attio/Twenty shell on `cursor/light-attio-shell-eed9`.** Removed black sidebar + dark theme (forced light). Bonsai ideas added as Considerations only. Prior: Chunk 5 + calm dashboard on main (`c2d1f13`). **Not browser-verified.**
+2026-11-03 — **Merged PR #9 (renewal rollover) + PR #10 (mobile shell) to `main`.** Light Attio shell already on main (PR #8). **Not browser-verified.**
 
-**On main now:** drawer split + shallow `?record=`; no `notesDoc` on list rows; edge middleware; cron bounds/spend cap; calm home (Today → pulse → Watch → activity); quieter badges/shell.
-
-**Bundle (Chunk 5 build):** middleware ~85.5 kB; `/pipeline` First Load ~155 kB; `/companies` still ~228 kB.
+**On main now:** rollover “start next year from…”; mobile column shell + company cards + full-screen drawer; light Attio UI; Chunk 5 perf + calm dashboard.
 
 **Prod still needs (user, manual):** `pnpm db:migrate` for **0015**; rotate Neon `neondb_owner` password; set `CRON_SECRET`.
 
-**In progress:** nothing uncommitted after this merge.
+**In progress:** none. Next backlog: tier inventory + weighted forecast/pace.
 
 **Decisions made (chunk 5):**
 - Shallow `history.pushState` for `?record=` instead of App Router navigation — only way to avoid re-running `listEventCompanies` when opening the drawer.
@@ -687,7 +685,7 @@ Original plan (kept so the follow-up does not re-derive it):
 Shipped on the feature branch — merge to main. Remaining: `/companies` First Load still ~228 kB vs 160 target.
 
 ### Feature backlog (ranked, from the audit)
-~~Renewal rollover ("start next year from…")~~ — shipped on `cursor/renewal-rollover-eed9` · **tier inventory + weighted forecast/pace** · fulfillment board · duplicate detection/merge · playbooks from the drawer · email "open in mail / mark sent" · export pack · sponsor self-service link · vitest for `compile.ts`/serializer/reports.
+~~Renewal rollover~~ (PR #9) · ~~mobile shell~~ (PR #10) · **tier inventory + weighted forecast/pace** · fulfillment board · duplicate detection/merge · playbooks from the drawer · email "open in mail / mark sent" · export pack · sponsor self-service link · vitest for `compile.ts`/serializer/reports.
 
 ### Considerations — Bonsai (hellobonsai.com), not scheduled
 Agency all-in-one CRM. Relevant for **after Confirmed**, not for spreadsheet outreach. Candidates: sponsor portal · proposal view tracking · fulfillment handoff · intake forms · fixed automations · meeting→CRM. Skip: time tracking, Gantt, payments product, e-sign suite. Stay on current build plan until ops (0015 migrate, CRON_SECRET, Neon rotate) + browser verify; then pick from the ranked backlog above.
