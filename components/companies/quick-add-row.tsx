@@ -15,7 +15,7 @@ export function QuickAddRow({ eventId }: { eventId: string }) {
 
   return (
     <form
-      className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/50 px-3 py-2 dark:border-slate-800 dark:bg-zinc-900/50"
+      className="flex flex-wrap items-center gap-2 rounded-xl border border-zinc-200/90 bg-zinc-50/80 px-3 py-2.5 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:border-b sm:bg-zinc-50/50"
       onSubmit={(e) => {
         e.preventDefault();
         if (!name.trim()) return;
@@ -34,10 +34,10 @@ export function QuickAddRow({ eventId }: { eventId: string }) {
         });
       }}
     >
-      <Plus className="h-4 w-4 text-slate-400" />
+      <Plus className="hidden h-4 w-4 shrink-0 text-zinc-400 sm:block" />
       <Input
-        className="h-7 max-w-md text-sm"
-        placeholder="Add prospect — type a company name and press Enter"
+        className="h-9 min-w-0 flex-1 text-sm sm:h-7 sm:max-w-md"
+        placeholder="Add a company…"
         value={name}
         disabled={pending}
         onChange={(e) => setName(e.target.value)}
@@ -51,7 +51,9 @@ export function QuickAddRow({ eventId }: { eventId: string }) {
         {pending ? "Adding…" : "Add"}
       </Button>
       {error ? (
-        <span className="text-xs text-red-600 dark:text-red-400">{error}</span>
+        <span className="basis-full text-xs text-red-600 sm:basis-auto">
+          {error}
+        </span>
       ) : null}
     </form>
   );

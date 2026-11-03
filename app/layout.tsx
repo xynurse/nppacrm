@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { DensityProvider } from "@/components/providers/density-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -14,6 +14,13 @@ export const metadata: Metadata = {
   title: "LPD Sponsor CRM",
   description:
     "Sponsor outreach management for Leadership & Professional Development for NPs & PAs.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#fafafa",
 };
 
 export default function RootLayout({

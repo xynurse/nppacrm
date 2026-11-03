@@ -37,25 +37,25 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="app-canvas flex h-screen overflow-hidden">
+    <div className="app-canvas flex h-dvh flex-col overflow-hidden lg:flex-row">
       <Sidebar
         role={session.user.role}
         user={user}
         events={events}
         activeEventId={activeEvent?.id ?? null}
       />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <TopBar notifications={notifications} unreadCount={unreadCount} />
-        <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-5 sm:px-8 sm:py-8">
           {children}
         </main>
+        <BottomNav
+          role={session.user.role}
+          user={user}
+          events={events}
+          activeEventId={activeEvent?.id ?? null}
+        />
       </div>
-      <BottomNav
-        role={session.user.role}
-        user={user}
-        events={events}
-        activeEventId={activeEvent?.id ?? null}
-      />
       <CommandProvider
         eventId={activeEvent?.id ?? null}
         isAdmin={session.user.role === "admin"}

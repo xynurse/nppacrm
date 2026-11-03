@@ -111,10 +111,10 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-10">
+    <div className="mx-auto max-w-5xl space-y-6 sm:space-y-10">
       {/* ── Do this next ─────────────────────────────────────────────── */}
       <header className="space-y-1">
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+        <h1 className="font-display text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl dark:text-zinc-50">
           Good {greetingHour()}, {firstName}
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">

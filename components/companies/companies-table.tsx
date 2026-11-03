@@ -685,6 +685,11 @@ export function CompaniesTable({
 
   const selectedIds = Object.keys(selection).filter((id) => selection[id]);
 
+  const ownerById = useMemo(() => {
+    const map = new Map(owners.map((o) => [o.id, o.name]));
+    return map;
+  }, [owners]);
+
   if (rows.length === 0) {
     return (
       <div className="surface-card flex flex-col items-center gap-2 p-12 text-center">
@@ -705,7 +710,75 @@ export function CompaniesTable({
 
   return (
     <>
-      <div className="overflow-x-auto rounded-xl border border-zinc-200/90 bg-white shadow-[var(--shadow-card)] dark:border-zinc-800 dark:bg-zinc-900">
+      {/* Phone / tablet: tappable cards (spreadsheet is unusable here). */}
+      <ul className="space-y-2 lg:hidden">
+        {rows.map((row) => {
+          const amount = row.confirmedAmount ?? row.proposedAmount;
+          const active = activeRecordId === row.id;
+          return (
+            <li key={row.id}>
+              <button
+                type="button"
+                onClick={() => onOpenRecord(row.id)}
+                className={cn(
+                  "flex w-full items-start gap-3 rounded-xl border bg-white px-3.5 py-3 text-left shadow-[var(--shadow-card)] transition-colors",
+                  active
+                    ? "border-brand-200 bg-brand-50/60"
+                    : "border-zinc-200/90 active:bg-zinc-50",
+                )}
+              >
+                <CompanyAvatar
+                  name={row.companyName}
+                  logoUrl={row.companyLogoUrl}
+                  size="md"
+                />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="truncate font-medium text-zinc-900">
+                      {row.companyName}
+                    </span>
+                    <PriorityDot priority={row.priority} />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <StatusBadge status={row.status} />
+                    {hasBouncedTag(row.tagsCache) ? <BouncedBadge /> : null}
+                    {hasDeferredTag(row.tagsCache) ? <DeferredBadge /> : null}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-zinc-500">
+                    {row.ownerId ? (
+                      <span className="truncate">
+                        {ownerById.get(row.ownerId) ?? "Owner"}
+                      </span>
+                    ) : (
+                      <span className="text-zinc-400">Unassigned</span>
+                    )}
+                    {amount ? (
+                      <span className="tabular-nums text-zinc-700">
+                        {formatCurrency(amount)}
+                      </span>
+                    ) : null}
+                    <span
+                      className={cn(
+                        "tabular-nums",
+                        cadenceTextClass(
+                          cadenceLevel({
+                            status: row.status,
+                            lastContactedAt: row.lastContactedAt,
+                          }),
+                        ),
+                      )}
+                    >
+                      {formatRelativeDate(row.lastContactedAt)}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="hidden overflow-x-auto rounded-xl border border-zinc-200/90 bg-white shadow-[var(--shadow-card)] dark:border-zinc-800 dark:bg-zinc-900 lg:block">
         <table className="w-full text-sm">
           <thead className="bg-zinc-50/90 text-left text-[11px] font-semibold tracking-wide text-zinc-500 dark:bg-zinc-900/80 dark:text-zinc-400">
             {table.getHeaderGroups().map((hg) => (

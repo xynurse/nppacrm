@@ -189,7 +189,7 @@ export function CompanyDrawer({
         id="close-drawer"
         onClick={onClose}
         className={cn(
-          "fixed inset-0 z-30 bg-slate-900/30 backdrop-blur-sm transition-opacity",
+          "fixed inset-0 z-40 bg-zinc-950/40 backdrop-blur-sm transition-opacity lg:bg-zinc-900/30",
           row ? "opacity-100" : "pointer-events-none opacity-0",
         )}
         aria-label="Close drawer"
@@ -197,8 +197,8 @@ export function CompanyDrawer({
       />
       <aside
         className={cn(
-          "fixed right-0 top-0 z-40 h-screen w-full max-w-2xl overflow-y-auto border-l border-zinc-200 bg-white shadow-[var(--shadow-overlay)] transition-transform duration-200 ease-[var(--ease-out-soft)] dark:border-zinc-800 dark:bg-zinc-900",
-          row ? "translate-x-0" : "translate-x-full",
+          "fixed inset-x-0 bottom-0 z-50 h-[100dvh] w-full overflow-y-auto overscroll-y-contain border-zinc-200 bg-white shadow-[var(--shadow-overlay)] transition-transform duration-200 ease-[var(--ease-out-soft)] lg:inset-x-auto lg:right-0 lg:top-0 lg:h-dvh lg:max-w-2xl lg:border-l",
+          row ? "translate-y-0 lg:translate-x-0" : "translate-y-full lg:translate-y-0 lg:translate-x-full",
         )}
         aria-hidden={!row}
       >
@@ -291,7 +291,7 @@ function DrawerContent({
 
   return (
     <div className="flex min-h-full flex-col">
-      <div className="sticky top-0 z-10 border-b border-zinc-200/90 bg-white/90 px-6 pb-4 pt-5 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/90">
+      <div className="sticky top-0 z-10 border-b border-zinc-200/90 bg-white/90 px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-md sm:px-6 sm:pb-4 sm:pt-5 dark:border-zinc-800 dark:bg-zinc-900/90">
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 flex-1 gap-3">
             <CompanyAvatar

@@ -90,12 +90,16 @@ export function MoreSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="more-sheet-title"
-        className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-zinc-200 bg-white px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900"
+        className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-2xl border-t border-zinc-200 bg-white px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-2 shadow-[var(--shadow-overlay)]"
       >
+        <div
+          className="mx-auto mb-3 h-1 w-10 rounded-full bg-zinc-200"
+          aria-hidden
+        />
         <div className="mb-3 flex items-center justify-between">
           <h2
             id="more-sheet-title"
-            className="text-sm font-semibold text-zinc-900 dark:text-zinc-100"
+            className="text-sm font-semibold text-zinc-900"
           >
             More
           </h2>
@@ -103,7 +107,7 @@ export function MoreSheet({
             type="button"
             onClick={onClose}
             data-autofocus
-            className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
             aria-label="Close menu"
           >
             <X className="h-4 w-4" />
@@ -137,19 +141,19 @@ export function MoreSheet({
           </div>
         ) : null}
 
-        <div className="mt-4 flex items-center gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+        <div className="mt-4 flex items-center gap-3 border-t border-zinc-200 pt-4">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+            <p className="truncate text-sm font-medium text-zinc-900">
               {user.name}
             </p>
-            <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="truncate text-xs text-zinc-500">
               {roleLabel(user.role)} · {user.email}
             </p>
           </div>
           <form action={logoutAction}>
             <button
               type="submit"
-              className="flex items-center gap-1.5 rounded-md border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+              className="flex items-center gap-1.5 rounded-md border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50"
             >
               <LogOut className="h-4 w-4" aria-hidden />
               Sign out
@@ -183,12 +187,12 @@ function SheetLinks({
               className={cn(
                 "flex flex-col items-center gap-1 rounded-lg border px-2 py-3 text-xs font-medium transition-colors",
                 active
-                  ? "border-brand-200 bg-brand-50 text-brand-700 dark:border-brand-800 dark:bg-brand-950/40 dark:text-brand-300"
-                  : "border-zinc-200 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800",
+                  ? "border-brand-200 bg-brand-50 text-brand-700"
+                  : "border-zinc-200 text-zinc-700 hover:bg-zinc-50",
               )}
             >
               <item.Icon className="h-5 w-5" />
-              <span className="text-center">{item.label}</span>
+              <span className="text-center leading-tight">{item.label}</span>
             </Link>
           </li>
         );
