@@ -2,68 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { createTask } from "@/lib/actions/tasks";
+import { runPlaybook } from "@/lib/actions/playbooks";
+import { PLAYBOOKS } from "@/lib/playbooks";
 import { Button } from "@/components/ui/button";
 
-type Step = { title: string; dueOffsetDays: number; priority: "high" | "medium" | "low" };
-
-const PLAYBOOKS: {
-  id: string;
-  name: string;
-  description: string;
-  steps: Step[];
-}[] = [
-  {
-    id: "first-outreach",
-    name: "First outreach",
-    description: "Initial email + 7-day bump + 14-day call.",
-    steps: [
-      { title: "Send intro sponsorship email", dueOffsetDays: 0, priority: "high" },
-      { title: "Follow up if no reply", dueOffsetDays: 7, priority: "medium" },
-      { title: "Call / LinkedIn nudge", dueOffsetDays: 14, priority: "medium" },
-    ],
-  },
-  {
-    id: "bounce-recovery",
-    name: "Bounce recovery",
-    description: "Find a valid address and re-send.",
-    steps: [
-      {
-        title: "Find valid email / alternate contact",
-        dueOffsetDays: 1,
-        priority: "high",
-      },
-      {
-        title: "Re-send outreach to new address",
-        dueOffsetDays: 3,
-        priority: "high",
-      },
-      { title: "Clear BOUNCED tag if delivered", dueOffsetDays: 5, priority: "low" },
-    ],
-  },
-  {
-    id: "proposal-close",
-    name: "Proposal close",
-    description: "After sending a proposal — keep momentum.",
-    steps: [
-      { title: "Confirm proposal received", dueOffsetDays: 2, priority: "high" },
-      { title: "Answer questions / negotiate", dueOffsetDays: 7, priority: "high" },
-      { title: "Ask for verbal commit", dueOffsetDays: 14, priority: "medium" },
-    ],
-  },
-];
-
-function addDays(n: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-}
-
-export function PlaybooksPanel({
-  eventId,
-}: {
-  eventId: string;
-}) {
+export function PlaybooksPanel() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [eventCompanyId, setEventCompanyId] = useState("");
@@ -73,23 +16,18 @@ export function PlaybooksPanel({
     const book = PLAYBOOKS.find((p) => p.id === playbookId);
     if (!book) return;
     if (!eventCompanyId.trim()) {
-      setMessage("Paste a prospect ID (event company UUID) first — open a company drawer and copy the record= id from the URL.");
+      setMessage("Paste a prospect ID first — or run playbooks straight from a company drawer (“Run playbook”).");
       return;
     }
     setMessage(null);
     startTransition(async () => {
-      let ok = 0;
-      for (const step of book.steps) {
-        const r = await createTask({
-          eventId,
-          eventCompanyId: eventCompanyId.trim(),
-          title: `[${book.name}] ${step.title}`,
-          dueDate: addDays(step.dueOffsetDays),
-          priority: step.priority,
-        });
-        if (r.ok) ok += 1;
-      }
-      setMessage(`Created ${ok}/${book.steps.length} tasks.`);
+      const r = await runPlaybook({
+        eventCompanyId: eventCompanyId.trim(),
+        playbookId: book.id,
+      });
+      setMessage(
+        r.ok ? `Created ${r.data.taskIds.length} tasks.` : r.error,
+      );
       router.refresh();
     });
   };

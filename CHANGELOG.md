@@ -2,6 +2,9 @@
 
 ## Active build (committed to main)
 
+### Playbooks from the company drawer _(2026-11-04)_
+“Run playbook” button in the company drawer header: pick First outreach / Bounce recovery / Proposal close and its tasks are created on that prospect with due dates counted from today in the event timezone. One atomic batch (tasks + `playbook.run` + `task.create` audit rows). The same playbook is refused on the same company within 24 h. Inline Undo soft-deletes the tasks just created. Playbook definitions moved to `lib/playbooks.ts`; `/playbooks` uses the same server action. No migration.
+
 ### Forecast, fulfillment board, duplicate merge _(2026-11-03, merged PR #11)_
 Reports add a weighted pipeline forecast (status weights from the original spec), fundraising pace vs the event window, and tier inventory (sold / capacity / remaining; capacity set on Admin → Tiers). New `/fulfillment` page for confirmed sponsors with one-click agreement/invoice/paid toggles plus booth/reps. Admin `/admin/duplicates` finds companies with the same normalized name and merges contacts, tags, and event rows into a survivor. Migration **0016** adds `sponsorship_tiers.inventory_limit`.
 
