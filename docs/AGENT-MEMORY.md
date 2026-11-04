@@ -31,10 +31,10 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 
 **Mobile shell (PR #10)** · **Renewal rollover (PR #9)** · **Light Attio (PR #8)**
 
-**Prod DB:** **0000–0014 applied**. **0015 + 0016 not applied** — user `pnpm db:migrate`.  
+**Prod DB:** schema current through **0016** (verified 2026-11-04 via Neon MCP: `tasks.deleted_at` + `sponsorship_tiers.inventory_limit` exist; 16 rows in `drizzle.__drizzle_migrations`). Neon project `nppacrm` = `young-cell-40419191`.  
 **Still needed:** Vercel `CRON_SECRET` + AI keys; rotate Neon owner password.
 
-**Next up:** User migrates **0015+0016**. Then playbooks-from-drawer / email helpers / export pack.
+**Next up:** playbooks-from-drawer / email helpers / export pack.
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).

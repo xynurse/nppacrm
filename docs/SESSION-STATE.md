@@ -12,7 +12,7 @@
 
 **On main now:** rollover “start next year from…”; mobile column shell + company cards + full-screen drawer; light Attio UI; Chunk 5 perf + calm dashboard.
 
-**Prod still needs (user, manual):** `pnpm db:migrate` for **0015**; rotate Neon `neondb_owner` password; set `CRON_SECRET`.
+**Prod still needs (user, manual):** rotate Neon `neondb_owner` password; set `CRON_SECRET`.
 
 **In progress:** none. Next backlog: tier inventory + weighted forecast/pace.
 
@@ -746,6 +746,6 @@ git log --oneline -8
 | 0013 | ✅ (applied by user 2026-10-20) | `0013_fix_stale_view.sql` — rewrites the inverted "Stale" saved view (PR #2). |
 | 0014 | ✅ (applied by user 2026-10-20) | `login_attempts` table (login throttle, chunk 1) — throttling now active. |
 
-**Next migration:** 0015. All committed migrations (0000–0014) are applied in prod. Chunk 15b (`@` mentions) needs **no** migration —
+**Next migration:** 0017. 0000–0016 are applied in prod (verified 2026-11-04).
 mention nodes live inside the existing `*_doc` jsonb. Chunk 20 (notifications)
 will be the next one that does.
