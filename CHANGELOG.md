@@ -2,7 +2,7 @@
 
 ## Active build (committed to main)
 
-### Forecast, fulfillment board, duplicate merge _(2026-11-03, `cursor/forecast-fulfillment-dedupe-eed9`)_
+### Forecast, fulfillment board, duplicate merge _(2026-11-03, merged PR #11)_
 Reports add a weighted pipeline forecast (status weights from the original spec), fundraising pace vs the event window, and tier inventory (sold / capacity / remaining; capacity set on Admin → Tiers). New `/fulfillment` page for confirmed sponsors with one-click agreement/invoice/paid toggles plus booth/reps. Admin `/admin/duplicates` finds companies with the same normalized name and merges contacts, tags, and event rows into a survivor. Migration **0016** adds `sponsorship_tiers.inventory_limit`.
 
 ### Mobile shell fix _(2026-11-03, merged PR #10)_

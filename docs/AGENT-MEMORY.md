@@ -5,8 +5,7 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-11-03  
-**Branch:** `cursor/forecast-fulfillment-dedupe-eed9` — forecast + fulfillment + duplicates.  
-**main:** `e1313b2` — rollover + mobile merged.  
+**Branch:** `main` — PR #11 (forecast / fulfillment / duplicates) merged.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -25,10 +24,9 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Home IA: Today → money pulse → Watch → thin activity (funnel/tier live on Reports).
 
 ## Shipped recently
-**Forecast / fulfillment / duplicates (PR branch, 2026-11-03)**
-- Reports: weighted pipeline forecast + fundraising pace + tier inventory (sold/capacity/left).
-- `/fulfillment` board for confirmed sponsors (agreement/invoice/paid/booth/reps).
-- Admin `/admin/duplicates` — merge companies by normalized name.
+**Forecast / fulfillment / duplicates (merged PR #11, 2026-11-03)**
+- Reports: weighted pipeline forecast + fundraising pace + tier inventory.
+- `/fulfillment` board; Admin `/admin/duplicates` merge.
 - Migration **0016** `sponsorship_tiers.inventory_limit` (needs manual migrate).
 
 **Mobile shell (PR #10)** · **Renewal rollover (PR #9)** · **Light Attio (PR #8)**
