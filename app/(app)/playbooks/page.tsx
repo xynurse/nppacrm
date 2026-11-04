@@ -29,7 +29,7 @@ export default async function PlaybooksPage() {
           Apply a sequenced set of follow-up tasks to a prospect.
         </p>
       </div>
-      <PlaybooksPanel eventId={activeEvent.id} />
+      <PlaybooksPanel />
     </div>
   );
 }

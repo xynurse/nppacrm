@@ -24,6 +24,10 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Home IA: Today → money pulse → Watch → thin activity (funnel/tier live on Reports).
 
 ## Shipped recently
+**Playbooks from drawer (2026-11-04)** — `components/companies/playbook-menu.tsx`, `lib/actions/playbooks.ts` (`runPlaybook`/`undoPlaybook`), defs in `lib/playbooks.ts`. 24 h dedupe by title prefix. No migration.
+
+**Vercel env gap (2026-11-04):** `AI_GATEWAY_API_KEY`, `VALYU_API_KEY`, `AI_MODEL_ID`, `AI_DAILY_SPEND_CAP_USD` were set for **Development only**; `CRON_SECRET` missing. User asked to extend to Production/Preview + add CRON_SECRET in the Vercel dashboard, then redeploy.
+
 **Forecast / fulfillment / duplicates (merged PR #11, 2026-11-03)**
 - Reports: weighted pipeline forecast + fundraising pace + tier inventory.
 - `/fulfillment` board; Admin `/admin/duplicates` merge.
@@ -34,7 +38,7 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 **Prod DB:** schema current through **0016** (verified 2026-11-04 via Neon MCP: `tasks.deleted_at` + `sponsorship_tiers.inventory_limit` exist; 16 rows in `drizzle.__drizzle_migrations`). Neon project `nppacrm` = `young-cell-40419191`.  
 **Still needed:** Vercel `CRON_SECRET` + AI keys; rotate Neon owner password.
 
-**Next up:** playbooks-from-drawer / email helpers / export pack.
+**Next up:** email helpers / export pack.
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).

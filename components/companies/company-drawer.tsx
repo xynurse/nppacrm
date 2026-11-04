@@ -2,7 +2,7 @@
 
 import { Gift, Sparkles, ChevronLeft, ChevronRight, X } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CellShell } from "@/components/cells/cell-shell";
 import {
   CurrencyEditor,
@@ -62,6 +62,10 @@ const BenefitsTab = dynamic(
 const AiTab = dynamic(
   () => import("@/components/companies/ai-tab").then((m) => m.AiTab),
   { loading: () => <TabLoading /> },
+);
+const PlaybookMenu = dynamic(
+  () => import("./playbook-menu").then((m) => m.PlaybookMenu),
+  { ssr: false },
 );
 const EmailDraftButton = dynamic(
   () =>
@@ -144,6 +148,8 @@ export function CompanyDrawer({
   }, [row, onClose]);
 
   const rowId = row?.id ?? null;
+  const [reloadKey, setReloadKey] = useState(0);
+  const loadedRowRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!rowId) {
@@ -156,7 +162,9 @@ export function CompanyDrawer({
     let cancelled = false;
     setLoading(true);
     setError(null);
-    setData(null);
+    // Keep current data on an in-place reload; clear it when the record changes.
+    if (loadedRowRef.current !== rowId) setData(null);
+    loadedRowRef.current = rowId;
 
     void loadCompanyDrawerData({ eventCompanyId: rowId }).then((result) => {
       if (cancelled) return;
@@ -173,7 +181,7 @@ export function CompanyDrawer({
     return () => {
       cancelled = true;
     };
-  }, [rowId]);
+  }, [rowId, reloadKey]);
 
   const idx = row && recordIds ? recordIds.indexOf(row.id) : -1;
   const prevId = idx > 0 ? recordIds![idx - 1]! : null;
@@ -213,6 +221,7 @@ export function CompanyDrawer({
             fieldDefinitions={fieldDefinitions}
             onClose={onClose}
             onNavigateRecord={onNavigateRecord}
+            onDataChanged={() => setReloadKey((k) => k + 1)}
             prevId={prevId}
             nextId={nextId}
             positionLabel={
@@ -247,6 +256,7 @@ function DrawerContent({
   fieldDefinitions,
   onClose,
   onNavigateRecord,
+  onDataChanged,
   prevId,
   nextId,
   positionLabel,
@@ -260,6 +270,7 @@ function DrawerContent({
   fieldDefinitions: CustomFieldDefinition[];
   onClose: () => void;
   onNavigateRecord: (id: string) => void;
+  onDataChanged: () => void;
   prevId: string | null;
   nextId: string | null;
   positionLabel: string | null;
@@ -364,6 +375,10 @@ function DrawerContent({
                 )}
               </div>
             )}
+            <PlaybookMenu
+              eventCompanyId={row.id}
+              onChanged={onDataChanged}
+            />
             <EmailDraftButton
               eventCompanyId={row.id}
               companyName={row.companyName}
