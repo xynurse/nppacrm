@@ -2,6 +2,9 @@
 
 ## Active build (committed to main)
 
+### Export pack _(2026-11-10)_
+Reports → “Download export pack” builds one `.zip` for the active event: `sponsors.csv`, `contacts.csv`, `pipeline-history.csv` (from `eventCompany.move_status` audit rows), `interactions.csv`, `tasks.csv`, `fulfillment.csv`, every existing report CSV under `reports/`, and a `README.txt`. CSVs carry a UTF-8 BOM for Excel and reuse `escapeCsv` formula guarding. Audited as `event.export_pack`. New dependency: `fflate` (approved). No migration.
+
 ### Playbooks from the company drawer _(2026-11-04)_
 “Run playbook” button in the company drawer header: pick First outreach / Bounce recovery / Proposal close and its tasks are created on that prospect with due dates counted from today in the event timezone. One atomic batch (tasks + `playbook.run` + `task.create` audit rows). The same playbook is refused on the same company within 24 h. Inline Undo soft-deletes the tasks just created. Playbook definitions moved to `lib/playbooks.ts`; `/playbooks` uses the same server action. No migration.
 
