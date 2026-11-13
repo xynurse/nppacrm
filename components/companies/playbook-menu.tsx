@@ -107,7 +107,7 @@ export function PlaybookMenu({
               type="button"
               onClick={undo}
               disabled={pending}
-              className="font-medium text-indigo-600 hover:underline"
+              className="font-medium text-brand-600 hover:underline"
             >
               Undo
             </button>

@@ -5,7 +5,7 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-11-13  
-**Branch:** `cursor/fix-ai-gateway-anthropic-prod-8370` (onto `main` @ `b186d42` agents soft-fail).  
+**Branch:** `main` — Mayo blue theme landing (NPB-3); AI Gateway fix `2bccbf0` + agents soft-fail `b186d42`.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -15,7 +15,7 @@ Spreadsheet-first sponsorship CRM (Attio/Linear vibe) for Mayo Clinic NPPA LPD o
 Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Table · TipTap · pnpm.
 
 ## Design decisions (don't re-debate)
-- Brand: **indigo on zinc**, Plus Jakarta Sans (not Inter). Status colors stay semantic.
+- Brand: **Mayo blue on zinc** (`#0057b8`), Plus Jakarta Sans (not Inter). Status colors stay semantic; Deferred uses stone (not purple).
 - **Light-only UI** (Attio/Twenty) — no dark theme, no black sidebar. Forced `light` in ThemeProvider.
 - Rich text: additive `*_doc` jsonb + plain-text mirror (not convert columns).
 - BOUNCED / DEFERRED = **tags**, not pipeline statuses.
@@ -24,13 +24,13 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Home IA: Today → money pulse → Watch → thin activity (funnel/tier live on Reports).
 
 ## Shipped recently
-**Email helpers + export pack (2026-11-13)** — Draft dialog: To: (primary contact), **Open in mail** (`mailto:` via `lib/mailto.ts`), **Mark sent** (`markEmailSent` → email interaction + `prospect`→`contacted`). Companies toolbar Export menu: Prospects CSV + **Export pack** (prospects + contacts + interactions CSVs for the current view). No migration / no new deps.
+**Mayo blue theme (2026-11-13)** — Brand tokens indigo→Mayo `#0057b8` in `app/globals.css`; Deferred badge stone (not violet); meeting icon teal. Cascades via `brand-*` / `--accent`.
 
-**Playbooks from drawer (2026-11-04)** — `components/companies/playbook-menu.tsx`, `lib/actions/playbooks.ts`. 24 h dedupe. No migration.
+**Email helpers + export pack (2026-11-13)** — Draft dialog: To: (primary contact), **Open in mail** / **Mark sent**; Export pack CSVs. No migration.
 
-**Digest `86460961` (2026-11-13):** Neon `42P01` — missing `agent_schedules` on Admin → Event → AI Agents. Soft-fail on `main` (`b186d42`). User still needs `pnpm db:migrate` / `0009_agents.sql` on prod for real agents data.
+**Digest `86460961`:** missing `agent_schedules` — soft-fail on Agents page (`b186d42`); still need `pnpm db:migrate` / `0009`.
 
-**AI Gateway fix (this branch):** stop treating bare `VERCEL=1` as “AI configured”; use direct `@ai-sdk/anthropic` when only `ANTHROPIC_API_KEY` is set. Soften optional `CRON_SECRET` / `AI_DAILY_SPEND_CAP_USD` so typos don’t take down RSC.
+**AI Gateway fix (`2bccbf0`):** honor `ANTHROPIC_API_KEY` on Vercel; don’t treat bare `VERCEL=1` as AI-ready; soften optional env typos.
 
 **Vercel env:** `ANTHROPIC_API_KEY` on Production; `AI_GATEWAY_*` / `AI_MODEL_ID` / `VALYU_API_KEY` / spend cap still Development-only; `CRON_SECRET` unset.
 

@@ -2,6 +2,12 @@
 
 ## Active build (committed to main)
 
+### Mayo blue / Notion-Linear theme _(2026-11-13)_
+Brand accent swapped indigo → Mayo Clinic–inspired blue (`#0057b8`) via
+`--color-brand-*` / `--accent` in `app/globals.css` (components already use
+`brand-*` / `--accent`). Deferred badge stone instead of violet; meeting
+activity icon teal instead of purple. Light Attio/Twenty surfaces unchanged.
+
 ### Email helpers + export pack _(2026-11-13)_
 AI draft dialog now shows the primary contact To:, **Open in mail** (mailto with subject/body; long bodies copy to clipboard), and **Mark sent** (logs an email interaction and advances `prospect` → `contacted`). Companies toolbar Export is a menu: existing Prospects CSV plus **Export pack** (prospects + contacts + interactions CSVs for the current filtered view). No migration; no new dependencies.
 

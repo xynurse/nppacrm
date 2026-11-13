@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
 
 /**
- * Brand mark — an ascending-pipeline glyph on an indigo tile.
+ * Brand mark — an ascending-pipeline glyph on a Mayo-blue tile.
  * Abstract and product-neutral (deliberately no medical/heartbeat cue).
  * Shared by the sidebar and the login screen so the mark stays in sync.
  */

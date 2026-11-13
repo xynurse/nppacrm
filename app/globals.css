@@ -19,24 +19,24 @@
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
 
-  /* Indigo brand palette — modern SaaS accent (Linear/Vercel lineage) */
-  --color-brand-50: #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-200: #c7d2fe;
-  --color-brand-300: #a5b4fc;
-  --color-brand-400: #818cf8;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
-  --color-brand-800: #3730a3;
-  --color-brand-900: #312e81;
-  --color-brand-950: #1e1b4b;
+  /* Mayo Clinic–inspired blue — Notion/Linear cool accent on zinc */
+  --color-brand-50: #eef5fb;
+  --color-brand-100: #d6e8f5;
+  --color-brand-200: #add0eb;
+  --color-brand-300: #7bb3db;
+  --color-brand-400: #3d8fc4;
+  --color-brand-500: #1a73b8;
+  --color-brand-600: #0057b8; /* Mayo primary */
+  --color-brand-700: #004796;
+  --color-brand-800: #003a7a;
+  --color-brand-900: #002f63;
+  --color-brand-950: #001a3a;
 }
 
 /*
- * Modern SaaS design tokens.
+ * Spreadsheet-first CRM tokens (Attio/Twenty/Linear/Notion).
  * Semantic surfaces/ink/accent that dark-switch in one place. Neutrals are the
- * cool near-black zinc ramp; the accent is indigo. Components opt in via
+ * cool zinc ramp; the accent is Mayo blue. Components opt in via
  * e.g. border-[var(--hairline)] or bg-[var(--surface)].
  */
 :root {
@@ -51,9 +51,9 @@
   --ink: #18181b; /* zinc-900 */
   --ink-muted: #71717a; /* zinc-500 */
   --ink-subtle: #a1a1aa; /* zinc-400 */
-  --accent: #4f46e5; /* brand-600 (indigo) */
-  --accent-strong: #4338ca; /* brand-700 */
-  --accent-tint: #eef2ff; /* brand-50 */
+  --accent: #0057b8; /* brand-600 (Mayo blue) */
+  --accent-strong: #004796; /* brand-700 */
+  --accent-tint: #eef5fb; /* brand-50 */
 
   /*
    * Elevation + motion. Three shadow tiers only —
@@ -79,9 +79,9 @@
   --ink: #fafafa; /* zinc-50 */
   --ink-muted: #a1a1aa; /* zinc-400 */
   --ink-subtle: #71717a; /* zinc-500 */
-  --accent: #818cf8; /* brand-400 — brighter on dark */
-  --accent-strong: #a5b4fc; /* brand-300 */
-  --accent-tint: rgba(99, 102, 241, 0.14);
+  --accent: #3d8fc4; /* brand-400 — brighter on dark */
+  --accent-strong: #7bb3db; /* brand-300 */
+  --accent-tint: rgba(26, 115, 184, 0.16);
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-raised:
@@ -135,10 +135,10 @@
   line-height: 1;
 }
 
-/* Soft indigo text selection */
+/* Soft Mayo-blue text selection */
 ::selection {
-  background: #e0e7ff; /* brand-100 */
-  color: #3730a3; /* brand-800 */
+  background: #d6e8f5; /* brand-100 */
+  color: #003a7a; /* brand-800 */
 }
 
 html,
@@ -160,10 +160,10 @@ body {
   color: var(--ink);
 }
 
-/* Indigo selection needs a dark-legible pairing too */
+/* Mayo-blue selection needs a dark-legible pairing too */
 .dark ::selection {
-  background: #3730a3; /* brand-800 */
-  color: #e0e7ff; /* brand-100 */
+  background: #003a7a; /* brand-800 */
+  color: #d6e8f5; /* brand-100 */
 }
 
 /* Soft page atmosphere — light Attio/Twenty canvas */
