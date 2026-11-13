@@ -26,6 +26,8 @@ type Props = {
   onChange: (next: { filter: FilterAst; sort: SortSpec }) => void;
   ownerOptions: FieldOption[];
   tierOptions: FieldOption[];
+  /** Per-field option lists (e.g. size / sector facets from the DB). */
+  fieldOptions?: Record<string, FieldOption[]>;
   resultCount: number;
   extraFields?: FieldMeta[];
 };
@@ -44,10 +46,11 @@ function getOptionsForField(
   meta: FieldMeta,
   ownerOptions: FieldOption[],
   tierOptions: FieldOption[],
+  fieldOptions?: Record<string, FieldOption[]>,
 ): FieldOption[] {
   if (meta.type === "person") return ownerOptions;
   if (meta.type === "tier") return tierOptions;
-  return meta.options ?? [];
+  return fieldOptions?.[meta.key] ?? meta.options ?? [];
 }
 
 function describeValue(
@@ -55,10 +58,16 @@ function describeValue(
   cond: FilterCondition,
   ownerOptions: FieldOption[],
   tierOptions: FieldOption[],
+  fieldOptions?: Record<string, FieldOption[]>,
 ): string {
   if (cond.op === "is_empty" || cond.op === "is_not_empty") return "";
   if (cond.op === "is_true" || cond.op === "is_false") return "";
-  const options = getOptionsForField(meta, ownerOptions, tierOptions);
+  const options = getOptionsForField(
+    meta,
+    ownerOptions,
+    tierOptions,
+    fieldOptions,
+  );
   const optionLabel = (v: string) =>
     options.find((o) => o.value === v)?.label ?? v;
   if (cond.op === "is_one_of" && Array.isArray(cond.value)) {
@@ -81,6 +90,7 @@ export function FilterBar({
   onChange,
   ownerOptions,
   tierOptions,
+  fieldOptions,
   resultCount,
   extraFields = [],
 }: Props) {
@@ -125,10 +135,16 @@ export function FilterBar({
     const meta = fieldByKey[fieldKey];
     if (!meta) return;
     const op = meta.operators[0]!;
+    const options = getOptionsForField(
+      meta,
+      ownerOptions,
+      tierOptions,
+      fieldOptions,
+    );
     const newCond: FilterCondition = {
       field: fieldKey,
       op,
-      value: defaultValueFor(meta, op),
+      value: defaultValueFor({ ...meta, options }, op),
     };
     const nextIndex = filter.conditions.length;
     setConditions([...filter.conditions, newCond]);
@@ -150,7 +166,13 @@ export function FilterBar({
       {filter.conditions.map((cond, i) => {
         const meta = fieldByKey[cond.field];
         if (!meta) return null;
-        const valueStr = describeValue(meta, cond, ownerOptions, tierOptions);
+        const valueStr = describeValue(
+          meta,
+          cond,
+          ownerOptions,
+          tierOptions,
+          fieldOptions,
+        );
         return (
           <div key={i} className="flex items-center gap-1">
             {/* AND/OR connector between conditions */}
@@ -199,6 +221,7 @@ export function FilterBar({
                   cond={cond}
                   ownerOptions={ownerOptions}
                   tierOptions={tierOptions}
+                  fieldOptions={fieldOptions}
                   onChange={(patch) => updateCondition(i, patch)}
                   onClose={() => setEditingIndex(null)}
                 />
@@ -305,6 +328,7 @@ function ConditionEditor({
   cond,
   ownerOptions,
   tierOptions,
+  fieldOptions,
   onChange,
   onClose,
 }: {
@@ -312,14 +336,15 @@ function ConditionEditor({
   cond: FilterCondition;
   ownerOptions: FieldOption[];
   tierOptions: FieldOption[];
+  fieldOptions?: Record<string, FieldOption[]>;
   onChange: (patch: Partial<FilterCondition>) => void;
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useClickOutside(ref, onClose);
   const options = useMemo(
-    () => getOptionsForField(meta, ownerOptions, tierOptions),
-    [meta, ownerOptions, tierOptions],
+    () => getOptionsForField(meta, ownerOptions, tierOptions, fieldOptions),
+    [meta, ownerOptions, tierOptions, fieldOptions],
   );
   const showsValue =
     cond.op !== "is_empty" &&

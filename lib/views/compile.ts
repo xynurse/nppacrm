@@ -45,6 +45,8 @@ function eventCompanyColumn(key: string): SQL | null {
       return sql`${companies.name}`;
     case "industry":
       return sql`${companies.industry}`;
+    case "sizeBand":
+      return sql`${companies.sizeBand}`;
     case "category":
       return sql`${companies.category}`;
     case "subcategory":

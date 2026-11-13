@@ -62,16 +62,22 @@ export const FIELD_REGISTRY = {
     label: "Industry",
     type: "text",
   } satisfies FieldDef,
+  "company.sizeBand": {
+    entity: "company",
+    column: "size_band",
+    label: "Size",
+    type: "text",
+  } satisfies FieldDef,
   "company.category": {
     entity: "company",
     column: "category",
-    label: "Category",
+    label: "Sector",
     type: "text",
   } satisfies FieldDef,
   "company.subcategory": {
     entity: "company",
     column: "subcategory",
-    label: "Subcategory",
+    label: "Sub-sector",
     type: "text",
   } satisfies FieldDef,
   "company.hqLocation": {

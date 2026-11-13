@@ -511,8 +511,24 @@ export function CompaniesTable({
         },
       },
       {
+        id: "sizeBand",
+        header: () => sortHeader("sizeBand", "Size"),
+        cell: ({ row }) => (
+          <CellShell
+            fieldKey="company.sizeBand"
+            entityId={row.original.companyId}
+            value={row.original.companySizeBand}
+            display={row.original.companySizeBand ?? "—"}
+            onLocalChange={(v) =>
+              setRowField(row.original.id, "companySizeBand", v)
+            }
+            Editor={TextEditor}
+          />
+        ),
+      },
+      {
         id: "category",
-        header: () => sortHeader("category", "Category"),
+        header: () => sortHeader("category", "Sector"),
         cell: ({ row }) => (
           <CellShell
             fieldKey="company.category"
@@ -528,7 +544,7 @@ export function CompaniesTable({
       },
       {
         id: "subcategory",
-        header: () => sortHeader("subcategory", "Subcategory"),
+        header: () => sortHeader("subcategory", "Sub-sector"),
         cell: ({ row }) => (
           <CellShell
             fieldKey="company.subcategory"

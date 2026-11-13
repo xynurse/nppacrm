@@ -761,7 +761,20 @@ function OverviewTab({
           }
         />
         <KV
-          label="Category"
+          label="Size"
+          value={
+            <CellShell
+              fieldKey="company.sizeBand"
+              entityId={row.companyId}
+              value={row.companySizeBand}
+              display={row.companySizeBand ?? "—"}
+              onLocalChange={(v) => update("companySizeBand", v)}
+              Editor={TextEditor}
+            />
+          }
+        />
+        <KV
+          label="Sector"
           value={
             <CellShell
               fieldKey="company.category"
@@ -774,7 +787,7 @@ function OverviewTab({
           }
         />
         <KV
-          label="Subcategory"
+          label="Sub-sector"
           value={
             <CellShell
               fieldKey="company.subcategory"

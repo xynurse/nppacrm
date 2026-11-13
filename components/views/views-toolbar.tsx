@@ -28,6 +28,7 @@ type Props = {
   initialColumns?: string[];
   ownerOptions: FieldOption[];
   tierOptions: FieldOption[];
+  fieldOptions?: Record<string, FieldOption[]>;
   resultCount: number;
   isAdmin: boolean;
   extraColumns?: ColumnDef[];
@@ -47,6 +48,7 @@ export function ViewsToolbar({
   initialColumns,
   ownerOptions,
   tierOptions,
+  fieldOptions,
   resultCount,
   isAdmin,
   extraColumns = [],
@@ -341,6 +343,7 @@ export function ViewsToolbar({
         onChange={handleFilterChange}
         ownerOptions={ownerOptions}
         tierOptions={tierOptions}
+        fieldOptions={fieldOptions}
         resultCount={resultCount}
         extraFields={extraFields}
       />
