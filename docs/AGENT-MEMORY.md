@@ -5,7 +5,7 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-11-13  
-**Branch:** `main` — Mayo blue theme landing (NPB-3); AI Gateway fix `2bccbf0` + agents soft-fail `b186d42`.  
+**Branch:** `main` — NPB-3 UX merge in progress.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -24,7 +24,9 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Home IA: Today → money pulse → Watch → thin activity (funnel/tier live on Reports).
 
 ## Shipped recently
-**Mayo blue theme (2026-11-13)** — Brand tokens indigo→Mayo `#0057b8` in `app/globals.css`; Deferred badge stone (not violet); meeting icon teal. Cascades via `brand-*` / `--accent`.
+**Contacts row actions (2026-11-13)** — `/contacts`: name → drawer, company → companies record, email → clipboard copy.
+
+**Mayo blue theme (2026-11-13)** — Brand tokens indigo→Mayo `#0057b8`; Deferred stone; meeting teal.
 
 **Email helpers + export pack (2026-11-13)** — Draft dialog: To: (primary contact), **Open in mail** / **Mark sent**; Export pack CSVs. No migration.
 
@@ -72,6 +74,7 @@ Skip for us: time tracking, Gantt, full Stripe invoicing, e-sign product.
 | Schema | `lib/db/schema/` · migrations `lib/db/migrations/` |
 | Email draft | `components/companies/email-draft-dialog.tsx` · `lib/actions/email.ts` · `lib/mailto.ts` |
 | Export | `components/views/export-button.tsx` · `lib/actions/csv.ts` |
+| Contacts dir | `components/contacts/contacts-workspace.tsx` · `contact-drawer.tsx` · `app/(app)/contacts/page.tsx` |
 
 ## Ops / known gaps
 - TipTap `/` and `@` and Phase 5 columns were not browser-verified here (no `.env.local` / login).
