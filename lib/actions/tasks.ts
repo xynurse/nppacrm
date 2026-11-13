@@ -161,6 +161,17 @@ export async function updateTask(raw: unknown): Promise<ActionResult> {
   if (!parsed.success) return { ok: false, error: "Invalid input" };
   const { id, ...patch } = parsed.data;
 
+  const [existing] = await db
+    .select({
+      title: tasks.title,
+      assignedTo: tasks.assignedTo,
+      eventCompanyId: tasks.eventCompanyId,
+    })
+    .from(tasks)
+    .where(eq(tasks.id, id))
+    .limit(1);
+  if (!existing) return { ok: false, error: "Task not found" };
+
   const updates: Record<string, unknown> = { updatedAt: new Date() };
   if ("title" in patch && patch.title) updates.title = patch.title.trim();
   if ("description" in patch || "descriptionDoc" in patch) {
@@ -190,6 +201,32 @@ export async function updateTask(raw: unknown): Promise<ActionResult> {
     entityId: id,
     changes: patch,
   });
+
+  if (
+    "assignedTo" in patch &&
+    patch.assignedTo &&
+    patch.assignedTo !== existing.assignedTo &&
+    patch.assignedTo !== session.user.id
+  ) {
+    const { createNotification } = await import("@/lib/notifications");
+    const title =
+      typeof patch.title === "string" && patch.title.trim()
+        ? patch.title.trim()
+        : existing.title;
+    await createNotification({
+      userId: patch.assignedTo,
+      type: "task_assigned",
+      title: `Task assigned: ${title}`,
+      body: session.user.name
+        ? `Assigned by ${session.user.name}`
+        : "You were assigned a task",
+      entityType: "task",
+      entityId: id,
+      href: existing.eventCompanyId
+        ? `/companies?record=${existing.eventCompanyId}`
+        : "/tasks",
+    });
+  }
 
   revalidatePath("/companies");
   revalidatePath("/tasks");

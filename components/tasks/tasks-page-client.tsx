@@ -1,9 +1,17 @@
 "use client";
 
-import { ExternalLink, List, Plus, Timer, X } from "lucide-react";
+import {
+  Columns3,
+  ExternalLink,
+  List,
+  Plus,
+  Search,
+  Timer,
+  X,
+} from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
 import { createTask, deleteTask } from "@/lib/actions/tasks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,16 +19,28 @@ import { Label } from "@/components/ui/label";
 import type { TaskRow } from "@/lib/db/queries/tasks";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { AssigneePicker } from "./assignee-picker";
+import { bucketTasks, startOfToday } from "./date-buckets";
 import { InlineComplete } from "./inline-complete";
+import { TasksKanban } from "./tasks-kanban";
+import type { TaskFilter, TaskView, UserOption } from "./types";
 
-export type UserOption = { id: string; name: string; email: string };
+export type { UserOption } from "./types";
 
-const FILTERS: { id: "open" | "mine" | "overdue" | "all"; label: string }[] = [
+const FILTERS: { id: TaskFilter; label: string }[] = [
   { id: "open", label: "Open" },
   { id: "mine", label: "Mine" },
   { id: "overdue", label: "Overdue" },
   { id: "all", label: "All" },
 ];
+
+const VIEWS: { id: TaskView; label: string; icon: typeof List }[] = [
+  { id: "list", label: "List", icon: List },
+  { id: "timeline", label: "Timeline", icon: Timer },
+  { id: "kanban", label: "Board", icon: Columns3 },
+];
+
+const PRIORITIES = ["high", "medium", "low"] as const;
 
 export function TasksPageClient({
   tasks,
@@ -32,77 +52,179 @@ export function TasksPageClient({
 }: {
   tasks: TaskRow[];
   currentUserId: string;
-  currentFilter: "open" | "mine" | "overdue" | "all";
-  currentView: "list" | "timeline";
+  currentFilter: TaskFilter;
+  currentView: TaskView;
   eventId: string;
   users: UserOption[];
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [deletePending, startDeleteTransition] = useTransition();
   const [showNewTask, setShowNewTask] = useState(false);
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
+  const priorityParam = searchParams.get("priority") ?? "";
+  const assigneeParam = searchParams.get("assignee") ?? "";
+
+  const hrefFor = (patch: Record<string, string | null>) => {
+    const sp = new URLSearchParams(searchParams.toString());
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === null || v === "") sp.delete(k);
+      else sp.set(k, v);
+    }
+    const qs = sp.toString();
+    return `${pathname}${qs ? `?${qs}` : ""}`;
+  };
+
+  const setParam = (key: string, value: string | null) => {
+    router.replace(hrefFor({ [key]: value }), { scroll: false });
+  };
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return tasks.filter((t) => {
+      if (priorityParam && t.priority !== priorityParam) return false;
+      if (assigneeParam === "unassigned" && t.assignedTo) return false;
+      if (
+        assigneeParam &&
+        assigneeParam !== "unassigned" &&
+        t.assignedTo !== assigneeParam
+      ) {
+        return false;
+      }
+      if (!q) return true;
+      const hay = [t.title, t.companyName, t.assigneeName, t.description]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return q.split(/\s+/).every((term) => hay.includes(term));
+    });
+  }, [tasks, query, priorityParam, assigneeParam]);
+
+  const onDelete = (id: string, title: string) => {
+    if (!window.confirm(`Delete "${title}"?`)) return;
+    startDeleteTransition(async () => {
+      await deleteTask({ id });
+      router.refresh();
+    });
+  };
+
+  const hasSecondaryFilters = Boolean(query || priorityParam || assigneeParam);
 
   return (
     <>
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-2">
-          {FILTERS.map((f) => (
-            <Link
-              key={f.id}
-              href={`/tasks?filter=${f.id}&view=${currentView}`}
-              className={cn(
-                "rounded-full border px-3 py-1 text-xs transition-colors",
-                currentFilter === f.id
-                  ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
-                  : "border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-zinc-800",
-              )}
-            >
-              {f.label}
-            </Link>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* View toggle */}
-          <div className="flex overflow-hidden rounded-md border border-slate-200 dark:border-slate-700">
-            <Link
-              href={`/tasks?filter=${currentFilter}&view=list`}
-              className={cn(
-                "flex items-center gap-1 px-2.5 py-1.5 text-xs transition-colors",
-                currentView === "list"
-                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                  : "text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-zinc-800",
-              )}
-            >
-              <List className="h-3.5 w-3.5" />
-              List
-            </Link>
-            <Link
-              href={`/tasks?filter=${currentFilter}&view=timeline`}
-              className={cn(
-                "flex items-center gap-1 border-l border-slate-200 px-2.5 py-1.5 text-xs transition-colors dark:border-slate-700",
-                currentView === "timeline"
-                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                  : "text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-zinc-800",
-              )}
-            >
-              <Timer className="h-3.5 w-3.5" />
-              Timeline
-            </Link>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-1 rounded-lg border border-[var(--hairline)] bg-[var(--surface-muted)]/60 p-0.5">
+            {FILTERS.map((f) => (
+              <Link
+                key={f.id}
+                href={hrefFor({ filter: f.id })}
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                  currentFilter === f.id
+                    ? "bg-[var(--surface)] text-[var(--ink)] shadow-[var(--shadow-card)]"
+                    : "text-[var(--ink-muted)] hover:text-[var(--ink)]",
+                )}
+              >
+                {f.label}
+              </Link>
+            ))}
           </div>
 
-          <Button
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setShowNewTask(true)}
+          <div className="flex items-center gap-2">
+            <div className="flex overflow-hidden rounded-lg border border-[var(--hairline)] bg-[var(--surface)]">
+              {VIEWS.map((v, i) => {
+                const Icon = v.icon;
+                return (
+                  <Link
+                    key={v.id}
+                    href={hrefFor({ view: v.id })}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium transition-colors",
+                      i > 0 && "border-l border-[var(--hairline)]",
+                      currentView === v.id
+                        ? "bg-[var(--ink)] text-white"
+                        : "text-[var(--ink-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]",
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">{v.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <Button
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setShowNewTask(true)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              New task
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[12rem] flex-1 sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--ink-subtle)]" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Filter by title, company, assignee…"
+              className="h-8 w-full rounded-md border border-[var(--hairline)] bg-[var(--surface)] pl-8 pr-7 text-sm shadow-[var(--shadow-card)] placeholder:text-[var(--ink-subtle)] hover:border-[var(--hairline-strong)] focus-visible:border-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/25 [&::-webkit-search-cancel-button]:appearance-none"
+            />
+            {query ? (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => setQuery("")}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[var(--ink-subtle)] hover:text-[var(--ink)]"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
+          </div>
+
+          <select
+            value={priorityParam}
+            onChange={(e) => setParam("priority", e.target.value || null)}
+            className="h-8 rounded-md border border-[var(--hairline)] bg-[var(--surface)] px-2 text-xs text-[var(--ink)] shadow-[var(--shadow-card)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/25"
+            aria-label="Filter by priority"
           >
-            <Plus className="h-3.5 w-3.5" />
-            New task
-          </Button>
+            <option value="">All priorities</option>
+            {PRIORITIES.map((p) => (
+              <option key={p} value={p}>
+                {p.charAt(0).toUpperCase() + p.slice(1)}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={assigneeParam}
+            onChange={(e) => setParam("assignee", e.target.value || null)}
+            className="h-8 max-w-[10rem] rounded-md border border-[var(--hairline)] bg-[var(--surface)] px-2 text-xs text-[var(--ink)] shadow-[var(--shadow-card)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/25"
+            aria-label="Filter by assignee"
+          >
+            <option value="">Anyone</option>
+            <option value="unassigned">Unassigned</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.id === currentUserId ? `${u.name} (me)` : u.name}
+              </option>
+            ))}
+          </select>
+
+          {hasSecondaryFilters ? (
+            <span className="text-[11px] tabular-nums text-[var(--ink-subtle)]">
+              {visible.length} of {tasks.length}
+            </span>
+          ) : null}
         </div>
       </div>
 
-      {/* New Task Form */}
       {showNewTask ? (
         <NewTaskForm
           eventId={eventId}
@@ -116,41 +238,53 @@ export function TasksPageClient({
         />
       ) : null}
 
-      {/* Task list / timeline */}
-      {tasks.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-zinc-900">
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+      {visible.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-[var(--hairline)] bg-[var(--surface)] px-6 py-12 text-center">
+          <p className="text-sm text-[var(--ink-muted)]">
             No tasks match this filter.
           </p>
+          {hasSecondaryFilters ? (
+            <button
+              type="button"
+              className="mt-2 text-xs font-medium text-[var(--accent)] hover:underline"
+              onClick={() => {
+                setQuery("");
+                router.replace(
+                  hrefFor({ priority: null, assignee: null, q: null }),
+                  { scroll: false },
+                );
+              }}
+            >
+              Clear filters
+            </button>
+          ) : null}
         </div>
+      ) : currentView === "kanban" ? (
+        <TasksKanban
+          tasks={visible}
+          users={users}
+          currentUserId={currentUserId}
+          includeDone={currentFilter === "all"}
+        />
       ) : currentView === "timeline" ? (
         <TimelineView
-          tasks={tasks}
+          tasks={visible}
+          users={users}
           currentUserId={currentUserId}
           deletePending={deletePending}
-          onDelete={(id, title) => {
-            if (!window.confirm(`Delete "${title}"?`)) return;
-            startDeleteTransition(async () => {
-              await deleteTask({ id });
-              router.refresh();
-            });
-          }}
+          onDelete={onDelete}
+          includeDone={currentFilter === "all"}
         />
       ) : (
-        <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-zinc-900">
-          {tasks.map((t) => (
-            <TaskRow
+        <ul className="divide-y divide-[var(--hairline)] overflow-hidden rounded-xl border border-[var(--hairline)] bg-[var(--surface)] shadow-[var(--shadow-card)]">
+          {visible.map((t) => (
+            <TaskListRow
               key={t.id}
               t={t}
+              users={users}
               currentUserId={currentUserId}
               deletePending={deletePending}
-              onDelete={(id, title) => {
-                if (!window.confirm(`Delete "${title}"?`)) return;
-                startDeleteTransition(async () => {
-                  await deleteTask({ id });
-                  router.refresh();
-                });
-              }}
+              onDelete={onDelete}
             />
           ))}
         </ul>
@@ -159,126 +293,54 @@ export function TasksPageClient({
   );
 }
 
-// ── Timeline view ─────────────────────────────────────────────────────────────
-
-function startOfToday(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function addDays(d: Date, n: number): Date {
-  const r = new Date(d);
-  r.setDate(r.getDate() + n);
-  return r;
-}
-
-type Bucket = {
-  label: string;
-  accent: string;
-  tasks: TaskRow[];
-};
-
-function bucketTasks(tasks: TaskRow[]): Bucket[] {
-  const today = startOfToday();
-  const endOfWeek = addDays(today, 7);
-
-  const overdue: TaskRow[] = [];
-  const todayTasks: TaskRow[] = [];
-  const thisWeek: TaskRow[] = [];
-  const later: TaskRow[] = [];
-  const noDueDate: TaskRow[] = [];
-
-  for (const t of tasks) {
-    if (!t.dueDate) {
-      noDueDate.push(t);
-      continue;
-    }
-    const d = new Date(t.dueDate);
-    d.setHours(0, 0, 0, 0);
-    if (d < today && !t.completedAt) overdue.push(t);
-    else if (d.getTime() === today.getTime()) todayTasks.push(t);
-    else if (d < endOfWeek) thisWeek.push(t);
-    else later.push(t);
-  }
-
-  return [
-    {
-      label: "Overdue",
-      accent: "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30",
-      tasks: overdue,
-    },
-    {
-      label: "Today",
-      accent:
-        "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30",
-      tasks: todayTasks,
-    },
-    {
-      label: "This week",
-      accent:
-        "border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/20",
-      tasks: thisWeek,
-    },
-    {
-      label: "Later",
-      accent: "border-slate-200 bg-white dark:border-slate-800 dark:bg-zinc-900",
-      tasks: later,
-    },
-    {
-      label: "No due date",
-      accent: "border-slate-200 bg-white dark:border-slate-800 dark:bg-zinc-900",
-      tasks: noDueDate,
-    },
-  ].filter((b) => b.tasks.length > 0);
-}
-
 function TimelineView({
   tasks,
+  users,
   currentUserId,
   deletePending,
   onDelete,
+  includeDone,
 }: {
   tasks: TaskRow[];
+  users: UserOption[];
   currentUserId: string;
   deletePending: boolean;
   onDelete: (id: string, title: string) => void;
+  includeDone: boolean;
 }) {
-  const buckets = bucketTasks(tasks);
+  const buckets = bucketTasks(tasks, { includeDone }).filter(
+    (b) => b.tasks.length > 0,
+  );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {buckets.map((b) => (
-        <section key={b.label}>
-          <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            <span
-              className={cn(
-                "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px]",
-                b.label === "Overdue"
-                  ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400"
-                  : b.label === "Today"
-                    ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
-                    : "bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-400",
-              )}
-            >
+        <section key={b.id} className="relative pl-4">
+          <div
+            className={cn(
+              "absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-[var(--page)]",
+              b.id === "overdue"
+                ? "bg-red-500"
+                : b.id === "today"
+                  ? "bg-amber-500"
+                  : b.id === "done"
+                    ? "bg-emerald-500"
+                    : "bg-sky-500",
+            )}
+          />
+          <div className="absolute bottom-0 left-[3px] top-5 w-px bg-[var(--hairline)]" />
+          <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--ink-muted)]">
+            {b.label}
+            <span className="rounded-full bg-[var(--surface-muted)] px-1.5 py-0.5 text-[10px] font-medium tabular-nums normal-case text-[var(--ink-subtle)]">
               {b.tasks.length}
             </span>
-            {b.label}
           </h3>
-          <ul
-            className={cn(
-              "divide-y rounded-lg border",
-              b.label === "Overdue"
-                ? "divide-red-100 border-red-200 bg-white dark:divide-red-900 dark:border-red-900 dark:bg-zinc-900"
-                : b.label === "Today"
-                  ? "divide-amber-100 border-amber-200 bg-white dark:divide-amber-900 dark:border-amber-800 dark:bg-zinc-900"
-                  : "divide-slate-100 border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-zinc-900",
-            )}
-          >
+          <ul className="overflow-hidden rounded-xl border border-[var(--hairline)] bg-[var(--surface)] shadow-[var(--shadow-card)] divide-y divide-[var(--hairline)]">
             {b.tasks.map((t) => (
-              <TaskRow
+              <TaskListRow
                 key={t.id}
                 t={t}
+                users={users}
                 currentUserId={currentUserId}
                 deletePending={deletePending}
                 onDelete={onDelete}
@@ -291,55 +353,66 @@ function TimelineView({
   );
 }
 
-// ── Shared task row ───────────────────────────────────────────────────────────
-
-function TaskRow({
+function TaskListRow({
   t,
+  users,
   currentUserId,
   deletePending,
   onDelete,
 }: {
   t: TaskRow;
+  users: UserOption[];
   currentUserId: string;
   deletePending: boolean;
   onDelete: (id: string, title: string) => void;
 }) {
   const today = startOfToday();
   const isOverdue =
-    t.dueDate && new Date(t.dueDate) < today && !t.completedAt;
-  const isMine = t.assignedTo === currentUserId;
+    !!t.dueDate && new Date(t.dueDate) < today && !t.completedAt;
 
   return (
-    <li className="group flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-zinc-800/40">
+    <li className="group flex items-center gap-3 px-3 py-2.5 text-sm transition-colors hover:bg-[var(--surface-muted)]/60">
       <InlineComplete taskId={t.id} completed={!!t.completedAt} />
       <div className="min-w-0 flex-1">
         <div
           className={cn(
-            "truncate",
-            t.completedAt && "text-slate-400 line-through",
+            "truncate text-[var(--ink)]",
+            t.completedAt && "text-[var(--ink-subtle)] line-through",
           )}
         >
           {t.title}
         </div>
-        <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-slate-500 dark:text-slate-400">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[var(--ink-muted)]">
           {t.dueDate ? (
-            <span className={isOverdue ? "font-medium text-red-600 dark:text-red-400" : ""}>
+            <span
+              className={cn(
+                isOverdue && "font-medium text-red-600",
+              )}
+            >
               Due {formatDate(t.dueDate)}
             </span>
-          ) : null}
-          {t.assigneeName ? (
-            <span>{isMine ? "· Me" : `· ${t.assigneeName}`}</span>
           ) : (
-            <span>· Unassigned</span>
+            <span className="text-[var(--ink-subtle)]">No due date</span>
           )}
           {t.companyName ? <span>· {t.companyName}</span> : null}
+          {t.priority !== "medium" ? (
+            <span className="capitalize">· {t.priority}</span>
+          ) : null}
         </div>
       </div>
+      <AssigneePicker
+        taskId={t.id}
+        assignedTo={t.assignedTo}
+        assigneeName={t.assigneeName}
+        users={users}
+        currentUserId={currentUserId}
+        className="shrink-0"
+      />
       {t.eventCompanyId ? (
         <Link
           href={`/companies?record=${t.eventCompanyId}`}
           scroll={false}
-          className="hidden items-center gap-1 text-xs text-slate-500 hover:text-slate-900 group-hover:flex dark:text-slate-400 dark:hover:text-slate-100"
+          className="hidden items-center gap-1 text-xs text-[var(--ink-muted)] hover:text-[var(--ink)] group-hover:flex"
         >
           Open <ExternalLink className="h-3 w-3" />
         </Link>
@@ -356,8 +429,6 @@ function TaskRow({
     </li>
   );
 }
-
-// ── New Task Form ─────────────────────────────────────────────────────────────
 
 function NewTaskForm({
   eventId,
@@ -403,27 +474,25 @@ function NewTaskForm({
   };
 
   return (
-    <div className="rounded-xl border border-brand-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-zinc-900">
+    <div className="rounded-xl border border-[var(--hairline)] bg-[var(--surface)] p-4 shadow-[var(--shadow-raised)]">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">New task</h3>
+        <h3 className="text-sm font-semibold text-[var(--ink)]">New task</h3>
         <button
           type="button"
           onClick={onClose}
-          className="rounded p-1 text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+          className="rounded p-1 text-[var(--ink-subtle)] hover:text-[var(--ink)]"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="space-y-1">
-          <Input
-            name="title"
-            placeholder="Task title…"
-            autoFocus
-            className="font-medium"
-          />
-        </div>
-        <div className="grid grid-cols-3 gap-3">
+        <Input
+          name="title"
+          placeholder="Task title…"
+          autoFocus
+          className="font-medium"
+        />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="space-y-1">
             <Label className="text-xs">Due date</Label>
             <Input type="date" name="dueDate" className="text-sm" />
@@ -433,7 +502,7 @@ function NewTaskForm({
             <select
               name="priority"
               defaultValue="medium"
-              className="h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-zinc-800 dark:text-white"
+              className="h-9 w-full rounded-md border border-[var(--hairline)] bg-[var(--surface)] px-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
             >
               <option value="high">High</option>
               <option value="medium">Medium</option>
@@ -445,7 +514,7 @@ function NewTaskForm({
             <select
               name="assignedTo"
               defaultValue={currentUserId}
-              className="h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-zinc-800 dark:text-white"
+              className="h-9 w-full rounded-md border border-[var(--hairline)] bg-[var(--surface)] px-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
             >
               {users.map((u) => (
                 <option key={u.id} value={u.id}>
@@ -455,9 +524,7 @@ function NewTaskForm({
             </select>
           </div>
         </div>
-        {error ? (
-          <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
-        ) : null}
+        {error ? <p className="text-xs text-red-600">{error}</p> : null}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={onClose}>
             Cancel

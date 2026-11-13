@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { PersonOption } from "@/components/cells/types";
+import { AssigneePicker } from "./assignee-picker";
 import { InlineComplete } from "./inline-complete";
 import type { TaskRow } from "@/lib/db/queries/tasks";
 import { PROSPECT_PRIORITY_VALUES } from "@/lib/db/schema";
@@ -26,10 +27,12 @@ export function TasksTab({
   eventCompanyId,
   tasks,
   owners,
+  currentUserId,
 }: {
   eventCompanyId: string;
   tasks: TaskRow[];
   owners: PersonOption[];
+  currentUserId: string;
 }) {
   const router = useRouter();
   const [adding, setAdding] = useState(false);
@@ -92,7 +95,12 @@ export function TasksTab({
       {open.length > 0 ? (
         <ul className="space-y-1.5">
           {open.map((t) => (
-            <TaskRowView key={t.id} task={t} owners={owners} />
+            <TaskRowView
+              key={t.id}
+              task={t}
+              owners={owners}
+              currentUserId={currentUserId}
+            />
           ))}
         </ul>
       ) : null}
@@ -104,7 +112,12 @@ export function TasksTab({
           </summary>
           <ul className="mt-2 space-y-1.5">
             {completed.map((t) => (
-              <TaskRowView key={t.id} task={t} owners={owners} />
+              <TaskRowView
+                key={t.id}
+                task={t}
+                owners={owners}
+                currentUserId={currentUserId}
+              />
             ))}
           </ul>
         </details>
@@ -116,9 +129,11 @@ export function TasksTab({
 function TaskRowView({
   task,
   owners,
+  currentUserId,
 }: {
   task: TaskRow;
   owners: PersonOption[];
+  currentUserId: string;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -170,7 +185,6 @@ function TaskRowView({
           </div>
           <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-slate-500 dark:text-slate-400">
             {task.dueDate ? <span>Due {formatDate(task.dueDate)}</span> : null}
-            {task.assigneeName ? <span>· {task.assigneeName}</span> : null}
             {task.priority !== "medium" ? (
               <span className="capitalize">· {task.priority}</span>
             ) : null}
@@ -186,6 +200,14 @@ function TaskRowView({
           />
         ) : null}
       </div>
+      <AssigneePicker
+        taskId={task.id}
+        assignedTo={task.assignedTo}
+        assigneeName={task.assigneeName}
+        users={owners}
+        currentUserId={currentUserId}
+        compact
+      />
       <button
         type="button"
         className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-500 dark:hover:bg-zinc-800"

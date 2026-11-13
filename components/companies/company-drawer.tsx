@@ -510,6 +510,7 @@ function DrawerContent({
             eventCompanyId={row.id}
             tasks={data.tasks}
             owners={owners}
+            currentUserId={currentUserId}
           />
         ) : tab === "notes" ? (
           <NotesTab
