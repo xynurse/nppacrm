@@ -25,6 +25,8 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Calendar: month grid + list; priority via CSS vars (`--priority-*`); no new calendar lib (`date-fns` only).
 
 ## Shipped recently
+**Event page details (2026-11-13)** — course directors, goals, metrics.
+
 **Company taxonomy filters (2026-11-13)** — size / sector / sub-sector on Companies.
 
 **Dashboard activity filters (2026-11-13)** — filterable/collapsible activity on Home.

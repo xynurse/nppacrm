@@ -120,6 +120,13 @@
       "when": 1793731800000,
       "tag": "0016_tier_inventory_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794618000000,
+      "tag": "0017_event_profile_details",
+      "breakpoints": true
     }
   ]
 }

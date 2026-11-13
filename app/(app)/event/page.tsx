@@ -22,6 +22,12 @@ import {
   PROSPECT_STATUS_LABELS,
   StatusBadge,
 } from "@/components/companies/status-badge";
+import {
+  EventAboutSection,
+  EventCourseDirectorsSection,
+  EventGoalsSection,
+  EventMetricsTargetsSection,
+} from "@/components/event/event-profile-sections";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { encodeToParam } from "@/lib/views/schema";
@@ -108,6 +114,12 @@ export default async function EventProfilePage() {
               {activeEvent.startDate ? formatDate(activeEvent.startDate) : "TBD"}
               {activeEvent.endDate ? ` – ${formatDate(activeEvent.endDate)}` : ""}
             </span>
+            {activeEvent.location ? (
+              <>
+                <span className="text-slate-300 dark:text-slate-600">·</span>
+                <span>{activeEvent.location}</span>
+              </>
+            ) : null}
             <span className="text-slate-300 dark:text-slate-600">·</span>
             <span>{activeEvent.timezone}</span>
             <span className="text-slate-300 dark:text-slate-600">·</span>
@@ -139,6 +151,26 @@ export default async function EventProfilePage() {
             </Button>
           </Link>
         ) : null}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <EventAboutSection event={activeEvent} isAdmin={isAdmin} />
+        <EventCourseDirectorsSection
+          directors={activeEvent.courseDirectors}
+          eventId={activeEvent.id}
+          isAdmin={isAdmin}
+        />
+        <EventGoalsSection
+          goals={activeEvent.goals}
+          eventId={activeEvent.id}
+          isAdmin={isAdmin}
+        />
+        <EventMetricsTargetsSection
+          event={activeEvent}
+          confirmedCount={metrics.confirmedCount}
+          confirmedAmount={metrics.confirmedAmount}
+          isAdmin={isAdmin}
+        />
       </div>
 
       {/* Fundraising / revenue */}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEventById, listReviewersForEvent } from "@/lib/db/queries/events";
 import { listUsers } from "@/lib/db/queries/users";
+import { EventProfileForm } from "@/components/admin/event-profile-form";
 import { ReviewerPanel } from "@/components/admin/reviewer-panel";
 import { RolloverEventForm } from "@/components/admin/rollover-event-form";
 
@@ -27,7 +28,12 @@ export default async function EventDetailPage({
           {event.name}
         </h1>
         <p className="font-mono text-xs text-zinc-500">{event.slug}</p>
+        {event.location ? (
+          <p className="mt-1 text-sm text-zinc-600">{event.location}</p>
+        ) : null}
       </div>
+
+      <EventProfileForm event={event} />
 
       <ReviewerPanel
         eventId={event.id}
