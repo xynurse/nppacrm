@@ -141,6 +141,7 @@ export async function createTask(
 
   revalidatePath("/companies");
   revalidatePath("/tasks");
+  revalidatePath("/calendar");
   return { ok: true, data: { id: row.id } };
 }
 
@@ -192,6 +193,7 @@ export async function updateTask(raw: unknown): Promise<ActionResult> {
 
   revalidatePath("/companies");
   revalidatePath("/tasks");
+  revalidatePath("/calendar");
   return { ok: true };
 }
 
@@ -225,6 +227,7 @@ export async function setTaskCompleted(
 
   revalidatePath("/companies");
   revalidatePath("/tasks");
+  revalidatePath("/calendar");
   return { ok: true };
 }
 
@@ -291,5 +294,6 @@ export async function deleteTask(raw: unknown): Promise<ActionResult> {
 
   revalidatePath("/companies");
   revalidatePath("/tasks");
+  revalidatePath("/calendar");
   return { ok: true };
 }

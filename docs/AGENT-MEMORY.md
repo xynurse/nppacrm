@@ -5,7 +5,7 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-11-13  
-**Branch:** `main` — NPB-3 UX merge in progress.  
+**Branch:** `main` — NPB-3 UX merge in progress.
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -22,8 +22,11 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Mutations → Server Actions + `auditLog`. Soft deletes via `deletedAt`.
 - Commit policy: **Claude Code is the primary environment** — follow CLAUDE.md (commit + push to `main` after every green build). Any `cursor/*` or `claude/*` branch must be merged to `main` before the session ends.
 - Home IA: Today → money pulse → Watch → thin activity (funnel/tier live on Reports).
+- Calendar: month grid + list; priority via CSS vars (`--priority-*`); no new calendar lib (`date-fns` only).
 
 ## Shipped recently
+**Calendar Todoist UX (2026-11-13)** — month grid + priorities on `/calendar`.
+
 **Contacts row actions (2026-11-13)** — `/contacts`: name → drawer, company → companies record, email → clipboard copy.
 
 **Mayo blue theme (2026-11-13)** — Brand tokens indigo→Mayo `#0057b8`; Deferred stone; meeting teal.
