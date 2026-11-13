@@ -32,8 +32,8 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 
 **Forecast / fulfillment / duplicates (merged PR #11)** · **Mobile shell (PR #10)** · **Renewal rollover (PR #9)** · **Light Attio (PR #8)**
 
-**Prod DB:** schema through **0016** (verified 2026-11-04). Neon `nppacrm` = `young-cell-40419191`.  
-**Still needed:** Vercel `CRON_SECRET` + AI keys; rotate Neon owner password.
+**Prod DB:** claimed through **0016**, but **`agent_schedules` missing in prod** (2026-11-13 logs: digest `86460961` on `/admin/events/[id]/agents`). Agents page now soft-fails; still need manual recreate via `0009_agents.sql` / `pnpm db:migrate`. Neon `nppacrm` = `young-cell-40419191`.  
+**Still needed:** apply agents tables; Vercel `CRON_SECRET`; extend AI keys to Production (ANTHROPIC_API_KEY is on Production; Gateway/MODEL/VALYU still Development-only); rotate Neon owner password.
 
 **Next up:** sponsor self-service link · vitest for `compile.ts`/serializer/reports.
 
