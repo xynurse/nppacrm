@@ -5,7 +5,7 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-11-13  
-**Branch:** `cursor/email-helpers-export-pack-8370` (open PR) → merge to `main`.  
+**Branch:** `main` — PR #14 (email helpers / export pack) merged `3ad63c2`.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---

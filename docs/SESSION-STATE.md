@@ -8,13 +8,13 @@
 ---
 
 ## Last updated
-2026-11-13 — **Email helpers + export pack** on `cursor/email-helpers-export-pack-8370` at `e756202`. typecheck + lint + `build:offline` green. **Not browser-verified** (no `.env.local` / login here).
+2026-11-13 — **Merged PR #14 (email helpers + export pack) to `main` at `3ad63c2`.** typecheck + lint + `build:offline` + CI green. **Not browser-verified** (no `.env.local` / login here).
 
 **This chunk:** Draft email dialog — To: primary contact, Open in mail (`lib/mailto.ts`), Mark sent (`markEmailSent` → interaction + prospect→contacted). Companies Export menu — Prospects CSV + Export pack (3 CSVs for current view). No migration.
 
 **Prod still needs (user, manual):** rotate Neon `neondb_owner` password; set `CRON_SECRET` + AI keys on Production/Preview.
 
-**In progress:** none after merge. Next backlog: sponsor self-service link · vitest for compile/serializer/reports.
+**In progress:** none. Next backlog: sponsor self-service link · vitest for compile/serializer/reports.
 
 **Decisions made (chunk 5):**
 - Shallow `history.pushState` for `?record=` instead of App Router navigation — only way to avoid re-running `listEventCompanies` when opening the drawer.
