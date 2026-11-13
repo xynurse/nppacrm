@@ -4,8 +4,8 @@
 > `SESSION-STATE.md` / `TODO.md` / `CHANGELOG.md` / the build prompt unless
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
-**Last updated:** 2026-11-03  
-**Branch:** `main` — PR #11 (forecast / fulfillment / duplicates) merged.  
+**Last updated:** 2026-11-13  
+**Branch:** `cursor/email-helpers-export-pack-8370` (open PR) → merge to `main`.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -24,31 +24,28 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Home IA: Today → money pulse → Watch → thin activity (funnel/tier live on Reports).
 
 ## Shipped recently
-**Playbooks from drawer (2026-11-04)** — `components/companies/playbook-menu.tsx`, `lib/actions/playbooks.ts` (`runPlaybook`/`undoPlaybook`), defs in `lib/playbooks.ts`. 24 h dedupe by title prefix. No migration.
+**Email helpers + export pack (2026-11-13)** — Draft dialog: To: (primary contact), **Open in mail** (`mailto:` via `lib/mailto.ts`), **Mark sent** (`markEmailSent` → email interaction + `prospect`→`contacted`). Companies toolbar Export menu: Prospects CSV + **Export pack** (prospects + contacts + interactions CSVs for the current view). No migration / no new deps.
 
-**Vercel env gap (2026-11-04):** `AI_GATEWAY_API_KEY`, `VALYU_API_KEY`, `AI_MODEL_ID`, `AI_DAILY_SPEND_CAP_USD` were set for **Development only**; `CRON_SECRET` missing. User asked to extend to Production/Preview + add CRON_SECRET in the Vercel dashboard, then redeploy.
+**Playbooks from drawer (2026-11-04)** — `components/companies/playbook-menu.tsx`, `lib/actions/playbooks.ts`. 24 h dedupe. No migration.
 
-**Forecast / fulfillment / duplicates (merged PR #11, 2026-11-03)**
-- Reports: weighted pipeline forecast + fundraising pace + tier inventory.
-- `/fulfillment` board; Admin `/admin/duplicates` merge.
-- Migration **0016** `sponsorship_tiers.inventory_limit` (needs manual migrate).
+**Vercel env gap:** extend AI keys + `CRON_SECRET` to Production/Preview (user dashboard), then redeploy.
 
-**Mobile shell (PR #10)** · **Renewal rollover (PR #9)** · **Light Attio (PR #8)**
+**Forecast / fulfillment / duplicates (merged PR #11)** · **Mobile shell (PR #10)** · **Renewal rollover (PR #9)** · **Light Attio (PR #8)**
 
-**Prod DB:** schema current through **0016** (verified 2026-11-04 via Neon MCP: `tasks.deleted_at` + `sponsorship_tiers.inventory_limit` exist; 16 rows in `drizzle.__drizzle_migrations`). Neon project `nppacrm` = `young-cell-40419191`.  
+**Prod DB:** schema through **0016** (verified 2026-11-04). Neon `nppacrm` = `young-cell-40419191`.  
 **Still needed:** Vercel `CRON_SECRET` + AI keys; rotate Neon owner password.
 
-**Next up:** email helpers / export pack.
+**Next up:** sponsor self-service link · vitest for `compile.ts`/serializer/reports.
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).
 - New custom-field types (multiSelect, datetime, rating, person, relation).
 - Gallery view. Real-time Pusher presence.
 - Sequences as DB objects (playbooks are client templates only).
-- `/companies` First Load still ~228 kB vs 160 target.
+- `/companies` First Load still ~229 kB vs 160 target.
 
 ## Considerations (not scheduled — Bonsai / post-commit UX)
-From hellobonsai.com review (agency CRM, not sponsorship-native). Steal post-commit ideas only; keep Attio/Twenty for outreach UX.
+From hellobonsai.com review. Steal post-commit ideas only; keep Attio/Twenty for outreach UX.
 1. Sponsor self-service portal (narrow: docs + invoice/booth status)
 2. Proposal view/accept tracking (beyond “sent”)
 3. Confirmed → fulfillment board handoff
@@ -69,6 +66,8 @@ Skip for us: time tracking, Gantt, full Stripe invoicing, e-sign product.
 | Queries | `lib/db/queries/companies.ts` |
 | Cells | `lib/cells/registry.ts` · `components/cells/lazy-editors.tsx` |
 | Schema | `lib/db/schema/` · migrations `lib/db/migrations/` |
+| Email draft | `components/companies/email-draft-dialog.tsx` · `lib/actions/email.ts` · `lib/mailto.ts` |
+| Export | `components/views/export-button.tsx` · `lib/actions/csv.ts` |
 
 ## Ops / known gaps
 - TipTap `/` and `@` and Phase 5 columns were not browser-verified here (no `.env.local` / login).

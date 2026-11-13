@@ -8,13 +8,13 @@
 ---
 
 ## Last updated
-2026-11-03 — **Merged PR #9 (renewal rollover) + PR #10 (mobile shell) to `main`.** Light Attio shell already on main (PR #8). **Not browser-verified.**
+2026-11-13 — **Email helpers + export pack** on `cursor/email-helpers-export-pack-8370` (open PR). typecheck + lint + `build:offline` green. **Not browser-verified** (no `.env.local` / login here).
 
-**On main now:** rollover “start next year from…”; mobile column shell + company cards + full-screen drawer; light Attio UI; Chunk 5 perf + calm dashboard.
+**This chunk:** Draft email dialog — To: primary contact, Open in mail (`lib/mailto.ts`), Mark sent (`markEmailSent` → interaction + prospect→contacted). Companies Export menu — Prospects CSV + Export pack (3 CSVs for current view). No migration.
 
-**Prod still needs (user, manual):** rotate Neon `neondb_owner` password; set `CRON_SECRET`.
+**Prod still needs (user, manual):** rotate Neon `neondb_owner` password; set `CRON_SECRET` + AI keys on Production/Preview.
 
-**In progress:** none. Next backlog: tier inventory + weighted forecast/pace.
+**In progress:** none after merge. Next backlog: sponsor self-service link · vitest for compile/serializer/reports.
 
 **Decisions made (chunk 5):**
 - Shallow `history.pushState` for `?record=` instead of App Router navigation — only way to avoid re-running `listEventCompanies` when opening the drawer.
@@ -685,7 +685,7 @@ Original plan (kept so the follow-up does not re-derive it):
 Shipped on the feature branch — merge to main. Remaining: `/companies` First Load still ~228 kB vs 160 target.
 
 ### Feature backlog (ranked, from the audit)
-~~Renewal rollover~~ (PR #9) · ~~mobile shell~~ (PR #10) · **tier inventory + weighted forecast/pace** · fulfillment board · duplicate detection/merge · playbooks from the drawer · email "open in mail / mark sent" · export pack · sponsor self-service link · vitest for `compile.ts`/serializer/reports.
+~~Renewal rollover~~ (PR #9) · ~~mobile shell~~ (PR #10) · ~~tier inventory + weighted forecast/pace~~ · ~~fulfillment board~~ · ~~duplicate detection/merge~~ · ~~playbooks from the drawer~~ · ~~email "open in mail / mark sent"~~ · ~~export pack~~ · sponsor self-service link · vitest for `compile.ts`/serializer/reports.
 
 ### Considerations — Bonsai (hellobonsai.com), not scheduled
 Agency all-in-one CRM. Relevant for **after Confirmed**, not for spreadsheet outreach. Candidates: sponsor portal · proposal view tracking · fulfillment handoff · intake forms · fixed automations · meeting→CRM. Skip: time tracking, Gantt, payments product, e-sign suite. Stay on current build plan until ops (0015 migrate, CRON_SECRET, Neon rotate) + browser verify; then pick from the ranked backlog above.
