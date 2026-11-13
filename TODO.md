@@ -15,7 +15,8 @@ Latest on main: PRs #9 (renewal rollover) + #10 (mobile shell) merged 2026-11-03
 - [x] Duplicate detection/merge (`/admin/duplicates`)
 - [ ] **(user, manual)** `pnpm db:migrate` for **0015 + 0016**
 - [x] Playbooks from drawer (2026-11-04)
-- [ ] Email helpers / export pack (next)
+- [x] Email helpers / export pack (2026-11-13) — open in mail + mark sent; export pack CSVs
+- [ ] Sponsor self-service link (next)
 
 ## Shipped 2026-10-20 (Chunk 1 — security)
 

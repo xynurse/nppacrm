@@ -2,6 +2,9 @@
 
 ## Active build (committed to main)
 
+### Email helpers + export pack _(2026-11-13)_
+AI draft dialog now shows the primary contact To:, **Open in mail** (mailto with subject/body; long bodies copy to clipboard), and **Mark sent** (logs an email interaction and advances `prospect` → `contacted`). Companies toolbar Export is a menu: existing Prospects CSV plus **Export pack** (prospects + contacts + interactions CSVs for the current filtered view). No migration; no new dependencies.
+
 ### Playbooks from the company drawer _(2026-11-04)_
 “Run playbook” button in the company drawer header: pick First outreach / Bounce recovery / Proposal close and its tasks are created on that prospect with due dates counted from today in the event timezone. One atomic batch (tasks + `playbook.run` + `task.create` audit rows). The same playbook is refused on the same company within 24 h. Inline Undo soft-deletes the tasks just created. Playbook definitions moved to `lib/playbooks.ts`; `/playbooks` uses the same server action. No migration.
 

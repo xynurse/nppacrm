@@ -1,6 +1,7 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { generateText } from "ai";
 import {
@@ -17,12 +18,22 @@ import {
   eventCompanies,
   prospectuses,
 } from "@/lib/db/schema";
+import { logInteraction } from "@/lib/actions/interactions";
+import { changeStatus } from "@/lib/pipeline/change-status";
 
 type ActionResult<T = unknown> =
   | ({ ok: true } & T)
   | { ok: false; error: string };
 
 const draftSchema = z.object({ eventCompanyId: z.uuid() });
+
+export type DraftEmailResult = {
+  subject: string;
+  body: string;
+  toEmail: string | null;
+  toName: string | null;
+  contactId: string | null;
+};
 
 /**
  * Generate a professional outreach email for a prospect company.
@@ -31,7 +42,7 @@ const draftSchema = z.object({ eventCompanyId: z.uuid() });
  */
 export async function draftOutreachEmail(
   raw: unknown,
-): Promise<ActionResult<{ subject: string; body: string }>> {
+): Promise<ActionResult<DraftEmailResult>> {
   const session = await requireSession();
   const parsed = draftSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid input" };
@@ -67,23 +78,49 @@ export async function draftOutreachEmail(
   if (!company) return { ok: false, error: "Company record missing" };
 
   // ── Primary contact for personalisation ──────────────────────────────────
-  const [primaryContact] = await db
-    .select({
-      firstName: contacts.firstName,
-      lastName: contacts.lastName,
-      fullName: contacts.fullName,
-      title: contacts.title,
-      email: contacts.email,
-    })
-    .from(contacts)
-    .where(
-      and(
-        eq(contacts.companyId, ec.companyId),
-        eq(contacts.isPrimary, true),
-        isNull(contacts.deletedAt),
-      ),
-    )
-    .limit(1);
+  // Prefer the flagged primary; fall back to any contact with an email so
+  // "Open in mail" still has a To: address.
+  let primaryContact =
+    (
+      await db
+        .select({
+          id: contacts.id,
+          firstName: contacts.firstName,
+          lastName: contacts.lastName,
+          fullName: contacts.fullName,
+          title: contacts.title,
+          email: contacts.email,
+        })
+        .from(contacts)
+        .where(
+          and(
+            eq(contacts.companyId, ec.companyId),
+            eq(contacts.isPrimary, true),
+            isNull(contacts.deletedAt),
+          ),
+        )
+        .limit(1)
+    )[0] ?? null;
+
+  if (!primaryContact) {
+    primaryContact =
+      (
+        await db
+          .select({
+            id: contacts.id,
+            firstName: contacts.firstName,
+            lastName: contacts.lastName,
+            fullName: contacts.fullName,
+            title: contacts.title,
+            email: contacts.email,
+          })
+          .from(contacts)
+          .where(
+            and(eq(contacts.companyId, ec.companyId), isNull(contacts.deletedAt)),
+          )
+          .limit(1)
+      )[0] ?? null;
+  }
 
   // ── Event prospectus ──────────────────────────────────────────────────────
   const [prospectus] = await db
@@ -149,11 +186,97 @@ export async function draftOutreachEmail(
       changes: { companyName: company.name },
     });
 
-    return { ok: true, subject, body };
+    return {
+      ok: true,
+      subject,
+      body,
+      toEmail: primaryContact?.email ?? null,
+      toName: primaryContact?.fullName ?? null,
+      contactId: primaryContact?.id ?? null,
+    };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Email draft failed";
     return { ok: false, error: message };
   }
+}
+
+const markSentSchema = z.object({
+  eventCompanyId: z.uuid(),
+  subject: z.string().trim().max(280).nullable().optional(),
+  body: z.string().trim().max(20000).nullable().optional(),
+  contactId: z.uuid().nullable().optional(),
+});
+
+/**
+ * Log the drafted outreach as a sent email interaction. When the prospect is
+ * still in `prospect`, advance them to `contacted` (same path as the pipeline).
+ */
+export async function markEmailSent(
+  raw: unknown,
+): Promise<
+  ActionResult<{ interactionId: string; statusAdvanced: boolean }>
+> {
+  const session = await requireSession();
+  const parsed = markSentSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid input" };
+
+  const [ec] = await db
+    .select({
+      id: eventCompanies.id,
+      eventId: eventCompanies.eventId,
+      status: eventCompanies.status,
+      deletedAt: eventCompanies.deletedAt,
+    })
+    .from(eventCompanies)
+    .where(eq(eventCompanies.id, parsed.data.eventCompanyId))
+    .limit(1);
+  if (!ec || ec.deletedAt) return { ok: false, error: "Prospect not found" };
+
+  const logged = await logInteraction({
+    eventCompanyId: parsed.data.eventCompanyId,
+    type: "email",
+    subject: parsed.data.subject ?? null,
+    body: parsed.data.body ?? null,
+    contactId: parsed.data.contactId ?? null,
+  });
+  if (!logged.ok || !logged.data?.id) {
+    return { ok: false, error: logged.ok ? "Failed to log email" : logged.error };
+  }
+
+  let statusAdvanced = false;
+  if (ec.status === "prospect") {
+    const moved = await changeStatus({
+      id: parsed.data.eventCompanyId,
+      to: "contacted",
+      actor: {
+        id: session.user.id,
+        name: session.user.name ?? null,
+      },
+      source: "email.mark_sent",
+    });
+    statusAdvanced = moved.ok;
+  }
+
+  await recordAudit({
+    userId: session.user.id,
+    eventId: ec.eventId,
+    action: "email.mark_sent",
+    entityType: "eventCompany",
+    entityId: parsed.data.eventCompanyId,
+    changes: {
+      interactionId: logged.data.id,
+      statusAdvanced,
+      subject: parsed.data.subject ?? null,
+    },
+  });
+
+  revalidatePath("/companies");
+  revalidatePath("/pipeline");
+  return {
+    ok: true,
+    interactionId: logged.data.id,
+    statusAdvanced,
+  };
 }
 
 // ── Prompt helpers ────────────────────────────────────────────────────────────
