@@ -8,7 +8,7 @@
 ---
 
 ## Last updated
-2026-11-13 — **Email helpers + export pack** on `cursor/email-helpers-export-pack-8370` (open PR). typecheck + lint + `build:offline` green. **Not browser-verified** (no `.env.local` / login here).
+2026-11-13 — **Email helpers + export pack** on `cursor/email-helpers-export-pack-8370` at `e756202`. typecheck + lint + `build:offline` green. **Not browser-verified** (no `.env.local` / login here).
 
 **This chunk:** Draft email dialog — To: primary contact, Open in mail (`lib/mailto.ts`), Mark sent (`markEmailSent` → interaction + prospect→contacted). Companies Export menu — Prospects CSV + Export pack (3 CSVs for current view). No migration.
 
