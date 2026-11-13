@@ -1,4 +1,14 @@
-import { and, asc, desc, eq, inArray, isNotNull, isNull, lt } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  sql,
+} from "drizzle-orm";
 import { db } from "@/lib/db";
 import { isUndefinedColumnError } from "@/lib/db/errors";
 import {
@@ -27,6 +37,22 @@ export type ActivityRow = {
   companyName: string;
   eventCompanyId: string;
   userName: string | null;
+  category: string | null;
+  subcategory: string | null;
+};
+
+export type ActivityFilters = {
+  category?: string | null;
+  subcategory?: string | null;
+  /** Inclusive start date `YYYY-MM-DD` (America/Chicago calendar day). */
+  from?: string | null;
+  /** Inclusive end date `YYYY-MM-DD`. */
+  to?: string | null;
+};
+
+export type ActivityCategoryOption = {
+  category: string;
+  subcategory: string | null;
 };
 
 export type DashboardMetrics = {
@@ -131,10 +157,41 @@ export async function listStalledProspects(
     .limit(limit);
 }
 
+const YMD_RE = /^\d{4}-\d{2}-\d{2}$/u;
+
 export async function listRecentActivity(
   eventId: string,
-  limit = 10,
+  limit = 40,
+  filters: ActivityFilters = {},
 ): Promise<ActivityRow[]> {
+  const category = filters.category?.trim() || null;
+  const subcategory = filters.subcategory?.trim() || null;
+  const from = filters.from?.trim() || null;
+  const to = filters.to?.trim() || null;
+
+  const conditions = [
+    eq(interactions.eventId, eventId),
+    isNull(eventCompanies.deletedAt),
+  ];
+
+  if (category) {
+    conditions.push(eq(companies.category, category));
+  }
+  if (subcategory) {
+    conditions.push(eq(companies.subcategory, subcategory));
+  }
+  // Calendar-day bounds in America/Chicago (product default timezone).
+  if (from && YMD_RE.test(from)) {
+    conditions.push(
+      sql`(${interactions.occurredAt} AT TIME ZONE 'America/Chicago')::date >= ${from}::date`,
+    );
+  }
+  if (to && YMD_RE.test(to)) {
+    conditions.push(
+      sql`(${interactions.occurredAt} AT TIME ZONE 'America/Chicago')::date <= ${to}::date`,
+    );
+  }
+
   return db
     .select({
       id: interactions.id,
@@ -144,6 +201,8 @@ export async function listRecentActivity(
       companyName: companies.name,
       eventCompanyId: interactions.eventCompanyId,
       userName: users.name,
+      category: companies.category,
+      subcategory: companies.subcategory,
     })
     .from(interactions)
     .innerJoin(
@@ -152,14 +211,44 @@ export async function listRecentActivity(
     )
     .innerJoin(companies, eq(companies.id, eventCompanies.companyId))
     .leftJoin(users, eq(users.id, interactions.userId))
+    .where(and(...conditions))
+    .orderBy(desc(interactions.occurredAt))
+    .limit(limit);
+}
+
+/** Distinct company category/subcategory pairs for the event's activity feed. */
+export async function listActivityCategoryOptions(
+  eventId: string,
+): Promise<ActivityCategoryOption[]> {
+  const rows = await db
+    .selectDistinct({
+      category: companies.category,
+      subcategory: companies.subcategory,
+    })
+    .from(interactions)
+    .innerJoin(
+      eventCompanies,
+      eq(eventCompanies.id, interactions.eventCompanyId),
+    )
+    .innerJoin(companies, eq(companies.id, eventCompanies.companyId))
     .where(
       and(
         eq(interactions.eventId, eventId),
         isNull(eventCompanies.deletedAt),
+        isNotNull(companies.category),
+        sql`trim(${companies.category}) <> ''`,
       ),
     )
-    .orderBy(desc(interactions.occurredAt))
-    .limit(limit);
+    .orderBy(asc(companies.category), asc(companies.subcategory));
+
+  return rows
+    .filter((r): r is { category: string; subcategory: string | null } =>
+      Boolean(r.category),
+    )
+    .map((r) => ({
+      category: r.category,
+      subcategory: r.subcategory?.trim() ? r.subcategory : null,
+    }));
 }
 
 export type MyTaskRow = {

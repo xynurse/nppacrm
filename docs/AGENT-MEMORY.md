@@ -25,6 +25,8 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Calendar: month grid + list; priority via CSS vars (`--priority-*`); no new calendar lib (`date-fns` only).
 
 ## Shipped recently
+**Dashboard activity filters (2026-11-13)** — filterable/collapsible activity on Home.
+
 **Calendar Todoist UX (2026-11-13)** — month grid + priorities on `/calendar`.
 
 **Contacts row actions (2026-11-13)** — `/contacts`: name → drawer, company → companies record, email → clipboard copy.
@@ -68,7 +70,7 @@ Skip for us: time tracking, Gantt, full Stripe invoicing, e-sign product.
 |---|---|
 | Tokens / look | `app/globals.css`, `app/layout.tsx` |
 | Shell | `components/app/{sidebar,top-bar,page-title,notification-bell}.tsx` |
-| Home | `app/(app)/page.tsx` |
+| Home | `app/(app)/page.tsx` · `components/dashboard/recent-activity.tsx` |
 | Table / drawer | `components/companies/{companies-table,company-drawer,companies-workspace}.tsx` |
 | Pipeline | `components/pipeline/{kanban-board,pipeline-workspace}.tsx` |
 | Auth edge | `lib/auth/edge-config.ts`, `middleware.ts` |

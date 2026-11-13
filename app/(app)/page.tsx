@@ -4,6 +4,7 @@ import { requireSession } from "@/lib/auth";
 import { listActiveEvents } from "@/lib/db/queries/events";
 import {
   getDashboardMetrics,
+  listActivityCategoryOptions,
   listHotProspects,
   listMyOpenTasks,
   listRecentActivity,
@@ -14,6 +15,7 @@ import {
   DEFERRED_TAG,
   StatusBadge,
 } from "@/components/companies/status-badge";
+import { RecentActivitySection } from "@/components/dashboard/recent-activity";
 import { Button } from "@/components/ui/button";
 import { NlUpdateBox } from "@/components/ai/nl-update-box";
 import { encodeToParam } from "@/lib/views/schema";
@@ -66,13 +68,15 @@ export default async function DashboardPage() {
     );
   }
 
-  const [metrics, stalled, recent, myTasks, hotProspects] = await Promise.all([
-    getDashboardMetrics(activeEvent.id),
-    listStalledProspects(activeEvent.id),
-    listRecentActivity(activeEvent.id),
-    listMyOpenTasks(activeEvent.id, session.user.id),
-    listHotProspects(activeEvent.id),
-  ]);
+  const [metrics, stalled, recent, activityCategories, myTasks, hotProspects] =
+    await Promise.all([
+      getDashboardMetrics(activeEvent.id),
+      listStalledProspects(activeEvent.id),
+      listRecentActivity(activeEvent.id),
+      listActivityCategoryOptions(activeEvent.id),
+      listMyOpenTasks(activeEvent.id, session.user.id),
+      listHotProspects(activeEvent.id),
+    ]);
 
   const goal = activeEvent.fundraisingGoal
     ? Number(activeEvent.fundraisingGoal)
@@ -284,58 +288,11 @@ export default async function DashboardPage() {
       </section>
 
       {/* ── Activity feed ────────────────────────────────────────────── */}
-      <section className="space-y-3">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="font-display text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Recent activity
-          </h2>
-          <Link
-            href="/reports"
-            className="text-xs text-zinc-500 underline-offset-2 hover:text-zinc-800 hover:underline dark:hover:text-zinc-200"
-          >
-            Reports
-          </Link>
-        </div>
-        {recent.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            No activity yet.
-          </p>
-        ) : (
-          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
-            {recent.map((a) => (
-              <li
-                key={a.id}
-                className="flex items-baseline gap-3 py-2.5 text-sm first:pt-0"
-              >
-                <span className="w-16 shrink-0 text-[11px] uppercase tracking-wide text-zinc-400">
-                  {a.type}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <Link
-                    href={`/companies?record=${a.eventCompanyId}`}
-                    scroll={false}
-                    className="font-medium text-zinc-800 hover:underline dark:text-zinc-100"
-                  >
-                    {a.companyName}
-                  </Link>
-                  {a.subject ? (
-                    <span className="text-zinc-500 dark:text-zinc-400">
-                      {" "}
-                      — {a.subject}
-                    </span>
-                  ) : null}
-                  {a.userName ? (
-                    <span className="text-zinc-400"> · {a.userName}</span>
-                  ) : null}
-                </div>
-                <span className="shrink-0 tabular-nums text-xs text-zinc-400">
-                  {formatRelativeDate(a.occurredAt)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <RecentActivitySection
+        eventId={activeEvent.id}
+        initialItems={recent}
+        categoryOptions={activityCategories}
+      />
     </div>
   );
 }
