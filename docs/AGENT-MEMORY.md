@@ -5,7 +5,7 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-11-13  
-**Branch:** `main` — NPB-3 UX merge in progress.
+**Branch:** `main` @ `4f8a5d8` — NPB-3 UX PRs #18–#24 landed.  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -25,17 +25,7 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Calendar: month grid + list; priority via CSS vars (`--priority-*`); no new calendar lib (`date-fns` only).
 
 ## Shipped recently
-**Event page details (2026-11-13)** — course directors, goals, metrics.
-
-**Company taxonomy filters (2026-11-13)** — size / sector / sub-sector on Companies.
-
-**Dashboard activity filters (2026-11-13)** — filterable/collapsible activity on Home.
-
-**Calendar Todoist UX (2026-11-13)** — month grid + priorities on `/calendar`.
-
-**Contacts row actions (2026-11-13)** — `/contacts`: name → drawer, company → companies record, email → clipboard copy.
-
-**Mayo blue theme (2026-11-13)** — Brand tokens indigo→Mayo `#0057b8`; Deferred stone; meeting teal.
+**NPB-3 UX pack (2026-11-13, PRs #18–#24 on `main`):** Mayo blue theme · contacts row actions · Todoist calendar · dashboard activity filters · company taxonomy filters · tasks assign/kanban/timeline · event profile (directors/goals/metrics). Migration **0017** (`event_profile_details`) needs manual `pnpm db:migrate`.
 
 **Email helpers + export pack (2026-11-13)** — Draft dialog: To: (primary contact), **Open in mail** / **Mark sent**; Export pack CSVs. No migration.
 
@@ -47,10 +37,10 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 
 **Forecast / fulfillment / duplicates (merged PR #11)** · **Mobile shell (PR #10)** · **Renewal rollover (PR #9)** · **Light Attio (PR #8)**
 
-**Prod DB:** claimed through **0016**, but agents tables missing. Neon `nppacrm` = `young-cell-40419191`.  
-**Still needed:** apply agents migration; `CRON_SECRET`; extend AI Gateway/MODEL/VALYU to Production; rotate Neon owner password.
+**Prod DB:** through **0016** applied; agents tables still missing; **0017** not applied. Neon `nppacrm` = `young-cell-40419191`.  
+**Still needed:** recreate agents tables (`0009`) + migrate **0017**; `CRON_SECRET`; extend AI Gateway/MODEL/VALYU to Production; rotate Neon owner password.
 
-**Next up:** sponsor self-service link · vitest for `compile.ts`/serializer/reports.
+**Next up:** mark NPB-3 done after prod migrate/verify · email ingest (NPB-6) · vitest.
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).
