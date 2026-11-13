@@ -6,15 +6,17 @@ import { env } from "@/lib/env";
  * Returns true if at least one of the LLM credentials is configured.
  * Supports three auth paths:
  *  1. Explicit AI_GATEWAY_API_KEY
- *  2. Direct ANTHROPIC_API_KEY (local fallback)
- *  3. VERCEL_OIDC_TOKEN — injected by `vercel env pull` locally or auto-present
- *     on deployed Vercel functions (no separate key needed).
+ *  2. Direct ANTHROPIC_API_KEY (local or Vercel Production)
+ *  3. VERCEL_OIDC_TOKEN — injected by `vercel env pull` locally or when the
+ *     deployment actually has OIDC wired for AI Gateway
+ *
+ * Do NOT treat bare `process.env.VERCEL` as configured — that made every
+ * production deploy report "AI ready" and route through the Gateway with no
+ * key, while ignoring a user-supplied ANTHROPIC_API_KEY.
  */
 function isAiConfigured(): boolean {
   if (env.AI_GATEWAY_API_KEY || env.ANTHROPIC_API_KEY) return true;
   if (process.env.VERCEL_OIDC_TOKEN) return true;
-  // On Vercel deployments, OIDC is always available even before env pull.
-  if (process.env.VERCEL === "1" || process.env.VERCEL === "true") return true;
   return false;
 }
 
@@ -72,24 +74,19 @@ export function calculateCostUsd(opts: {
 /**
  * Resolve the AI SDK LanguageModel for a "provider/model" string.
  *
- * On Vercel with AI_GATEWAY_API_KEY (or OIDC), the `ai` package routes the
- * call through the gateway automatically. If only ANTHROPIC_API_KEY is set,
- * fall back to the direct provider package so we can still talk to the model.
+ * Prefer AI Gateway when an explicit gateway key or OIDC token is present.
+ * Otherwise use the direct Anthropic provider when ANTHROPIC_API_KEY is set
+ * — including on Vercel Production (do not require the Gateway).
  */
 export async function resolveModel(
   modelId: string = DEFAULT_MODEL_ID,
 ): Promise<LanguageModel> {
   // Gateway path: AI SDK v6 accepts plain provider/model strings when the
-  // gateway is wired via AI_GATEWAY_API_KEY, VERCEL_OIDC_TOKEN (from
-  // `vercel env pull`), or the auto-injected OIDC on deployed Vercel functions.
-  if (
-    env.AI_GATEWAY_API_KEY ||
-    process.env.VERCEL_OIDC_TOKEN ||
-    process.env.VERCEL
-  ) {
+  // gateway is wired via AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN.
+  if (env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN) {
     return modelId as unknown as LanguageModel;
   }
-  // Direct Anthropic fallback for local dev w/o gateway access.
+  // Direct Anthropic — local and Vercel when only ANTHROPIC_API_KEY is set.
   if (env.ANTHROPIC_API_KEY && modelId.startsWith("anthropic/")) {
     const { anthropic } = await import("@ai-sdk/anthropic");
     const stripped = modelId.slice("anthropic/".length);

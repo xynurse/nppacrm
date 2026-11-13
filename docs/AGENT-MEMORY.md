@@ -5,7 +5,7 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-11-13  
-**Branch:** `main` — PR #14 (email helpers / export pack) merged `3ad63c2`.  
+**Branch:** `cursor/fix-ai-gateway-anthropic-prod-8370` (onto `main` @ `b186d42` agents soft-fail).  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -28,12 +28,16 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 
 **Playbooks from drawer (2026-11-04)** — `components/companies/playbook-menu.tsx`, `lib/actions/playbooks.ts`. 24 h dedupe. No migration.
 
-**Vercel env gap:** extend AI keys + `CRON_SECRET` to Production/Preview (user dashboard), then redeploy.
+**Digest `86460961` (2026-11-13):** Neon `42P01` — missing `agent_schedules` on Admin → Event → AI Agents. Soft-fail on `main` (`b186d42`). User still needs `pnpm db:migrate` / `0009_agents.sql` on prod for real agents data.
+
+**AI Gateway fix (this branch):** stop treating bare `VERCEL=1` as “AI configured”; use direct `@ai-sdk/anthropic` when only `ANTHROPIC_API_KEY` is set. Soften optional `CRON_SECRET` / `AI_DAILY_SPEND_CAP_USD` so typos don’t take down RSC.
+
+**Vercel env:** `ANTHROPIC_API_KEY` on Production; `AI_GATEWAY_*` / `AI_MODEL_ID` / `VALYU_API_KEY` / spend cap still Development-only; `CRON_SECRET` unset.
 
 **Forecast / fulfillment / duplicates (merged PR #11)** · **Mobile shell (PR #10)** · **Renewal rollover (PR #9)** · **Light Attio (PR #8)**
 
-**Prod DB:** claimed through **0016**, but **`agent_schedules` missing in prod** (2026-11-13 logs: digest `86460961` on `/admin/events/[id]/agents`). Agents page now soft-fails; still need manual recreate via `0009_agents.sql` / `pnpm db:migrate`. Neon `nppacrm` = `young-cell-40419191`.  
-**Still needed:** apply agents tables; Vercel `CRON_SECRET`; extend AI keys to Production (ANTHROPIC_API_KEY is on Production; Gateway/MODEL/VALYU still Development-only); rotate Neon owner password.
+**Prod DB:** claimed through **0016**, but agents tables missing. Neon `nppacrm` = `young-cell-40419191`.  
+**Still needed:** apply agents migration; `CRON_SECRET`; extend AI Gateway/MODEL/VALYU to Production; rotate Neon owner password.
 
 **Next up:** sponsor self-service link · vitest for `compile.ts`/serializer/reports.
 

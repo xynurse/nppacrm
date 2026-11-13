@@ -22,8 +22,18 @@ export const env = createEnv({
     AI_GATEWAY_API_KEY: z.string().optional(),
     AI_MODEL_ID: z.string().default("anthropic/claude-sonnet-4-6"),
     VALYU_API_KEY: z.string().optional(),
-    AI_DAILY_SPEND_CAP_USD: z.coerce.number().positive().default(5),
-    CRON_SECRET: z.string().min(16).optional(),
+    // Soften optional ops knobs: a typo in Vercel must not take down every
+    // Server Component that imports `env` via the DB layer.
+    AI_DAILY_SPEND_CAP_USD: z.coerce
+      .number()
+      .positive()
+      .default(5)
+      .catch(5),
+    CRON_SECRET: z
+      .string()
+      .min(16)
+      .optional()
+      .catch(undefined),
   },
   client: {},
   runtimeEnv: {
