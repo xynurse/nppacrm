@@ -5,7 +5,7 @@
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
 **Last updated:** 2026-11-13  
-**Branch:** `cursor/ux-today-research-prospectus-email-8370` — Today tasks + research inject + prospectus/event + email-parse help.  
+**Branch:** `main` @ `a4f867b` — UX pack PR #25 merged (Today / research inject / prospectus / email-parse help).  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -25,7 +25,7 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - Calendar: month grid + list; priority via CSS vars (`--priority-*`); no new calendar lib (`date-fns` only).
 
 ## Shipped recently
-**UX pack in flight (2026-11-13):** Home Today — collapse / multiselect / due date · AI enrich research-notes inject · Event page event switcher + prospectus upload/revise · Quick update email-parse help. No migration.
+**UX pack (2026-11-13, PR #25 on `main`):** Home Today — collapse / multiselect / due date · AI enrich research-notes inject · Event page event switcher + prospectus upload/revise · Quick update email-parse help. No migration.
 
 **NPB-3 UX pack (2026-11-13, PRs #18–#24 on `main`):** Mayo blue theme · contacts row actions · Todoist calendar · dashboard activity filters · company taxonomy filters · tasks assign/kanban/timeline · event profile (directors/goals/metrics). Migration **0017** (`event_profile_details`) needs manual `pnpm db:migrate`.
 
@@ -42,7 +42,7 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 **Prod DB:** through **0016** applied; agents tables still missing; **0017** not applied. Neon `nppacrm` = `young-cell-40419191`.  
 **Still needed:** recreate agents tables (`0009`) + migrate **0017**; `CRON_SECRET`; extend AI Gateway/MODEL/VALYU to Production; rotate Neon owner password.
 
-**Next up:** land UX pack PR · mark NPB-3 done after prod migrate/verify · email ingest (NPB-6 / IMAP) · vitest.
+**Next up:** mark NPB-3 done after prod migrate/verify · email ingest (NPB-6 / IMAP) · vitest.
 
 ## Deferred / not built
 - Email send + IMAP (needs Resend dep approval).
