@@ -139,6 +139,7 @@ export async function createTask(
     });
   }
 
+  revalidatePath("/");
   revalidatePath("/companies");
   revalidatePath("/tasks");
   revalidatePath("/calendar");
@@ -228,6 +229,7 @@ export async function updateTask(raw: unknown): Promise<ActionResult> {
     });
   }
 
+  revalidatePath("/");
   revalidatePath("/companies");
   revalidatePath("/tasks");
   revalidatePath("/calendar");
@@ -262,6 +264,7 @@ export async function setTaskCompleted(
     entityId: parsed.data.id,
   });
 
+  revalidatePath("/");
   revalidatePath("/companies");
   revalidatePath("/tasks");
   revalidatePath("/calendar");
@@ -329,6 +332,7 @@ export async function deleteTask(raw: unknown): Promise<ActionResult> {
     changes,
   });
 
+  revalidatePath("/");
   revalidatePath("/companies");
   revalidatePath("/tasks");
   revalidatePath("/calendar");

@@ -36,9 +36,11 @@ export default async function ProspectusAdminPage({
           Prospectus
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Upload the conference sponsorship prospectus PDF. The system extracts
-          the text and uses it as grounding context for every AI enrichment on
-          this event&apos;s prospects.
+          Upload or replace the conference sponsorship prospectus PDF. The
+          system extracts the text and uses it as grounding context for every
+          AI enrichment on this event&apos;s prospects. Switching the active
+          event (sidebar or Event page) scopes enrichment to that event&apos;s
+          prospectus.
         </p>
       </div>
 
