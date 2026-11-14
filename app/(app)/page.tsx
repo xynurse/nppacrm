@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckSquare, Flame } from "lucide-react";
+import { Flame } from "lucide-react";
 import { requireSession } from "@/lib/auth";
 import { listActiveEvents } from "@/lib/db/queries/events";
 import {
@@ -16,6 +16,7 @@ import {
   StatusBadge,
 } from "@/components/companies/status-badge";
 import { RecentActivitySection } from "@/components/dashboard/recent-activity";
+import { TodayTasksSection } from "@/components/dashboard/today-tasks";
 import { Button } from "@/components/ui/button";
 import { NlUpdateBox } from "@/components/ai/nl-update-box";
 import { encodeToParam } from "@/lib/views/schema";
@@ -74,7 +75,7 @@ export default async function DashboardPage() {
       listStalledProspects(activeEvent.id),
       listRecentActivity(activeEvent.id),
       listActivityCategoryOptions(activeEvent.id),
-      listMyOpenTasks(activeEvent.id, session.user.id),
+      listMyOpenTasks(activeEvent.id, session.user.id, 20),
       listHotProspects(activeEvent.id),
     ]);
 
@@ -144,71 +145,7 @@ export default async function DashboardPage() {
       </header>
 
       <section className="space-y-4">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="font-display text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Today
-          </h2>
-          <Link
-            href="/tasks"
-            className="text-xs text-zinc-500 underline-offset-2 hover:text-zinc-800 hover:underline dark:hover:text-zinc-200"
-          >
-            All tasks
-          </Link>
-        </div>
-
-        {myTasks.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            No open tasks assigned to you. You’re clear.
-          </p>
-        ) : (
-          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
-            {myTasks.slice(0, 8).map((t) => {
-              const inner = (
-                <>
-                  <CheckSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400" />
-                  <span className="min-w-0 flex-1 truncate text-zinc-800 dark:text-zinc-100">
-                    {t.title}
-                    {t.companyName ? (
-                      <span className="text-zinc-400"> · {t.companyName}</span>
-                    ) : null}
-                  </span>
-                </>
-              );
-              return (
-                <li
-                  key={t.id}
-                  className="flex items-center justify-between gap-3 py-2.5 text-sm first:pt-0"
-                >
-                  {t.eventCompanyId ? (
-                    <Link
-                      href={`/companies?record=${t.eventCompanyId}`}
-                      scroll={false}
-                      className="flex min-w-0 flex-1 items-start gap-2 hover:underline"
-                    >
-                      {inner}
-                    </Link>
-                  ) : (
-                    <span className="flex min-w-0 flex-1 items-start gap-2">
-                      {inner}
-                    </span>
-                  )}
-                  <span className="shrink-0 tabular-nums text-xs text-zinc-400">
-                    {t.dueDate ?? "—"}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        {myTasks.length > 8 ? (
-          <Link
-            href="/tasks"
-            className="inline-block text-xs text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
-          >
-            +{myTasks.length - 8} more →
-          </Link>
-        ) : null}
-
+        <TodayTasksSection tasks={myTasks} />
         <NlUpdateBox />
       </section>
 

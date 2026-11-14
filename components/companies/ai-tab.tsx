@@ -38,6 +38,7 @@ export function AiTab({
   const [running, startRun] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [userContext, setUserContext] = useState("");
 
   const pending = suggestions.filter((s) => s.status === "pending");
   const pendingByField = new Map<string, SuggestionRow[]>();
@@ -53,7 +54,10 @@ export function AiTab({
     setError(null);
     setSuccessMessage(null);
     startRun(async () => {
-      const res = await enrichSingle({ eventCompanyId });
+      const res = await enrichSingle({
+        eventCompanyId,
+        userContext: userContext.trim() || undefined,
+      });
       if (!res.ok) {
         setError(res.error);
       } else {
@@ -93,6 +97,29 @@ export function AiTab({
             {running ? "Thinking…" : "Enrich with AI"}
           </Button>
         </div>
+        {hasProspectus ? (
+          <div className="mt-3 space-y-1.5">
+            <label
+              htmlFor={`enrich-context-${eventCompanyId}`}
+              className="text-xs font-medium text-slate-600 dark:text-slate-300"
+            >
+              Your research notes (optional)
+            </label>
+            <textarea
+              id={`enrich-context-${eventCompanyId}`}
+              value={userContext}
+              onChange={(e) => setUserContext(e.target.value)}
+              rows={3}
+              maxLength={4000}
+              disabled={running}
+              placeholder="Inject specifics for this company — products to mention, contacts you’ve met, tone, constraints, competitive angle…"
+              className="w-full resize-y rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-500/15 dark:border-slate-700 dark:bg-zinc-950 dark:text-slate-100"
+            />
+            <p className="text-[11px] text-slate-400">
+              Included only for this enrich run — not saved to the CRM field.
+            </p>
+          </div>
+        ) : null}
         {error ? (
           <p className="mt-3 rounded border border-red-200 bg-red-50 p-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
             {error}
