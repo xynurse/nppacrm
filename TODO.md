@@ -3,20 +3,40 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest on main: PRs #9 (renewal rollover) + #10 (mobile shell) merged 2026-11-03. Prod migrations still 0000–0014 until manual `pnpm db:migrate` for **0015**.
+Latest on main: **UX PRs #18–#25** (2026-11-13/14) + earlier #8–#14. Prod DB through **0016**; still need manual migrate **0017** + agents tables (**0009**).
 
 **Considerations (Bonsai — not scheduled):** sponsor portal · proposal view tracking · fulfillment board handoff · intake forms · fixed automations · meeting→CRM. See AGENT-MEMORY.
+
+## Open (ordered)
+
+- [ ] **(user, manual)** `pnpm db:migrate` for **0017** (event profile details) — NPB-13
+- [ ] **(user, manual)** Recreate agents tables / `agent_schedules` (**0009**) — NPB-12
+- [ ] **(user, manual)** `CRON_SECRET` + extend AI Gateway/MODEL/VALYU to Production; rotate Neon owner password
+- [ ] Inbound email agent ingest (NPB-6) — blocked on mailbox/domain + provider
+- [ ] Sponsor self-service link
+- [ ] Vitest for compile / TipTap serializer / reports
+- [ ] `/companies` First Load toward 160 kB
+
+## Shipped 2026-11-13/14 — NPB-3 UX + follow-ons (PRs #18–#25)
+
+- [x] #18 Mayo Clinic blue theme (Notion/Linear — no purple)
+- [x] #19 Contacts — name opens drawer, company links, email copies
+- [x] #20 Todoist-like calendar month grid + priorities
+- [x] #21 Dashboard activity filters + collapse
+- [x] #22 Company size / sector / sub-sector filters
+- [x] #23 Tasks — click-to-assign, filters, kanban + timeline
+- [x] #24 Event profile — directors, goals, metrics (migration **0017**)
+- [x] #25 Home Today — collapse / multiselect / due date · AI research-notes inject · Event switcher + prospectus upload/revise · Quick update email-parse help
+
+## Earlier shipped (keep)
 
 - [x] Light Attio/Twenty shell (merged PR #8, 2026-11-03)
 - [x] Renewal rollover — start next year from event (merged PR #9)
 - [x] Mobile shell fix — bottom nav + company cards (merged PR #10)
-- [x] Tier inventory + weighted forecast/pace (`cursor/forecast-fulfillment-dedupe-eed9`)
-- [x] Fulfillment board (`/fulfillment`)
-- [x] Duplicate detection/merge (`/admin/duplicates`)
-- [ ] **(user, manual)** `pnpm db:migrate` for **0015 + 0016**
+- [x] Tier inventory + weighted forecast/pace · Fulfillment board · Duplicate merge (PR #11)
+- [x] **(user, manual)** `pnpm db:migrate` for **0015 + 0016** (applied)
 - [x] Playbooks from drawer (2026-11-04)
 - [x] Email helpers / export pack (2026-11-13) — open in mail + mark sent; export pack CSVs
-- [ ] Sponsor self-service link (next)
 
 ## Shipped 2026-10-20 (Chunk 1 — security)
 

@@ -4,8 +4,8 @@
 > `SESSION-STATE.md` / `TODO.md` / `CHANGELOG.md` / the build prompt unless
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
-**Last updated:** 2026-11-13  
-**Branch:** `main` @ `a4f867b` — UX pack PR #25 merged (Today / research inject / prospectus / email-parse help).  
+**Last updated:** 2026-11-14  
+**Branch:** `main` — Claude Code handoff after UX PRs **#18–#25** (parent `7e21c6e` + this docs commit).  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
 ---
@@ -15,78 +15,49 @@ Spreadsheet-first sponsorship CRM (Attio/Linear vibe) for Mayo Clinic NPPA LPD o
 Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Table · TipTap · pnpm.
 
 ## Design decisions (don't re-debate)
-- Brand: **Mayo blue on zinc** (`#0057b8`), Plus Jakarta Sans (not Inter). Status colors stay semantic; Deferred uses stone (not purple).
+- Brand: **Mayo Clinic blue on zinc** (`#0057b8`), Plus Jakarta Sans — Notion/Linear look. **No purple** (Deferred = stone).
 - **Light-only UI** (Attio/Twenty) — no dark theme, no black sidebar. Forced `light` in ThemeProvider.
 - Rich text: additive `*_doc` jsonb + plain-text mirror (not convert columns).
 - BOUNCED / DEFERRED = **tags**, not pipeline statuses.
 - Mutations → Server Actions + `auditLog`. Soft deletes via `deletedAt`.
-- Commit policy: **Claude Code is the primary environment** — follow CLAUDE.md (commit + push to `main` after every green build). Any `cursor/*` or `claude/*` branch must be merged to `main` before the session ends.
-- Home IA: Today → money pulse → Watch → thin activity (funnel/tier live on Reports).
-- Calendar: month grid + list; priority via CSS vars (`--priority-*`); no new calendar lib (`date-fns` only).
+- Commit policy: **Claude Code is primary** — commit + push `main` after green build. Merge any `cursor/*` / `claude/*` before session end.
+- Home IA: Today → money pulse → Watch → thin activity (funnel/tier on Reports).
+- Calendar: month grid + list; priority via CSS vars (`--priority-*`); `date-fns` only.
+- **Never** `db:migrate` / `db:seed` against prod from an agent (`.env.local` → prod Neon).
 
 ## Shipped recently
-**UX pack (2026-11-13, PR #25 on `main`):** Home Today — collapse / multiselect / due date · AI enrich research-notes inject · Event page event switcher + prospectus upload/revise · Quick update email-parse help. No migration.
+**NPB-3 UX + follow-ons (2026-11-13/14, PRs #18–#25 on `main`):**
+- #18 Mayo blue theme · #19 contacts row actions · #20 Todoist calendar + priorities · #21 dashboard activity filters/collapse · #22 company size/sector filters · #23 tasks assign/kanban/timeline · #24 event profile (directors/goals/metrics, mig **0017**) · #25 Today collapse/multiselect/due date · research-notes inject on Enrich · Event switcher + prospectus upload/revise · Quick update email-parse help.
 
-**NPB-3 UX pack (2026-11-13, PRs #18–#24 on `main`):** Mayo blue theme · contacts row actions · Todoist calendar · dashboard activity filters · company taxonomy filters · tasks assign/kanban/timeline · event profile (directors/goals/metrics). Migration **0017** (`event_profile_details`) needs manual `pnpm db:migrate`.
+**Also:** Email helpers + export pack (#14) · AI Gateway honor `ANTHROPIC_API_KEY` · Agents page soft-fail without `agent_schedules` · forecast/fulfillment/dupes (#11) · mobile (#10) · rollover (#9) · light Attio (#8).
 
-**Email helpers + export pack (2026-11-13)** — Draft dialog: To: (primary contact), **Open in mail** / **Mark sent**; Export pack CSVs. No migration.
-
-**Digest `86460961`:** missing `agent_schedules` — soft-fail on Agents page (`b186d42`); still need `pnpm db:migrate` / `0009`.
-
-**AI Gateway fix (`2bccbf0`):** honor `ANTHROPIC_API_KEY` on Vercel; don’t treat bare `VERCEL=1` as AI-ready; soften optional env typos.
-
-**Vercel env:** `ANTHROPIC_API_KEY` on Production; `AI_GATEWAY_*` / `AI_MODEL_ID` / `VALYU_API_KEY` / spend cap still Development-only; `CRON_SECRET` unset.
-
-**Forecast / fulfillment / duplicates (merged PR #11)** · **Mobile shell (PR #10)** · **Renewal rollover (PR #9)** · **Light Attio (PR #8)**
-
-**Prod DB:** through **0016** applied; agents tables still missing; **0017** not applied. Neon `nppacrm` = `young-cell-40419191`.  
-**Still needed:** recreate agents tables (`0009`) + migrate **0017**; `CRON_SECRET`; extend AI Gateway/MODEL/VALYU to Production; rotate Neon owner password.
-
-**Next up:** mark NPB-3 done after prod migrate/verify · email ingest (NPB-6 / IMAP) · vitest.
+**Prod DB:** through **0016** applied; **0017** not applied; agents tables (`0009` / `agent_schedules`) still missing. Neon `nppacrm` = `young-cell-40419191`.
 
 ## Deferred / not built
-- Email send + IMAP (needs Resend dep approval).
-- New custom-field types (multiSelect, datetime, rating, person, relation).
-- Gallery view. Real-time Pusher presence.
-- Sequences as DB objects (playbooks are client templates only).
-- `/companies` First Load still ~229 kB vs 160 target.
+- **Inbound email agent ingest (NPB-6)** — needs mailbox/domain + provider (Gmail/Outlook/forward). IMAP/Resend still needs dep approval.
+- Prod migrates: **0017** event profile · recreate agents (**0009**).
+- Sponsor self-service portal · vitest · gallery · Pusher presence · sequences as DB objects.
+- `/companies` First Load ~229 kB vs 160 target.
+- Cloud Agent has **no `SEED_ADMIN_*`** — cannot signed-in browser smoke against prod.
 
-## Considerations (not scheduled — Bonsai / post-commit UX)
-From hellobonsai.com review. Steal post-commit ideas only; keep Attio/Twenty for outreach UX.
-1. Sponsor self-service portal (narrow: docs + invoice/booth status)
-2. Proposal view/accept tracking (beyond “sent”)
-3. Confirmed → fulfillment board handoff
-4. Interest/intake forms → new prospect
-5. Fixed automations (few triggers, not a rules engine)
-6. Meeting → interaction/tasks (AI path) — larger lift  
-Skip for us: time tracking, Gantt, full Stripe invoicing, e-sign product.
-
-## High-traffic paths (edit here first)
+## High-traffic paths
 | Area | Path |
 |---|---|
 | Tokens / look | `app/globals.css`, `app/layout.tsx` |
 | Shell | `components/app/{sidebar,top-bar,page-title,notification-bell}.tsx` |
-| Home | `app/(app)/page.tsx` · `components/dashboard/recent-activity.tsx` |
-| Table / drawer | `components/companies/{companies-table,company-drawer,companies-workspace}.tsx` |
-| Pipeline | `components/pipeline/{kanban-board,pipeline-workspace}.tsx` |
-| Auth edge | `lib/auth/edge-config.ts`, `middleware.ts` |
-| Queries | `lib/db/queries/companies.ts` |
-| Cells | `lib/cells/registry.ts` · `components/cells/lazy-editors.tsx` |
-| Schema | `lib/db/schema/` · migrations `lib/db/migrations/` |
-| Email draft | `components/companies/email-draft-dialog.tsx` · `lib/actions/email.ts` · `lib/mailto.ts` |
-| Export | `components/views/export-button.tsx` · `lib/actions/csv.ts` |
-| Contacts dir | `components/contacts/contacts-workspace.tsx` · `contact-drawer.tsx` · `app/(app)/contacts/page.tsx` |
+| Home | `app/(app)/page.tsx` · `components/dashboard/{today-tasks,recent-activity}.tsx` |
+| Table / drawer | `components/companies/{companies-table,company-drawer,companies-workspace,ai-tab}.tsx` |
+| Tasks / calendar | `components/tasks/*` · `app/(app)/calendar/` |
+| Event | `app/(app)/event/page.tsx` · `components/event/*` · prospectus admin |
+| Schema | `lib/db/schema/` · `lib/db/migrations/` |
+| Email draft / NL | `components/companies/email-draft-dialog.tsx` · `components/ai/nl-update-box.tsx` |
 
-## Ops / known gaps
-- TipTap `/` and `@` and Phase 5 columns were not browser-verified here (no `.env.local` / login).
-- Repo is public — user undecided on private.
-
-## How to work in new chats (token discipline)
+## How to work in new chats
 1. Read **this file only** to start.
-2. For one feature: open ≤3 related files via Grep/Glob — no whole-tree walks.
+2. For one feature: ≤3 related files via Grep/Glob.
 3. One chunk per session; plan if >2–3 files.
-4. After ship: update **this file’s “Last updated / Shipped / Deferred”** (keep it short), then SESSION-STATE if needed.
-5. Never dump SESSION-STATE / CHANGELOG into context “just in case.”
+4. After ship: update Last updated / Shipped / Deferred here, then SESSION-STATE / TODO / CHANGELOG + push.
+5. Green build in cloud: `pnpm typecheck && pnpm lint && pnpm build:offline`.
 
 ## User preference on roadmap order
-When optimizing use/UI: preferred order was **Phase 2 (look) → 3 (features) → 4 (ambition) → 1 (daily unlock)**.
+When optimizing use/UI: **Phase 2 (look) → 3 (features) → 4 (ambition) → 1 (daily unlock)**.

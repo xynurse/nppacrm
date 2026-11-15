@@ -2,13 +2,34 @@
 
 ## Active build (committed to main)
 
-### Mayo blue / Notion-Linear theme _(2026-11-13)_
+### Today tasks, research inject, prospectus/event, email-parse help _(2026-11-13, PR #25)_
+Home **Today** is interactive: collapse (persisted), multi-select with bulk complete / set due date, per-row complete + date edit. Company AI Enrich accepts optional **research notes** (`userContext`) for that run only. Event page surfaces an event switcher (when multiple events) and admin Upload/Revise prospectus with current filename. Quick update adds expandable **How email parsing works** (paste → Parse → review; IMAP still deferred). No migration.
+
+### Event profile details _(2026-11-13, PR #24)_
+Event page gains course directors, goals, and metrics targets (editable for admins). Migration **0017** `event_profile_details` — apply manually in prod (`pnpm db:migrate`).
+
+### Tasks assign / kanban / timeline _(2026-11-13, PR #23)_
+Tasks page: click-to-assign, richer filters, kanban board and timeline views with due-date moves via existing `updateTask`.
+
+### Company taxonomy filters _(2026-11-13, PR #22)_
+Companies list filters by size, sector, and sub-sector facets for the active event.
+
+### Dashboard activity filters + collapse _(2026-11-13, PR #21)_
+Recent activity on Home is collapsible and filterable by category / subcategory / date range.
+
+### Todoist-like calendar _(2026-11-13, PR #20)_
+Calendar month grid + list with priority styling via CSS vars (`--priority-*`); `date-fns` only (no new calendar dependency).
+
+### Contacts row actions _(2026-11-13, PR #19)_
+Contacts directory: name opens the contact drawer, company links through, email copies to clipboard. (GitHub may show the PR `CLOSED` after rebase; commit is on `main`.)
+
+### Mayo blue / Notion-Linear theme _(2026-11-13, PR #18)_
 Brand accent swapped indigo → Mayo Clinic–inspired blue (`#0057b8`) via
 `--color-brand-*` / `--accent` in `app/globals.css` (components already use
 `brand-*` / `--accent`). Deferred badge stone instead of violet; meeting
-activity icon teal instead of purple. Light Attio/Twenty surfaces unchanged.
+activity icon teal instead of purple. Light Attio/Twenty surfaces unchanged — **no purple**.
 
-### Email helpers + export pack _(2026-11-13)_
+### Email helpers + export pack _(2026-11-13, PR #14)_
 AI draft dialog now shows the primary contact To:, **Open in mail** (mailto with subject/body; long bodies copy to clipboard), and **Mark sent** (logs an email interaction and advances `prospect` → `contacted`). Companies toolbar Export is a menu: existing Prospects CSV plus **Export pack** (prospects + contacts + interactions CSVs for the current filtered view). No migration; no new dependencies.
 
 ### Playbooks from the company drawer _(2026-11-04)_
