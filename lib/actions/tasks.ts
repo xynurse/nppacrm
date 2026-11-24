@@ -139,8 +139,10 @@ export async function createTask(
     });
   }
 
+  revalidatePath("/");
   revalidatePath("/companies");
   revalidatePath("/tasks");
+  revalidatePath("/calendar");
   return { ok: true, data: { id: row.id } };
 }
 
@@ -159,6 +161,17 @@ export async function updateTask(raw: unknown): Promise<ActionResult> {
   const parsed = updateSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid input" };
   const { id, ...patch } = parsed.data;
+
+  const [existing] = await db
+    .select({
+      title: tasks.title,
+      assignedTo: tasks.assignedTo,
+      eventCompanyId: tasks.eventCompanyId,
+    })
+    .from(tasks)
+    .where(eq(tasks.id, id))
+    .limit(1);
+  if (!existing) return { ok: false, error: "Task not found" };
 
   const updates: Record<string, unknown> = { updatedAt: new Date() };
   if ("title" in patch && patch.title) updates.title = patch.title.trim();
@@ -190,8 +203,36 @@ export async function updateTask(raw: unknown): Promise<ActionResult> {
     changes: patch,
   });
 
+  if (
+    "assignedTo" in patch &&
+    patch.assignedTo &&
+    patch.assignedTo !== existing.assignedTo &&
+    patch.assignedTo !== session.user.id
+  ) {
+    const { createNotification } = await import("@/lib/notifications");
+    const title =
+      typeof patch.title === "string" && patch.title.trim()
+        ? patch.title.trim()
+        : existing.title;
+    await createNotification({
+      userId: patch.assignedTo,
+      type: "task_assigned",
+      title: `Task assigned: ${title}`,
+      body: session.user.name
+        ? `Assigned by ${session.user.name}`
+        : "You were assigned a task",
+      entityType: "task",
+      entityId: id,
+      href: existing.eventCompanyId
+        ? `/companies?record=${existing.eventCompanyId}`
+        : "/tasks",
+    });
+  }
+
+  revalidatePath("/");
   revalidatePath("/companies");
   revalidatePath("/tasks");
+  revalidatePath("/calendar");
   return { ok: true };
 }
 
@@ -223,8 +264,10 @@ export async function setTaskCompleted(
     entityId: parsed.data.id,
   });
 
+  revalidatePath("/");
   revalidatePath("/companies");
   revalidatePath("/tasks");
+  revalidatePath("/calendar");
   return { ok: true };
 }
 
@@ -289,7 +332,9 @@ export async function deleteTask(raw: unknown): Promise<ActionResult> {
     changes,
   });
 
+  revalidatePath("/");
   revalidatePath("/companies");
   revalidatePath("/tasks");
+  revalidatePath("/calendar");
   return { ok: true };
 }

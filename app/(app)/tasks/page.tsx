@@ -5,8 +5,27 @@ import { listUsers } from "@/lib/db/queries/users";
 import { requireSession } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { TasksPageClient } from "@/components/tasks/tasks-page-client";
+import type { TaskFilter, TaskView } from "@/components/tasks/types";
 
-type SearchParams = Promise<{ filter?: string; view?: string }>;
+type SearchParams = Promise<{
+  filter?: string;
+  view?: string;
+  priority?: string;
+  assignee?: string;
+  q?: string;
+}>;
+
+function parseFilter(raw: string | undefined): TaskFilter {
+  if (raw === "mine" || raw === "overdue" || raw === "all" || raw === "open") {
+    return raw;
+  }
+  return "open";
+}
+
+function parseView(raw: string | undefined): TaskView {
+  if (raw === "timeline" || raw === "kanban" || raw === "list") return raw;
+  return "list";
+}
 
 export default async function TasksPage({
   searchParams,
@@ -18,20 +37,16 @@ export default async function TasksPage({
   const activeEvent =
     events.find((e) => e.id === session.user.activeEventId) ?? events[0] ?? null;
   const params = await searchParams;
-  const filter = (params.filter ?? "open") as
-    | "open"
-    | "mine"
-    | "overdue"
-    | "all";
-  const view = (params.view ?? "list") as "list" | "timeline";
+  const filter = parseFilter(params.filter);
+  const view = parseView(params.view);
 
   if (!activeEvent) {
     return (
       <div className="space-y-3">
-        <h1 className="font-display text-xl font-semibold tracking-tight">Tasks</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          No event yet.
-        </p>
+        <h1 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">
+          Tasks
+        </h1>
+        <p className="text-sm text-[var(--ink-muted)]">No event yet.</p>
         <Link href="/admin/events">
           <Button>Open admin → Events</Button>
         </Link>
@@ -63,9 +78,12 @@ export default async function TasksPage({
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="font-display text-xl font-semibold tracking-tight">Tasks</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          {activeEvent.name} · {filtered.length} task{filtered.length !== 1 ? "s" : ""}
+        <h1 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">
+          Tasks
+        </h1>
+        <p className="text-sm text-[var(--ink-muted)]">
+          {activeEvent.name} · {filtered.length} task
+          {filtered.length !== 1 ? "s" : ""}
         </p>
       </div>
       <TasksPageClient

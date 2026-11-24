@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listActiveEvents } from "@/lib/db/queries/events";
 import {
+  listCompanyTaxonomyFacets,
   listEventCompanies,
   listTiersForEvent,
 } from "@/lib/db/queries/companies";
@@ -70,15 +71,23 @@ export default async function CompaniesPage({
 
   // Event-scoped lookups that don't depend on the active view/filter can all
   // run together — tiers/users/reviews don't wait on saved views.
-  const [savedViews, fieldDefinitions, tiers, users, reviewerIds, reviews] =
-    await Promise.all([
-      listSavedViewsForUser(activeEvent.id, session.user.id),
-      listFieldDefinitionsForEvent(activeEvent.id),
-      listTiersForEvent(activeEvent.id),
-      listUsers(),
-      listReviewerIdsForEvent(activeEvent.id),
-      listReviewsForEvent(activeEvent.id),
-    ]);
+  const [
+    savedViews,
+    fieldDefinitions,
+    tiers,
+    users,
+    reviewerIds,
+    reviews,
+    taxonomyFacets,
+  ] = await Promise.all([
+    listSavedViewsForUser(activeEvent.id, session.user.id),
+    listFieldDefinitionsForEvent(activeEvent.id),
+    listTiersForEvent(activeEvent.id),
+    listUsers(),
+    listReviewerIdsForEvent(activeEvent.id),
+    listReviewsForEvent(activeEvent.id),
+    listCompanyTaxonomyFacets(activeEvent.id),
+  ]);
 
   const extraFields = fieldDefinitions.flatMap((def) => {
     const meta = fieldMetaForCustom(def);
@@ -142,6 +151,13 @@ export default async function CompaniesPage({
 
   const ownerFieldOptions = owners.map((o) => ({ value: o.id, label: o.name }));
   const tierFieldOptions = tiers.map((t) => ({ value: t.id, label: t.name }));
+  const toOptions = (values: string[]) =>
+    values.map((v) => ({ value: v, label: v }));
+  const taxonomyFieldOptions = {
+    sizeBand: toOptions(taxonomyFacets.sizeBands),
+    category: toOptions(taxonomyFacets.sectors),
+    subcategory: toOptions(taxonomyFacets.subSectors),
+  };
 
   const recordId = typeof params.record === "string" ? params.record : null;
 
@@ -186,6 +202,7 @@ export default async function CompaniesPage({
         initialColumns={visibleColumns}
         ownerOptions={ownerFieldOptions}
         tierOptions={tierFieldOptions}
+        fieldOptions={taxonomyFieldOptions}
         resultCount={rows.length}
         isAdmin={session.user.role === "admin"}
         extraFields={extraFields}

@@ -1,5 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { isUndefinedTableError } from "@/lib/db/errors";
 import {
   agentRuns,
   agentSchedules,
@@ -15,20 +16,27 @@ export async function getAgentSchedule(
   eventId: string,
   agentType: string,
 ): Promise<{ enabled: boolean; lastRunAt: Date | null } | null> {
-  const [row] = await db
-    .select({
-      enabled: agentSchedules.enabled,
-      lastRunAt: agentSchedules.lastRunAt,
-    })
-    .from(agentSchedules)
-    .where(
-      and(
-        eq(agentSchedules.eventId, eventId),
-        eq(agentSchedules.agentType, agentType),
-      ),
-    )
-    .limit(1);
-  return row ?? null;
+  try {
+    const [row] = await db
+      .select({
+        enabled: agentSchedules.enabled,
+        lastRunAt: agentSchedules.lastRunAt,
+      })
+      .from(agentSchedules)
+      .where(
+        and(
+          eq(agentSchedules.eventId, eventId),
+          eq(agentSchedules.agentType, agentType),
+        ),
+      )
+      .limit(1);
+    return row ?? null;
+  } catch (err) {
+    // Migration 0009 may be recorded as applied while the table is missing
+    // (re-baseline quirk). Don't 500 the Agents admin page.
+    if (isUndefinedTableError(err)) return null;
+    throw err;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -53,26 +61,31 @@ export async function listAgentRuns(
   eventId: string,
   limit = 10,
 ): Promise<AgentRunRow[]> {
-  const rows = await db
-    .select({
-      id: agentRuns.id,
-      agentType: agentRuns.agentType,
-      status: agentRuns.status,
-      suggestionCount: agentRuns.suggestionCount,
-      costUsd: agentRuns.costUsd,
-      searchCalls: agentRuns.searchCalls,
-      error: agentRuns.error,
-      startedAt: agentRuns.startedAt,
-      finishedAt: agentRuns.finishedAt,
-      createdAt: agentRuns.createdAt,
-      triggeredByName: users.name,
-    })
-    .from(agentRuns)
-    .leftJoin(users, eq(agentRuns.triggeredBy, users.id))
-    .where(eq(agentRuns.eventId, eventId))
-    .orderBy(desc(agentRuns.createdAt))
-    .limit(limit);
-  return rows;
+  try {
+    const rows = await db
+      .select({
+        id: agentRuns.id,
+        agentType: agentRuns.agentType,
+        status: agentRuns.status,
+        suggestionCount: agentRuns.suggestionCount,
+        costUsd: agentRuns.costUsd,
+        searchCalls: agentRuns.searchCalls,
+        error: agentRuns.error,
+        startedAt: agentRuns.startedAt,
+        finishedAt: agentRuns.finishedAt,
+        createdAt: agentRuns.createdAt,
+        triggeredByName: users.name,
+      })
+      .from(agentRuns)
+      .leftJoin(users, eq(agentRuns.triggeredBy, users.id))
+      .where(eq(agentRuns.eventId, eventId))
+      .orderBy(desc(agentRuns.createdAt))
+      .limit(limit);
+    return rows;
+  } catch (err) {
+    if (isUndefinedTableError(err)) return [];
+    throw err;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -96,26 +109,42 @@ export type CompanySuggestionRow = {
 export async function listPendingSuggestions(
   eventId: string,
 ): Promise<CompanySuggestionRow[]> {
-  return db
-    .select({
-      id: companySuggestions.id,
-      agentRunId: companySuggestions.agentRunId,
-      companyName: companySuggestions.companyName,
-      industry: companySuggestions.industry,
-      hqLocation: companySuggestions.hqLocation,
-      website: companySuggestions.website,
-      rationale: companySuggestions.rationale,
-      matchScore: companySuggestions.matchScore,
-      sourceUrls: companySuggestions.sourceUrls,
-      status: companySuggestions.status,
-      createdAt: companySuggestions.createdAt,
-    })
-    .from(companySuggestions)
-    .where(
-      and(
-        eq(companySuggestions.eventId, eventId),
-        eq(companySuggestions.status, "pending"),
-      ),
-    )
-    .orderBy(desc(companySuggestions.createdAt));
+  try {
+    return await db
+      .select({
+        id: companySuggestions.id,
+        agentRunId: companySuggestions.agentRunId,
+        companyName: companySuggestions.companyName,
+        industry: companySuggestions.industry,
+        hqLocation: companySuggestions.hqLocation,
+        website: companySuggestions.website,
+        rationale: companySuggestions.rationale,
+        matchScore: companySuggestions.matchScore,
+        sourceUrls: companySuggestions.sourceUrls,
+        status: companySuggestions.status,
+        createdAt: companySuggestions.createdAt,
+      })
+      .from(companySuggestions)
+      .where(
+        and(
+          eq(companySuggestions.eventId, eventId),
+          eq(companySuggestions.status, "pending"),
+        ),
+      )
+      .orderBy(desc(companySuggestions.createdAt));
+  } catch (err) {
+    if (isUndefinedTableError(err)) return [];
+    throw err;
+  }
+}
+
+/** True when the agents schema (migration 0009) is missing in the live DB. */
+export async function agentsSchemaMissing(): Promise<boolean> {
+  try {
+    await db.select({ enabled: agentSchedules.enabled }).from(agentSchedules).limit(1);
+    return false;
+  } catch (err) {
+    if (isUndefinedTableError(err)) return true;
+    throw err;
+  }
 }

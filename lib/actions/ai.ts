@@ -189,7 +189,11 @@ export async function deleteProspectus(raw: unknown): Promise<ActionResult> {
 // Single-prospect enrichment
 // ---------------------------------------------------------------------------
 
-const enrichSingleSchema = z.object({ eventCompanyId: z.uuid() });
+const enrichSingleSchema = z.object({
+  eventCompanyId: z.uuid(),
+  /** Optional free-text notes the user injects for this research run. */
+  userContext: z.string().trim().max(4000).optional(),
+});
 
 export async function enrichSingle(
   raw: unknown,
@@ -316,6 +320,7 @@ export async function enrichSingle(
         relationshipNotes: ec.relationshipNotes,
       },
       searchContext: formatHitsForPrompt(search.hits),
+      userContext: parsed.data.userContext?.trim() || null,
     });
 
     const { result, usage, model } = await runEnrichment({
@@ -368,6 +373,7 @@ export async function enrichSingle(
         suggestionCount: result.suggestions.length,
         model,
         cost,
+        hasUserContext: Boolean(parsed.data.userContext?.trim()),
       },
     });
 
@@ -522,11 +528,21 @@ function buildUserPrompt(opts: {
   companyIndustry: string | null;
   ecNotes: Record<string, string | null>;
   searchContext: string;
+  userContext: string | null;
 }): string {
   const existing = Object.entries(opts.ecNotes)
     .filter(([, v]) => v && v.trim().length > 0)
     .map(([k, v]) => `${k}: ${v}`)
     .join("\n");
+
+  const injected = opts.userContext?.trim()
+    ? `Researcher notes (treat as high-priority guidance for this run — honor
+angles, constraints, people, products, and tone called out here):
+"""
+${opts.userContext.trim().slice(0, 4000)}
+"""
+`
+    : "";
 
   return `Prospect company:
 - Name: ${opts.companyName}
@@ -536,11 +552,13 @@ function buildUserPrompt(opts: {
 Existing notes from CRM:
 ${existing || "(none yet)"}
 
+${injected}
 Web search context (cite the [N] index in sourceUrls when used):
 ${opts.searchContext}
 
 Draft 1-4 suggestions across these fields, picking only the fields where you
-can ground each draft in the prospectus + the company context:
+can ground each draft in the prospectus + the company context
+${opts.userContext?.trim() ? "+ the researcher notes" : ""}:
 
 - whyTheyShouldAttend: a paragraph the team can paste into outreach explaining
   why THIS conference is a fit for THIS company.

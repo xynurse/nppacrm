@@ -7,6 +7,7 @@ import { requireAdmin, requireSession } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { runAtomic } from "@/lib/db/batch";
 import { db } from "@/lib/db";
+import { isUndefinedColumnError } from "@/lib/db/errors";
 import {
   customFieldDefinitions,
   eventCompanies,
@@ -23,6 +24,9 @@ import {
 } from "@/lib/schemas/events";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
+
+const MIGRATE_HINT =
+  "Event profile fields need migration 0017 (`pnpm db:migrate`) before they can be saved.";
 
 type RolloverResult =
   | {
@@ -53,21 +57,58 @@ export async function createEvent(raw: unknown): Promise<ActionResult> {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
   }
 
-  const { name, slug, startDate, endDate, fundraisingGoal, currency, timezone } =
-    parsed.data;
+  const {
+    name,
+    slug,
+    startDate,
+    endDate,
+    fundraisingGoal,
+    currency,
+    timezone,
+    location,
+    description,
+    courseDirectors,
+    goals,
+    attendeeGoal,
+    sponsorCountGoal,
+  } = parsed.data;
 
-  const [created] = await db
-    .insert(events)
-    .values({
-      name,
-      slug,
-      startDate: startDate ?? null,
-      endDate: endDate ?? null,
-      fundraisingGoal: fundraisingGoal ?? null,
-      currency,
-      timezone,
-    })
-    .returning();
+  let created: typeof events.$inferSelect | undefined;
+  try {
+    [created] = await db
+      .insert(events)
+      .values({
+        name,
+        slug,
+        startDate: startDate ?? null,
+        endDate: endDate ?? null,
+        fundraisingGoal: fundraisingGoal ?? null,
+        currency,
+        timezone,
+        location: location ?? null,
+        description: description ?? null,
+        courseDirectors: courseDirectors ?? [],
+        goals: goals ?? [],
+        attendeeGoal: attendeeGoal ?? null,
+        sponsorCountGoal: sponsorCountGoal ?? null,
+      })
+      .returning();
+  } catch (err) {
+    if (!isUndefinedColumnError(err)) throw err;
+    // Pre-0017: create with core columns only.
+    [created] = await db
+      .insert(events)
+      .values({
+        name,
+        slug,
+        startDate: startDate ?? null,
+        endDate: endDate ?? null,
+        fundraisingGoal: fundraisingGoal ?? null,
+        currency,
+        timezone,
+      })
+      .returning();
+  }
 
   if (!created) {
     return { ok: false, error: "Failed to create event" };
@@ -104,8 +145,45 @@ export async function updateEvent(raw: unknown): Promise<ActionResult> {
   if (rest.currency !== undefined) updates.currency = rest.currency;
   if (rest.timezone !== undefined) updates.timezone = rest.timezone;
   if (rest.status !== undefined) updates.status = rest.status;
+  if (rest.location !== undefined) updates.location = rest.location ?? null;
+  if (rest.description !== undefined)
+    updates.description = rest.description ?? null;
+  if (rest.courseDirectors !== undefined)
+    updates.courseDirectors = rest.courseDirectors;
+  if (rest.goals !== undefined) updates.goals = rest.goals;
+  if (rest.attendeeGoal !== undefined)
+    updates.attendeeGoal = rest.attendeeGoal ?? null;
+  if (rest.sponsorCountGoal !== undefined)
+    updates.sponsorCountGoal = rest.sponsorCountGoal ?? null;
 
-  await db.update(events).set(updates).where(eq(events.id, id));
+  const touchingProfile =
+    rest.location !== undefined ||
+    rest.description !== undefined ||
+    rest.courseDirectors !== undefined ||
+    rest.goals !== undefined ||
+    rest.attendeeGoal !== undefined ||
+    rest.sponsorCountGoal !== undefined;
+
+  try {
+    await db.update(events).set(updates).where(eq(events.id, id));
+  } catch (err) {
+    if (!isUndefinedColumnError(err)) throw err;
+    if (touchingProfile) {
+      return { ok: false, error: MIGRATE_HINT };
+    }
+    // Core-only update (status/name/dates/etc.) — strip profile keys and retry.
+    const core: Partial<typeof events.$inferInsert> = { updatedAt: new Date() };
+    if (rest.name !== undefined) core.name = rest.name;
+    if (rest.slug !== undefined) core.slug = rest.slug;
+    if (rest.startDate !== undefined) core.startDate = rest.startDate ?? null;
+    if (rest.endDate !== undefined) core.endDate = rest.endDate ?? null;
+    if (rest.fundraisingGoal !== undefined)
+      core.fundraisingGoal = rest.fundraisingGoal ?? null;
+    if (rest.currency !== undefined) core.currency = rest.currency;
+    if (rest.timezone !== undefined) core.timezone = rest.timezone;
+    if (rest.status !== undefined) core.status = rest.status;
+    await db.update(events).set(core).where(eq(events.id, id));
+  }
 
   await recordAudit({
     userId: session.user.id,
@@ -118,6 +196,7 @@ export async function updateEvent(raw: unknown): Promise<ActionResult> {
 
   revalidatePath("/admin/events");
   revalidatePath(`/admin/events/${id}`);
+  revalidatePath("/event");
   return { ok: true };
 }
 
@@ -347,18 +426,32 @@ export async function rolloverEvent(raw: unknown): Promise<RolloverResult> {
     });
   }
 
-  const statements = [
-    db.insert(events).values({
-      id: newEventId,
-      name,
-      slug,
-      startDate: startDate ?? null,
-      endDate: endDate ?? null,
-      fundraisingGoal: fundraisingGoal ?? null,
-      currency,
-      timezone,
-      status: "active",
-    }),
+  const newEventCore = {
+    id: newEventId,
+    name,
+    slug,
+    startDate: startDate ?? null,
+    endDate: endDate ?? null,
+    fundraisingGoal: fundraisingGoal ?? null,
+    currency,
+    timezone,
+    status: "active" as const,
+  };
+  const newEventProfile = {
+    // Carry identity context from the prior year; form can override later.
+    location: parsed.data.location ?? source.location,
+    description: parsed.data.description ?? source.description,
+    courseDirectors:
+      parsed.data.courseDirectors ?? source.courseDirectors ?? [],
+    goals: parsed.data.goals ?? source.goals ?? [],
+    attendeeGoal: parsed.data.attendeeGoal ?? source.attendeeGoal,
+    sponsorCountGoal: parsed.data.sponsorCountGoal ?? source.sponsorCountGoal,
+  };
+
+  const buildStatements = (includeProfile: boolean) => [
+    db.insert(events).values(
+      includeProfile ? { ...newEventCore, ...newEventProfile } : newEventCore,
+    ),
     sourceTiers.length > 0
       ? db.insert(sponsorshipTiers).values(
           sourceTiers.map((tier) => ({
@@ -406,7 +499,12 @@ export async function rolloverEvent(raw: unknown): Promise<RolloverResult> {
       : null,
   ];
 
-  await runAtomic(statements);
+  try {
+    await runAtomic(buildStatements(true));
+  } catch (err) {
+    if (!isUndefinedColumnError(err)) throw err;
+    await runAtomic(buildStatements(false));
+  }
 
   await recordAudit({
     userId: session.user.id,

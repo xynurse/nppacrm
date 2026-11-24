@@ -1,4 +1,4 @@
-import { aliasedTable, desc, eq } from "drizzle-orm";
+import { aliasedTable, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { isUndefinedColumnError } from "@/lib/db/errors";
 import { contacts, interactions, users } from "@/lib/db/schema";
@@ -61,6 +61,30 @@ export async function listInteractionsForEventCompany(
   } catch (err) {
     // Migration 0011 hasn't run yet — fall back to the plain-text column so
     // the drawer still renders every interaction.
+    if (!isUndefinedColumnError(err)) throw err;
+    const rows = await query(legacySelect as unknown as InteractionSelect);
+    return rows.map((row) => ({ ...row, bodyDoc: null }));
+  }
+}
+
+/** All interactions for a set of event-company ids (export pack). No limit. */
+export async function listInteractionsForEventCompanies(
+  eventCompanyIds: string[],
+): Promise<InteractionRow[]> {
+  if (eventCompanyIds.length === 0) return [];
+
+  const query = (select: InteractionSelect): Promise<InteractionRow[]> =>
+    db
+      .select(select)
+      .from(interactions)
+      .leftJoin(contacts, eq(contacts.id, interactions.contactId))
+      .leftJoin(authors, eq(authors.id, interactions.userId))
+      .where(inArray(interactions.eventCompanyId, eventCompanyIds))
+      .orderBy(desc(interactions.occurredAt));
+
+  try {
+    return await query(baseSelect);
+  } catch (err) {
     if (!isUndefinedColumnError(err)) throw err;
     const rows = await query(legacySelect as unknown as InteractionSelect);
     return rows.map((row) => ({ ...row, bodyDoc: null }));

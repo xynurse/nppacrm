@@ -51,6 +51,9 @@ function buildCompanyKeywordCondition(keyword: string | null): SQL | null {
       ilike(companies.name, p),
       ilike(companies.website, p),
       ilike(companies.industry, p),
+      ilike(companies.category, p),
+      ilike(companies.subcategory, p),
+      ilike(companies.sizeBand, p),
       ilike(companies.hqLocation, p),
       ilike(companies.shortDescription, p),
       ilike(eventCompanies.companyContext, p),
@@ -76,6 +79,7 @@ export type EventCompanyRow = {
   companyWebsite: string | null;
   companyLogoUrl: string | null;
   companyIndustry: string | null;
+  companySizeBand: string | null;
   companyCategory: string | null;
   companySubcategory: string | null;
   companyHqLocation: string | null;
@@ -153,6 +157,7 @@ export async function listEventCompanies(
       companyWebsite: companies.website,
       companyLogoUrl: companies.logoUrl,
       companyIndustry: companies.industry,
+      companySizeBand: companies.sizeBand,
       companyCategory: companies.category,
       companySubcategory: companies.subcategory,
       companyHqLocation: companies.hqLocation,
@@ -225,4 +230,46 @@ export async function listTiersForEvent(eventId: string) {
       asc(sponsorshipTiers.displayOrder),
       desc(sponsorshipTiers.suggestedAmount),
     );
+}
+
+/** Distinct size / sector / sub-sector values for Companies filter chips. */
+export type CompanyTaxonomyFacets = {
+  sizeBands: string[];
+  sectors: string[];
+  subSectors: string[];
+};
+
+function uniqueSorted(values: Array<string | null>): string[] {
+  const set = new Set<string>();
+  for (const v of values) {
+    const trimmed = v?.trim();
+    if (trimmed) set.add(trimmed);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+export async function listCompanyTaxonomyFacets(
+  eventId: string,
+): Promise<CompanyTaxonomyFacets> {
+  const rows = await db
+    .select({
+      sizeBand: companies.sizeBand,
+      category: companies.category,
+      subcategory: companies.subcategory,
+    })
+    .from(eventCompanies)
+    .innerJoin(companies, eq(companies.id, eventCompanies.companyId))
+    .where(
+      and(
+        eq(eventCompanies.eventId, eventId),
+        isNull(eventCompanies.deletedAt),
+        isNull(companies.deletedAt),
+      ),
+    );
+
+  return {
+    sizeBands: uniqueSorted(rows.map((r) => r.sizeBand)),
+    sectors: uniqueSorted(rows.map((r) => r.category)),
+    subSectors: uniqueSorted(rows.map((r) => r.subcategory)),
+  };
 }

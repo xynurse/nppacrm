@@ -30,7 +30,7 @@ const TYPE_META: Record<
 > = {
   email: { label: "Email", Icon: Mail, tone: "text-blue-600" },
   call: { label: "Call", Icon: Phone, tone: "text-emerald-600" },
-  meeting: { label: "Meeting", Icon: Users, tone: "text-purple-600" },
+  meeting: { label: "Meeting", Icon: Users, tone: "text-teal-600" },
   note: { label: "Note", Icon: StickyNote, tone: "text-amber-600" },
   linkedin: { label: "LinkedIn", Icon: Users, tone: "text-sky-600" },
   other: { label: "Other", Icon: MessageSquare, tone: "text-slate-500" },

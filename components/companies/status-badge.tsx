@@ -80,14 +80,14 @@ export function hasDeferredTag(tags: string[] | null | undefined): boolean {
   return Array.isArray(tags) && tags.includes(DEFERRED_TAG);
 }
 
-/** Violet flag — outreach deferred, future prospect. */
+/** Stone flag — outreach deferred, future prospect (not a brand purple). */
 export function DeferredBadge() {
   return (
     <span
       title="Deferred — no outreach this batch; kept as a future sponsorship prospect"
       className={cn(
         badgeBase,
-        "bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
+        "bg-stone-100 text-stone-700 dark:bg-stone-900/50 dark:text-stone-300",
       )}
     >
       <Clock className="h-3 w-3" />

@@ -2,6 +2,8 @@ import { sql } from "drizzle-orm";
 import {
   date,
   index,
+  integer,
+  jsonb,
   numeric,
   pgTable,
   primaryKey,
@@ -11,6 +13,13 @@ import {
 } from "drizzle-orm/pg-core";
 import { eventStatus } from "./enums";
 import { users } from "./users";
+
+/** Faculty / course leadership for the conference year. */
+export type EventCourseDirector = {
+  name: string;
+  title?: string | null;
+  credentials?: string | null;
+};
 
 export const events = pgTable(
   "events",
@@ -24,6 +33,23 @@ export const events = pgTable(
     currency: text("currency").notNull().default("USD"),
     timezone: text("timezone").notNull().default("America/Chicago"),
     status: eventStatus("status").notNull().default("active"),
+    /** Venue / city shown on the event profile. */
+    location: text("location"),
+    /** Short event summary for outreach context. */
+    description: text("description"),
+    courseDirectors: jsonb("course_directors")
+      .$type<EventCourseDirector[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    /** Qualitative / programmatic goals (one string per bullet). */
+    goals: jsonb("goals")
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    /** Target attendee count for the conference year. */
+    attendeeGoal: integer("attendee_goal"),
+    /** Target number of confirmed sponsors. */
+    sponsorCountGoal: integer("sponsor_count_goal"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),

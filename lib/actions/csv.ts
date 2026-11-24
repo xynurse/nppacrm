@@ -20,6 +20,7 @@ import {
   type ProspectPriority,
 } from "@/lib/db/schema";
 import { listEventCompanies } from "@/lib/db/queries/companies";
+import { listInteractionsForEventCompanies } from "@/lib/db/queries/interactions";
 import { sanitizeFilter, sanitizeSort } from "@/lib/views/schema";
 import type { FilterAst, SortSpec } from "@/lib/views/types";
 
@@ -95,6 +96,149 @@ export async function exportEventCompaniesCsv(
     ok: true,
     filename: `prospects-${stamp}.csv`,
     csv,
+  };
+}
+
+export type ExportPackFile = { filename: string; csv: string };
+
+/**
+ * Download pack for the current view: prospects + contacts + interactions.
+ * Respects the same filter/sort as the single CSV export. No zip dep — the
+ * client saves each file in sequence.
+ */
+export async function exportEventPack(
+  raw: unknown,
+): Promise<
+  | { ok: true; files: ExportPackFile[] }
+  | { ok: false; error: string }
+> {
+  const session = await requireSession();
+  const parsed = exportSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid" };
+
+  const filter = sanitizeFilter(parsed.data.filter ?? null) as FilterAst;
+  const sort = sanitizeSort(parsed.data.sort ?? null) as SortSpec;
+
+  const rows = await listEventCompanies(parsed.data.eventId, { filter, sort });
+  const stamp = new Date().toISOString().slice(0, 10);
+
+  const prospectsHeader = EXPORT_COLUMNS.join(",");
+  const prospectsLines = rows.map((r) =>
+    [
+      escapeCsv(r.companyName),
+      escapeCsv(r.companyIndustry),
+      escapeCsv(r.companyHqLocation),
+      escapeCsv(r.status),
+      escapeCsv(r.priority),
+      escapeCsv(r.ownerName),
+      escapeCsv(r.targetTierName),
+      escapeCsv(r.confirmedTierName),
+      escapeCsv(r.proposedAmount),
+      escapeCsv(r.confirmedAmount),
+      escapeCsv(r.lastContactedAt ? r.lastContactedAt.toISOString() : ""),
+      escapeCsv(r.nextActionAt ? r.nextActionAt.toISOString() : ""),
+    ].join(","),
+  );
+  const prospectsCsv = [prospectsHeader, ...prospectsLines].join("\n");
+
+  const companyIds = [...new Set(rows.map((r) => r.companyId))];
+  const companyNameById = new Map(rows.map((r) => [r.companyId, r.companyName]));
+  const ecIds = rows.map((r) => r.id);
+  const companyNameByEcId = new Map(rows.map((r) => [r.id, r.companyName]));
+
+  let contactRows: {
+    companyId: string;
+    fullName: string;
+    title: string | null;
+    email: string | null;
+    phone: string | null;
+    linkedinUrl: string | null;
+    isPrimary: boolean;
+  }[] = [];
+  if (companyIds.length > 0) {
+    contactRows = await db
+      .select({
+        companyId: contacts.companyId,
+        fullName: contacts.fullName,
+        title: contacts.title,
+        email: contacts.email,
+        phone: contacts.phone,
+        linkedinUrl: contacts.linkedinUrl,
+        isPrimary: contacts.isPrimary,
+      })
+      .from(contacts)
+      .where(
+        and(inArray(contacts.companyId, companyIds), isNull(contacts.deletedAt)),
+      );
+  }
+
+  const contactsCsv = [
+    [
+      "companyName",
+      "fullName",
+      "title",
+      "email",
+      "phone",
+      "linkedinUrl",
+      "isPrimary",
+    ].join(","),
+    ...contactRows.map((c) =>
+      [
+        escapeCsv(companyNameById.get(c.companyId) ?? ""),
+        escapeCsv(c.fullName),
+        escapeCsv(c.title),
+        escapeCsv(c.email),
+        escapeCsv(c.phone),
+        escapeCsv(c.linkedinUrl),
+        escapeCsv(c.isPrimary ? "true" : "false"),
+      ].join(","),
+    ),
+  ].join("\n");
+
+  const interactionRows = await listInteractionsForEventCompanies(ecIds);
+  const interactionsCsv = [
+    [
+      "companyName",
+      "type",
+      "subject",
+      "body",
+      "contactName",
+      "author",
+      "occurredAt",
+    ].join(","),
+    ...interactionRows.map((i) =>
+      [
+        escapeCsv(companyNameByEcId.get(i.eventCompanyId) ?? ""),
+        escapeCsv(i.type),
+        escapeCsv(i.subject),
+        escapeCsv(i.body),
+        escapeCsv(i.contactName),
+        escapeCsv(i.userName),
+        escapeCsv(i.occurredAt.toISOString()),
+      ].join(","),
+    ),
+  ].join("\n");
+
+  await recordAudit({
+    userId: session.user.id,
+    eventId: parsed.data.eventId,
+    action: "eventCompany.export_pack",
+    entityType: "eventCompany",
+    entityId: `bulk:${rows.length}`,
+    changes: {
+      prospects: rows.length,
+      contacts: contactRows.length,
+      interactions: interactionRows.length,
+    },
+  });
+
+  return {
+    ok: true,
+    files: [
+      { filename: `prospects-${stamp}.csv`, csv: prospectsCsv },
+      { filename: `contacts-${stamp}.csv`, csv: contactsCsv },
+      { filename: `interactions-${stamp}.csv`, csv: interactionsCsv },
+    ],
   };
 }
 

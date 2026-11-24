@@ -1,751 +1,96 @@
 # Session State — LPD Sponsorship CRM
 
-> **This file is the authoritative handoff document.**
-> Claude must update it at the end of every session before stopping.
-> At the start of every session, read this file first — it tells you exactly
-> where things are and what to do next.
+> **Authoritative handoff.** Read after `docs/AGENT-MEMORY.md` when you need
+> HEAD / in-progress / bugs / next queue. Update this file at end of every
+> session, then commit + push to `origin/main`.
 
 ---
 
 ## Last updated
-2026-11-03 — **Merged PR #9 (renewal rollover) + PR #10 (mobile shell) to `main`.** Light Attio shell already on main (PR #8). **Not browser-verified.**
-
-**On main now:** rollover “start next year from…”; mobile column shell + company cards + full-screen drawer; light Attio UI; Chunk 5 perf + calm dashboard.
-
-**Prod still needs (user, manual):** rotate Neon `neondb_owner` password; set `CRON_SECRET`.
-
-**In progress:** none. Next backlog: tier inventory + weighted forecast/pace.
-
-**Decisions made (chunk 5):**
-- Shallow `history.pushState` for `?record=` instead of App Router navigation — only way to avoid re-running `listEventCompanies` when opening the drawer.
-- Middleware uses `edgeAuthConfig` only; Credentials/bcrypt stay in Node `authConfig`.
-- Spend cap sums enrichment jobs + agent runs + NL propose audit `costUsd`.
-- `/companies` 160 kB First Load target not met this pass; further cuts need splitting the table itself.
-
-**Earlier — 2026-11-02 — Chunk 4 on `main` at `0046823`.** Integrity `1e5c70b` + task soft-delete. PR #4 merged. Soft-delete falls back until migration 0015.
-
-**Decisions made (chunk 4):**
-- `db.batch` via `runAtomic` is the transaction. `auditInsert` is synchronous; `auditRows` loads ip/user-agent. An async function must not return the Drizzle builder.
-- Proposal fields, follow-up task, and `mark_proposal_sent` audit commit together, then `changeStatus` still owns the status write. Status stays out of the proposal update.
-- CSV audit counts are the rows queued, not `RETURNING` (later statements cannot see earlier ids). `onConflictDoNothing` remains the race safety.
-- Step 5 ships on the follow-up branch with the same `42703` fallback already used for `description_doc`, so a deploy before 0015 does not 500 task pages. The Drizzle schema includes `deletedAt` there; list queries name it only in a `WHERE` that is retried without the predicate when the column is absent. The snapshot select used by delete omits `deletedAt` so it still runs before the migration.
-
-**Earlier — 2026-10-26 — Handoff: Chunk 4 plan written, then approved 2026-10-31.** Previous session (2026-10-25): **Chunk 3: mobile "More" nav + dead-code pass 1 (SHIPPED, `39830a3`) + dep fix `94a009b`.** typecheck, lint, `build:offline`, CI green. **Not browser-verified** (no login here) — open the app on a phone once: More sheet opens/closes, Escape + backdrop, event switch, sign out, admin links for admins.
-
-**Prod still needs (user, manual):** rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`. No migration this chunk.
-
-**In progress:** nothing uncommitted.
-
-**Decisions made (chunk 3):**
-- Mobile bottom bar = Home, Companies, Pipeline, Tasks, More (`BOTTOM_BAR_HREFS` in `components/app/nav-config.ts`). Everything else goes in the More sheet. Nav lists live only in `nav-config.ts` — edit there, not in sidebar/bottom-nav.
-- `setDefaultView` deleted (user decision). `updateInteraction` and `updateFieldDefinition` are intentionally kept although no UI calls them yet (future edit buttons).
-- knip leftovers that are intentional: `scripts/font-mock.cjs`, `scripts/reset-admin-password.ts`, `@auth/core`, `eslint`/`eslint-config-next`, `buttonVariants`, schema enums/types, `tags`/`company_tags` (drop via migration in Pass 3).
-- New advisories keep landing every few days (Next 15.5.28 on 10-23, zod 4.6.7 + undici 6.29.1 on 10-25). The CI audit gate catches them, but they block deploy-time CI until bumped. Consider Dependabot/Renovate for security-only PRs.
-
-**Resolved from the audit list:** mobile nav dead-ends; sidebar showing raw "viewer"; dead code Pass 1; `listActiveEvents` cache.
+2026-11-14 (America/Chicago) — **Claude Code handoff after UX PRs #18–#25.**  
+UI for NPB-3 (plus Today/research/prospectus/email-parse) is on `main`. No code in progress. Docs-only close-out this session.
 
 ---
-
-**Earlier — 2026-10-23 (Chunk 2, `8cbddeb`):** 2026-10-23 — **Chunk 2: one status-change path + correct days-in-stage (SHIPPED, `8cbddeb`).** Every prospect status change (kanban, confirm dialog, proposal sent, inline cell, bulk, NL update) now goes through `lib/pipeline/change-status.ts`. Days-in-stage rewritten as event-scoped SQL. typecheck, lint, `build:offline` green; days-in-stage SQL verified against a seeded PGlite scratch DB (6 cases incl. legacy audit actions). **Not browser-verified** (no login here) — the table/drawer Confirmed dialog and bulk-bar message should be clicked through once.
-
-**Prod still needs (user, manual):** rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`. No migration this chunk.
-
-**Follow-up same day (`d1a6efa`):** CI audit gate failed on new Next.js advisories (critical SVG image-optimizer RCE + high Server Actions DoS, both ≤15.5.27) → bumped `next`/`eslint-config-next` to **15.5.28**; CI green.
-
-**In progress:** nothing uncommitted.
-
-**Decisions made (chunk 2):**
-- `changeStatuses()` is the only place that writes `event_companies.status` (CSV import's initial status excepted). New audit shape: `eventCompany.move_status` with `{from, to, source}` where source ∈ kanban | confirm | proposal | cell | bulk | nl_update.
-- Days-in-stage also reads the pre-consolidation actions (`eventCompany.confirm`, `mark_proposal_sent`, `update_field` `changes.status`, `bulk_update` `changes.ids`) so history isn't lost — keep those branches.
-- Bulk "Confirmed" stays in the menu but only applies to rows that already have amount + tier; the rest are reported as skipped.
-- Inline Confirmed opens the kanban `ConfirmModal` (via `CellShell.interceptSave` + `components/companies/status-cell.tsx`).
-
-**Resolved from the 2026-10-10 audit list below:** days-in-stage bug; status changes outside the kanban skipping audit/confirm gate; soft-deleted prospects mutable via status/confirm/cell/bulk; `confirmEventCompany` tier not checked against event.
-
----
-
-**Earlier — 2026-10-20 (Chunk 1, `7e48a0f`):** 2026-10-20 — **Full repo audit (2026-10-10) + Chunk 1: dependency security + auth hardening (SHIPPED, `7e48a0f`).** Three parallel reviews (security, performance, features/UX); findings below. Chunk 1 cleared every `pnpm audit --prod` advisory (was 5 critical / 17 high, incl. a Next.js image-optimizer RCE) and hardened auth. typecheck, lint, `build:offline` green; Playwright not run (needs a DB login).
-
-**Prod still needs (user, manual):** rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`. (0013 + 0014 applied by user 2026-10-20 — login throttling and the fixed Stale view are live.)
-
-**In progress:** nothing uncommitted.
-
-**Known bugs found in the 2026-10-10 audit (not yet fixed — exact fixes):**
-- **Days-in-stage is wrong** (`lib/db/queries/reports.ts` ~L411): the loop never checks `to === ec.status`, so `enteredAt` ends on the entity's *oldest* move; also scans every event's audit rows. Fix: SQL `DISTINCT ON (entity_id)` over the event's ids where `changes->>'to' = status`, newest first.
-- **Status changes outside the kanban write no `eventCompany.move_status` audit and skip the confirm gate**: `updateField` (`lib/actions/cells.ts` ~L31) and bulk update (~L172). Bulk "Confirmed" creates no benefits and needs no amount/tier. Fix: one shared `changeStatus()` used by kanban, inline cell and bulk.
-- **No transactions** (`neon-http`): `markProposalSent`, `quickAddEventCompany`, `uploadProspectus` (soft-deletes old before inserting new), CSV import (~1,000 serial calls for 312 rows). Fix: `db.batch([...])` or a `neon-serverless` Pool client.
-- Tasks hard-deleted with no snapshot (`lib/actions/tasks.ts` ~L233) — needs `deletedAt` (migration).
-- Custom-field writes are read-modify-write of the whole jsonb (`lib/actions/custom-fields.ts` ~L165) — concurrent edits lose data. Fix: `custom_fields || jsonb_build_object(k, v)`.
-- Custom date fields accept `2026-13-45` (regex only, ~L226) and then break `::timestamptz` casts in `lib/views/compile.ts`. Fix: real date parse server-side.
-- Soft-deleted prospects still mutable (`updateField`, `moveEventCompanyStatus`, `confirmEventCompany`, bulk): add `isNull(deletedAt)`. `confirmEventCompany` doesn't check tier belongs to event; `applyNlUpdate` / `acceptCompanySuggestion` trust client `eventId`.
-- AI spend cap (`lib/ai/spend.ts`) ignores `agent_runs` + NL update; cron agents have no `maxDuration`/abort; killed runs stay `running`.
-- Calendar overdue uses UTC date (`app/(app)/calendar/page.tsx` ~L82); date-only `updateField` saves UTC midnight.
-- CSV export (`lib/actions/csv.ts` ~L38, `lib/actions/reports.ts` ~L20) doesn't neutralise leading `= + - @`.
-- **Mobile nav dead-ends:** sidebar is `hidden lg:flex`, `BottomNav` has 5 items — no route to Event/Calendar/Playbooks/Reports/admin, event switcher or sign-out below `lg`.
-- Blobs are still `access: "public"` — moving to private needs a private store + migrating existing files.
-- `/companies` First Load JS rose 215 → 235 kB with the TipTap 3.31 bump.
-- Earlier (2026-10-06) debt below under "Previous" still stands: drawer refetch, `notesDoc` in list rows, `bulkRemoveTag` loop, `listActiveEvents` cache, dead code.
-
-**Decisions made this session:**
-- **"viewer" role = normal teammate** (full edit, no admin). Not made read-only; UI label is now **"Member"**, enum value unchanged. Don't add per-mutation role gates unless the user asks for a true read-only role (would need an enum migration).
-- **Login throttle storage = Postgres** (`login_attempts`, migration 0014), not Upstash. Enforced inside `authorize()` because the Auth.js callback endpoint can be POSTed directly. Fails open while the table is missing.
-- Role/isActive come from the DB per request (`getVerifiedSession`, React `cache()`), not the JWT.
-- Transitive security fixes are pinned in `pnpm-workspace.yaml` `overrides` (pnpm 11 reads them there; needed `pnpm install --no-optimistic-repeat-install` to apply). CI now runs `pnpm audit --prod --audit-level=high`.
-- Upload cap is 50 MB (matches the prospectus picker), not 25.
-
-## Previous
-2026-10-06 — **Repo audit + PR #2 merged + Claude Code stood up.** PR #2 (Phase 5 spreadsheet columns) merged to `main` as `d39ea08` after resolving a docs-only conflict in `AGENT-MEMORY.md`. Added `.claude/settings.json` (allow/deny rules + SessionStart install hook), `scripts/font-mock.cjs`, and `pnpm build:offline` (`5f811f3`). typecheck, lint and build all green. No open PRs. The user's Mac clone (`/Users/michaelthorn/nppacrm`) was fast-forwarded to `main`.
-
-**Prod still needs (user, manual):** `pnpm db:migrate` for **0013**; rotate the exposed Neon `neondb_owner` password; set `CRON_SECRET`.
-
-**In progress:** nothing uncommitted.
-
-**Known bugs / debt found in the 2026-10-06 audit (not yet fixed — exact fixes):**
-- Opening a company drawer (`?record=` on `/companies`) re-runs `listEventCompanies` + tiers/users/reviews/fields. Fix: load drawer data via its own server action or a parallel route so the table isn't refetched.
-- `listEventCompanies` (`lib/db/queries/companies.ts`) selects `companies.notesDoc` (full TipTap JSON) for every row; Companies, Pipeline, Contacts and CSV all ship it. Fix: drop it from the list select; fetch it only in the drawer.
-- Days-in-stage report (`lib/db/queries/reports.ts` ~L400) loads every `eventCompany.move_status` audit row for all events (`gte(createdAt, new Date(0))` is a no-op). Fix: filter to the event's `event_companies` ids and use `DISTINCT ON (entity_id, changes->>'to')` in SQL.
-- `bulkRemoveTag` (`lib/actions/cells.ts` ~L146) does up to 500 sequential UPDATEs. Fix: one `UPDATE … SET tags_cache = array_remove(tags_cache, $tag) WHERE id = ANY($ids)`.
-- Cron agents (`app/api/cron/{watch,discovery}`) have no `export const maxDuration` and run prospects sequentially. Fix: set `maxDuration` and process with bounded concurrency (3–4).
-- `listActiveEvents()` runs in both the layout and each page. Fix: wrap in React `cache()`.
-- Dead code (knip): unused files `components/app/event-switcher.tsx`, `components/app/user-menu.tsx`, `components/cells/checkbox-cell.tsx`; unused deps `@dnd-kit/sortable`, `@dnd-kit/utilities`, `@types/pdf-parse`; ~38 unused exports; unused `tags` / `company_tags` tables (app uses `tags_cache`).
-
-**Decisions made this session:**
-- **Claude Code is the primary agent environment.** CLAUDE.md's commit policy (commit + push to `main` after a green build) is authoritative; any `cursor/*` / `claude/*` branch gets merged, not left open.
-- Migrations and seeding are **denied** to Claude in `.claude/settings.json`, because `.env.local` → production. The user runs them.
-- In sandboxes without network, `pnpm typecheck && pnpm lint && pnpm build:offline` counts as the green build; CI runs the real `pnpm build`.
-
-2026-08-09 — **Chunk 15b: TipTap slash commands + `@` mentions (SHIPPED, commit
-`9bf136e`).** The two interactive extensions on top of the 15a editor, both on
-TipTap's Suggestion plugin and rendered through **one shared caret-positioned
-popup** — no `tippy.js` (positioned via `view.coordsAtPos`), so nothing added to
-the initial bundle.
-
-**Shipped (on `origin/main`):**
-- Deps: `@tiptap/extension-mention` + `@tiptap/suggestion` (v3.29). **User
-  approved the dep add.**
-- `components/tiptap/suggestion-popup.tsx` — shared keyboard-nav list
-  (↑/↓/Enter/Esc, ⌘K-palette styling) + a lifecycle bridge mounting a React root
-  at the caret. Reused by `/` and `@`.
-- `components/tiptap/slash-command.ts` — `/` menu inserting existing StarterKit
-  blocks (H1–3, bullet/numbered list, quote, code block, divider). `allow`
-  guard: fires only when `parentOffset <= 1` in a paragraph, so a stray `/`
-  mid-word never pops the menu — **no renderer changes needed** (all blocks
-  already handled).
-- `components/tiptap/mention.ts` — `@` mentions storing `{ id, label }`; `id` is
-  the user id. Users fetched once via `listMentionUsers()` and filtered
-  client-side (small team, no per-keystroke round trip).
-- `lib/actions/mentions.ts` — `listMentionUsers()` (active users, read-only).
-- `rich-text.tsx` gained a `mention` case (styled `@Name` chip); `serialize.ts`
-  `docToPlainText` emits `@label` so mentions survive the plain-text mirror.
-- **No migration** (mention nodes live in the existing `*_doc` jsonb).
-- typecheck + lint + build green; serializer round-trip re-verified (mentions →
-  `@label`, id fallback, non-empty). `/companies` first load **unchanged at
-  212 kB** — extensions rode into the dynamic chunk.
-
-**⚠️ Verification gap (same as 15a):** the `/` and `@` menus were **never
-exercised in a browser** — the editor is behind auth and no login was available.
-The serializer + build are proven; the interactive popups (caret positioning,
-keyboard nav, the mention user fetch) are not. To close it: log in, open a
-drawer note, type `/` (expect the block menu) and `@` (expect the user list),
-insert one of each, save + reload, confirm both survive. Writes a test row to
-prod (`.env.local` points at prod).
-
-**Chunk 20 (notification center) is now unblocked** — `@` mentions store the
-user id in node attrs, which is exactly what notification triggers resolve.
-
-Prior — 2026-08-09 — **Migrations 0010 + 0011 verified already applied to prod.** No
-migration was run this session. A read-only schema check against the prod Neon
-branch found `contact_email_history` present and `interactions.body_doc` +
-`tasks.description_doc` both `jsonb` — and both migrations are recorded in
-drizzle's `__drizzle_migrations` log, so `pnpm db:migrate` is now a clean
-no-op. (The log holds 11 rows for 12 journal entries; a hash match showed the
-single unlogged entry is **0009**, a harmless leftover from its re-baseline —
-it will never re-run because 0010/0011 carry later timestamps and are logged.)
-The serializer round-trip that reads/writes those columns was re-checked with a
-throwaway pure-logic script (rich→text mirror, legacy plain-text byte-identical
-inverse, empty-doc nulling, `safeHref` allowlist) — 12/12 pass. **Still not done:**
-the editor has never been exercised in a real browser (needs an admin login and
-would write a test interaction to prod). `interactions_with_doc = 0` /
-`tasks_with_doc = 0` — no rich doc has been written in prod yet.
-
-Prior — 2026-07-22 — **Chunk 15a: TipTap rich notes (editor foundation).** Rich text
-for interaction bodies, task descriptions, and long-form company notes, behind
-one shared lazy-loaded TipTap editor.
-
-**Shipped (commit `81e6811`, on `origin/main`):**
-- New deps: `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`,
-  `@tiptap/extension-placeholder` (v3.28). StarterKit v3 already bundles Link
-  and Underline — no separate packages needed.
-- `lib/tiptap/types.ts` + `serialize.ts` — DOM-free doc ↔ plain-text
-  conversion, `richDocSchema` zod validation (200 kB cap), `safeHref` protocol
-  allowlist.
-- `components/tiptap/` — `rich-editor.tsx` (toolbar, placeholder, Cmd+Enter),
-  `autosave-rich-editor.tsx` (debounced, coalesces in-flight edits),
-  `rich-text.tsx` (recursive read-only renderer, **no client JS**),
-  `rich-editor-lazy.tsx` (`next/dynamic` wrapper).
-- Migration **0011** — `interactions.body_doc`, `tasks.description_doc` jsonb.
-  Pure `ADD COLUMN`, nothing rewritten.
-- Wired into `activity-tab.tsx`, `tasks-tab.tsx`, and a **new Notes tab** in
-  the company drawer (`lib/actions/notes.ts` → `companies.notes_doc`).
-- `lib/db/errors.ts` — shared `42P01`/`42703` guards; `queries/contacts.ts`
-  now re-exports `isUndefinedTableError` from there.
-- typecheck + lint + build all green. `/companies` 204 → **212 kB**.
-
-**⚠️ Verification gap (second session running):** the editor was **never
-rendered in a browser** — every surface it touches is behind auth and there
-were still no admin credentials. The dev server boots clean and the login page
-renders with no console errors, but that proves nothing about the editor. The
-pure serializer logic *was* tested (a throwaway `tsx` script exercising
-round-trips, empty docs, and `safeHref`; all pass) — and it caught a real bug:
-the naive `plainTextToDoc` turned each line into its own paragraph, which would
-have double-spaced the plain-text mirror of every legacy body on first edit.
-Fixed to map single newlines to hard breaks, verified byte-identical
-round-trips. **Those checks are not in the repo** — there is no unit-test
-runner (Playwright only). Adding vitest would need a dep decision.
-
-**To unblock local verification:** `.env.local` has `AUTH_URL=http://localhost:3000`
-but `pnpm dev` serves :3001, so `/` redirects into a *different* app. Either
-change it to `:3001` or hit `http://localhost:3001/login` directly.
-
-Prior — 2026-07-20 — **UI retheme session.** Re-skinned the app from the clinical
-medical-teal/heartbeat identity to a restrained **indigo-on-zinc "modern SaaS"**
-look (Linear/Vercel lineage), per the user's ask for "more elegant, less
-medical/AI, more startup." User picked the direction (indigo on cool zinc) and
-scope (retheme + polish high-traffic surfaces) via a question prompt.
-
-**Shipped (commit `1229900`, on `origin/main`):**
-- `app/globals.css` — `--color-brand-*` cyan→**indigo** (`#6366f1`/`#4f46e5`);
-  semantic neutral tokens **slate→zinc** (dark `--page` near-black `#09090b`);
-  selection teal→indigo; crisper shadow tiers; comments rewritten.
-- **New `components/app/logo-mark.tsx`** — shared ascending-bars glyph on an
-  indigo tile, replacing the `Activity` heartbeat in the sidebar AND login.
-- Sidebar → near-black zinc rail; auth backdrop → `zinc-950`; top bar blur;
-  `Input`/`Button` neutrals → zinc; dashboard KPI hover + numeral polish.
-- App-wide: dark surface bgs `bg-slate-900/950/800` → zinc across 64 files
-  (pure color swap, no logic). typecheck + lint + build **all green**.
-
-**Verification caveat (for next session):** authenticated pages were NOT
-visually confirmed in-browser. Two dev-env snags: (1) no admin login creds this
-session; (2) a dev-only `AUTH_URL`/`NEXTAUTH_URL` set to `http://localhost:3000`
-makes `/` on the :3001 dev server redirect to `:3000/login` (a *different* app
-runs on :3000). The **login page** WAS verified live (indigo button, new logo,
-zinc backdrop render correctly). Everything else shares the same tokens/brand
-classes, so it cascades — but eyeball the dashboard/companies/pipeline/drawer
-once you can log in. To view locally: hit `http://localhost:3001/login`
-directly, or fix the `AUTH_URL` in `.env.local` to `:3001` for dev.
-
-**⚠️ Machine disk was ~99–100% full** this session (APFS container full from
-other volumes/snapshots — the CRM's own volume only uses 24 GB). `.next` had to
-be cleared twice to make room; the production build ultimately succeeded (disk
-recovered to ~1.6 GB free). If builds start failing with `ENOSPC`, free disk
-space — it's not a code problem.
-
-Prior (2026-07-13) — **Mayo Clinic NPPA LPD 2026 outreach batch** applied (data-only):
-24 companies → `contacted` + email interaction, 7 bounced → `BOUNCED` tag +
-bounce interaction (status untouched), 34 deferred → **new `DEFERRED` tag** +
-note interaction (status untouched). 65 interactions + 89 audit rows. Decided
-**deferred is a tag, not a status** (mirrors BOUNCED — a workflow flag
-orthogonal to the pipeline stage; avoids a `prospect_status` enum migration and
-keeps deferred companies in the prospect funnel count). **Then shipped the
-`DEFERRED` UI** (code commit) for visual parity with Bounced: violet "Deferred"
-badge (clock icon) on the companies table, kanban cards, and drawer header; a
-violet Deferred overlay bar on the dashboard funnel (`deferredCount` in
-`getDashboardMetrics`); DEFERRED rendered as its own badge in the Tags column.
-typecheck + lint + build all green. See the batch section below. Prior:
-
-2026-07-09 — big session. **Platform UX pass** (4 chunks A–D) **+ contact
-email-history feature** **+ bounced-email tracking suite** (BOUNCED tag,
-red badge, Tags column + filter, dashboard funnel bar) + applied two
-outreach batches (66 fresh prospects, then 40 more with bounce handling) +
-tagged 33 companies BOUNCED. Also fixed a real `is_one_of` filter crash.
-Prior session (2026-07-08): Chunk C (natural-language AI quick update).
-
-**Session close:** user could not run migration 0010 (see ACTION REQUIRED);
-all code is committed + pushed; docs updated. Next session should verify
-0010 once applied, then resume the numbered backlog at Chunk 15 (TipTap).
-
-## ✅ RESOLVED — migrations 0010 + 0011 are applied (verified 2026-08-09)
-Both are live in prod and logged in drizzle; `pnpm db:migrate` is a clean no-op.
-Confirmed read-only against the prod Neon branch:
-- `0010_opposite_lady_vermin.sql` — `contact_email_history` table present
-  (`id, contact_id, email, changed_by, archived_at, created_at`).
-- `0011_aromatic_firebird.sql` — `interactions.body_doc` +
-  `tasks.description_doc` both present, type `jsonb`.
-
-The `42P01`/`42703` guards therefore never fire now — but they stay in the code
-as insurance for the deploy→migrate gap on any *future* migration.
-
-**Remaining verification (not blocking, needs a login):** the editor still has
-not been exercised in a browser. To close it: log in, log an interaction with
-**bold text and a bullet list**, reload the drawer, confirm the formatting
-survives — that proves `body_doc` is written *and* read, not just the mirror.
-Note this writes a real (test) interaction to the prod DB, since `.env.local`
-points at prod. No rich doc has been written in prod yet
-(`interactions_with_doc = 0`, `tasks_with_doc = 0`).
 
 ## Current git HEAD
-`94a009b` fix(deps): zod 4.6.7 + undici — plus this docs commit on top. (Prior: `39830a3` chunk 3 mobile nav + dead code; `8cbddeb` chunk 2; `7e48a0f` chunk 1.)
+This docs handoff commit on `main` (parent `7e21c6e` `docs: record UX pack PR #25 merged to main`).  
+UX code: `a4f867b` merge PR #25 · `d5f6a0e` Today/research/prospectus/email-parse · `4f8a5d8` event #24 · `f548a0f` tasks #23 · `0bfed3f` company filters #22 · `0a52d15` activity #21 · `f37a3ab` calendar #20 · `9efd104` contacts #19 · `f98dbd8` Mayo blue #18.
 
-Older history:
-commit on top. (Prior: `750677c` docs: verify migrations 0010/0011; `81e6811`
-chunk 15a.) Prior notable:
-`1229900` feat: retheme UI — indigo/zinc "modern SaaS" identity, drop medical
-teal — plus this docs commit on top. (Prior notable HEAD:
-`a0cca97` bounced count on the dashboard funnel.)
-(this session, in order: `2c35b90` chunk A inline search · `93bb3d7` chunk B
-pipeline search+edit · `c0c7608` chunk C dashboard drill-downs + is_one_of
-fix · `b1357b5` chunk D event page · `f727d2f` docs · `e353f9c` contact
-email history · `ab614ab` docs · `cdfc16e` bounced badge · `5fd131c` docs ·
-`85abac1` tags column+filter · `9d80823` docs · `a0cca97` bounced funnel bar.
-Two outreach batches + 33 BOUNCED taggings were applied to prod as data-only
-writes, no commit.)
-
-> ⚠️ **Naming note:** the "chunk A–D" in *this* session's commits are the
-> UX pass described below — NOT the old lettered chunks. The backlog's
-> next numbered item is still **Chunk 15 (TipTap)**.
+Repo: `xynurse/nppacrm` · Prod: `nppacrm.vercel.app` · Neon: `young-cell-40419191`.
 
 ---
 
-## Outreach batch — APPLIED (2026-07-13, Mayo Clinic NPPA LPD 2026, data-only)
-
-Third outreach batch, 65 companies, all matched exactly (0 unmatched). Applied
-via a throwaway `apply-sync.tmp.ts` (deleted after; mirrors the app's own
-`interaction.log` / `move_status` / `update_field` audit shapes, `userAgent:
-"claude-code sync-outreach"`).
-- **24 emails sent** → `email` interaction ("Initial sponsorship outreach email
-  sent for Mayo Clinic NPPA LPD 2026."), status `prospect→contacted`, first +
-  last contacted = 2026-07-13. (Regard, Wiley, Owens & Minor, Northwestern
-  Mutual, 3D Systems Healthcare, Gaumard Scientific, Limbs & Things, Simulab,
-  BoardVitals, McGraw Hill, Sigma Theta Tau, Arcadia, Lightbeam Health
-  Solutions, Trilliant Health, NCQA, Medtronic, Stryker, Boston Scientific,
-  Johnson & Johnson, GoodRx, BetterHelp, FIGS, Hyro, Kore.ai.)
-- **7 bounced** → `email` interaction documenting the bounce, **`BOUNCED` tag**
-  appended to `tagsCache` (red badge lights up everywhere). Status **not**
-  changed, last-contact **not** bumped. (Whova, Oxford University Press,
-  Mölnlycke, Ramsey Solutions, GE Vscan, SonoSite, Clarify Health.)
-- **34 deferred** → `note` interaction ("Deferred for now… keep as future
-  sponsorship prospect…"), **new `DEFERRED` tag** appended to `tagsCache`.
-  Status **not** changed. (Hilton, Visit Salt Lake, Utah Office of Tourism,
-  Delta Air Lines, Southwest Airlines, Cvent, Bizzabo, Springer Nature, Kaufman
-  Hall, Medical Protective, Henry Schein, Ecolab, Flywire, Coronis Health,
-  Merck, Novo Nordisk, Pfizer, Sanofi, Regeneron, CVS Caremark, Cencora,
-  Evernorth, Baxter, AbbVie, Amgen, AstraZeneca, Bristol Myers Squibb, Eli
-  Lilly, GSK, MDLive, Solv, Wheel, Hinge Health, Doctor On Demand.)
-
-**New convention — `DEFERRED` tag** = intentionally held this batch, still a
-future prospect. Chosen over adding a `deferred` enum status (that would need a
-Postgres `ALTER TYPE` migration + edits across funnel/kanban/pipeline/dropdown/
-CSV, and would drop these companies out of the prospect funnel count). Renders
-filterable (`tags contains DEFERRED`) and keyword-searchable.
-
-**DEFERRED UI — BUILT (2026-07-13, code commit)** for visual parity with
-Bounced, mirroring the BOUNCED pattern file-for-file:
-- `status-badge.tsx` — `DEFERRED_TAG`, `hasDeferredTag`, `DeferredBadge`
-  (violet pill, `Clock` icon; violet is unused by any status hue so it's
-  scannable and distinct from the red Bounced badge).
-- Badge renders on the **companies table** name cell + as its own pill in the
-  Tags column, **kanban** cards, and the **company drawer** header.
-- **Dashboard funnel** gains a violet "Deferred" overlay bar below Bounced;
-  `getDashboardMetrics` now returns `deferredCount` (counts the DEFERRED tag in
-  `tagsCache`, same as `bouncedCount`). Links to `tags contains DEFERRED`.
-- Still **not built** (possible later): a select-style tag picker in the filter
-  UI, and a bulk "clear DEFERRED tag" action when a deferred prospect is
-  reactivated (same gaps noted for BOUNCED).
-
-## Outreach batches — APPLIED (2026-07-09, data-only, no commit)
-
-**Batch 1 (66 fresh prospects, #1–66):** 66 `email` interactions (each
-linked to the named recipient contact), 64 status flips `prospect→contacted`,
-66 first/last-contacted bumps, 132 audit rows. Vivian Health (kept
-`negotiating`) and Amwell (already `contacted`) not moved backward but still
-got the email + last-contact bump.
-
-**Batch 2 (40 companies) + bounce handling:**
-- 16 *delivered* → `contacted` (GE HealthCare & Optum were already contacted
-  → email logged + last-contact bump only). Companies incl. Osmosis, VisualDx,
-  ShiftWizard, Berxi, Imprivata, TruBridge, Panacea Financial, Laurel Road,
-  Quest Diagnostics, QuidelOrtho, Prime Therapeutics, Omada Health, Personify
-  Health, CM&F Group.
-- 24 *undeliverable/bounced* → **new `BOUNCED` tag** (color `#ef4444`;
-  `tags` row + `companyTags` links + added to each `eventCompanies.tagsCache`),
-  an `email` interaction marked UNDELIVERABLE, and a **follow-up task**
-  "Replace undeliverable email — find valid address" (due 2026-07-12,
-  assigned to Mike, priority high). Status deliberately **not** changed and
-  last-contact **not** bumped (a bounce isn't a real contact). Per user's
-  call, the 9 already-`contacted` bounced companies (Augmedix, Get Well,
-  Premier Inc., DispatchHealth, Maxim Healthcare Services, Torch, Suki, Redox,
-  Notable) were **not reverted** — just tagged/noted/tasked.
-- Skipped (unmatched, per user): The Doctors Group, Summit Strategic
-  Communication (PR agency), Ketchum (PR agency), Microsoft.
-
-**Convention established:** `BOUNCED` tag = the address on file is dead / needs
-replacing. **33 companies** now carry it (the 24 above + 9 added later: Huron,
-Medline, TeamHealth, Top Echelon, ECG Management Consultants, Staff Care, AMN
-Healthcare, Vizient, symplr — tag-only, no note/task for these 9). There are 24
-open "Replace undeliverable email" tasks (only the first batch got tasks).
-
-**Bounced now has UI (commits `cdfc16e`, `85abac1`, `a0cca97`):**
-- Red **Bounced** badge (`BouncedBadge` in `status-badge.tsx`, driven by
-  `hasBouncedTag(tagsCache)`) on the companies table name cell, pipeline cards,
-  and drawer header.
-- **Tags column** (toggleable, default on) renders `tagsCache` as pills, and a
-  **Tags filter** field (contains / equals / is empty / is not empty, compiled
-  against the `tagsCache` array in `compile.ts`). Filter "tags contains
-  BOUNCED" → the 33. Tags are also matched by the keyword search boxes.
-- **Dashboard pipeline funnel** has a red "Bounced" overlay bar (below the
-  status bars, divider-separated) showing the BOUNCED count, linking to the
-  filtered list. `getDashboardMetrics` now returns `bouncedCount`.
-- Four ways to find bounced companies: badge, Tags filter, keyword search,
-  funnel bar. **Not yet built** (possible follow-up): a select-style tag
-  picker in the filter UI (currently a text field — type "BOUNCED"), and a
-  bulk "clear BOUNCED tag" action once an email is fixed.
-
-## Contact email history — BUILT (2026-07-09, commit `e353f9c`)
-Captures & archives a contact's OLD email whenever it changes/clears.
-- New `contact_email_history` table (migration **0010 — apply manually**,
-  see ACTION REQUIRED above). Columns: `contactId`, `email` (archived),
-  `changedBy`, `archivedAt`, `createdAt`.
-- `updateContact` archives the old email on change (citext-aware compare);
-  best-effort insert so it never blocks saving.
-- Contacts tab in the company drawer shows a struck-through "Previous
-  email(s)" list per contact with archived-when + by-whom. Fed by
-  `listEmailHistoryForCompany` (drawer data on both /companies + /pipeline).
-- Read + write both guard on Postgres 42P01 (`isUndefinedTableError`) so
-  the deploy→migrate gap can't crash the drawer or contact editing.
-- Deliberately NO multi-email model and NO restore button (user chose the
-  minimal history-log scope). Restore could be added later.
-
-## This session — Platform UX pass (all shipped, 2026-07-09)
-
-**Chunk A — inline keyword search (Companies + Contacts)** `2c35b90`
-- New `components/ui/search-input.tsx` — debounced box that drives a `q`
-  URL param; server re-queries (no client filtering). Preserves other params.
-- `listEventCompanies` gained a `keyword` opt: wide ILIKE across company
-  name/website/industry/HQ/description, company+event tags, outreach/notes
-  fields, and an EXISTS subquery over the company's contacts (name/email/
-  title). Multi-term = AND-of-terms, OR-of-fields. LIKE wildcards escaped.
-- `listContactsForEvent` gained `keyword` (name/email/title/phone/company).
-- Search boxes wired into `views-toolbar.tsx` and the contacts page.
-
-**Chunk B — pipeline search + edit-in-place** `93bb3d7`
-- Client-side filter box on the kanban (company/owner/tier/tag, multi-term).
-- Company drawer now renders on `/pipeline` (cards link to `/pipeline?record=`).
-  `CompanyDrawer` took a `closeHref` prop so close/backdrop stay on-page.
-- `KanbanBoard` syncs local state to `initialRows` via effect so drawer
-  edits + drag persistence reflect after `router.refresh()`.
-
-**Chunk C — dashboard drill-downs** `c0c7608`
-- Static dashboard cards/sections now navigate: Confirmed→confirmed list,
-  Pipeline value→/pipeline, Stalled→stalled filter, funnel bars→that status,
-  goal/tier→/reports, hot prospects→hot filter, task rows→their drawer.
-- **Bug fix:** funnel/stalled links used params (`?v=`, `?filter=stalled`)
-  the companies page never read — they did nothing. Now use the real `f`
-  param + `sanitizeFilter`; verified filtered counts equal the dashboard's.
-- **Real bug fixed in `lib/views/compile.ts`:** `is_one_of` compiled to
-  `= ANY((a,b,c))` (a row constructor) → Postgres error "requires array on
-  right side". Now `IN (...)`. This crashed the companies filter UI too
-  whenever anyone picked "is any of".
-
-**Chunk D — event profile page** `b1357b5`
-- New `/event` route + "Event" sidebar nav item (CalendarDays icon).
-- Extensive: header (dates/tz/status/countdown), fundraising target vs goal
-  + stat cards, prospects-by-stage (links to filtered lists), tiers & targets
-  table, team leaderboard, outreach cadence health, avg days-in-stage,
-  reviewer roster, admin manage links. All from existing report queries.
-
-**Answered for the user:** dragging a pipeline card writes the single shared
-`eventCompanies.status` — it propagates to dashboard/companies/reports
-instantly (one source of truth), and revalidates `/companies` + `/pipeline`.
+## In progress
+Nothing uncommitted for product code. This handoff updates AGENT-MEMORY / SESSION-STATE / TODO / CHANGELOG only.
 
 ---
 
-## What's deployed
-**Production URL:** `nppacrm.vercel.app`
-
-Deployed code: chunks A, B, and 14b are on `origin/main`. Vercel auto-deploys
-from `main`, so 14b ships on the next deploy.
-
-**Before the crons actually run in prod, two env vars must be set in Vercel:**
-- `CRON_SECRET` — generate with `openssl rand -base64 32`. Required in prod or
-  the cron routes return 500. Vercel cron sends `Authorization: Bearer <it>`.
-- `AI_GATEWAY_API_KEY` — connect the Anthropic provider in the Vercel AI
-  Gateway tab, or the routes return 503 ("AI not configured").
+## Known bugs / gaps
+- **Prod migration 0017 not applied** — event profile columns (course directors / goals / metrics) from PR #24. User runs `pnpm db:migrate` manually. Tracker: **NPB-13**.
+- **Agents tables missing in prod** — `agent_schedules` / related from **0009**; Agents page soft-fails (`b186d42`). Tracker: **NPB-12**. Do **not** migrate from a cloud agent.
+- **Inbound email ingest not built (NPB-6)** — blocked on mailbox/domain + provider choice. Paste → Quick update Parse is the interim path.
+- **Cloud Agent cannot signed-in smoke** — no `SEED_ADMIN_*` / no `.env.local` login. TipTap `/` `@`, Phase 5 columns, and new Today/Event UX were not browser-verified here.
+- **`/companies` First Load** still ~229 kB vs 160 kB target (needs splitting the table itself).
+- **Vercel Production env gaps:** `CRON_SECRET` unset; `AI_GATEWAY_*` / `AI_MODEL_ID` / `VALYU_API_KEY` / spend cap still Development-only (`ANTHROPIC_API_KEY` is on Production). Rotate Neon `neondb_owner` password still owed.
 
 ---
 
-## Master List import — DONE (2026-07-08)
-
-**The user ran the import — all 312 prospects are live in production.**
-Admin login also recovered (password reset via `scripts/reset-admin-password.ts`;
-user holds the new password). Historical context below:
-
-Goal of the earlier session: migrate the real NPPA Master List (312 prospects)
-from the restructured Excel workbook into the CRM via the in-app importer.
-
-**Shipped (commits `9776150`, `2b43f88`):**
-- `lib/actions/csv.ts` — the importer now ingests the full Master List, not just
-  7 fields. New columns: `website`, `subcategory`, `owner`, `target_tier`, the
-  four AI fields (`why_they_should_attend`, `key_talking_points`, `email_angle`,
-  `sponsorship_hook`), `relationship_notes`, `first_contacted_at`,
-  `last_contacted_at`, and `contact1_*`/`contact2_*`. Owner resolves by user
-  name / first name / email local-part; tier resolves by name within the event;
-  contacts are inserted (contact 1 = primary) deduped by email/name;
-  `subcategory` is stashed in `eventCompanies.customFields` (no schema change).
-  Owner default changed from "importing user" to **null** (unassigned) when
-  unmatched.
-- `components/admin/import-wizard.tsx` — `ParsedRow`, `FIELD_ALIASES`, and the
-  recognized-columns help text expanded to match.
-- `scripts/excel-to-import-csv.py` — converts the workbook → importer-ready CSV.
-  Remaps status (`Not contacted`→`prospect`), tiers, composes `hq_location`, and
-  aliases owner `Michael`→`Mike Thorn`. typecheck + lint + build all green.
-
-**The generated CSV is on the Desktop (NOT committed — contains contact PII):**
-`~/Desktop/NPPA_LPD_2026_master_list_import.csv` — 312 rows. Status: 249
-prospect / 61 contacted / 2 declined. Owner: 77 Mike Thorn / 235 unassigned.
-Tiers: 146 Bronze / 144 Silver / 21 Gold.
-Source workbook: `~/Desktop/LPD 2026/NPPA_LPD_2026_Sponsor_Tracker_RESTRUCTURED.xlsx`.
-
-**NEXT ACTION (manual — admin runs it, per the no-DB-from-Claude rule):**
-1. `pnpm dev`, log in as admin.
-2. Admin → Events → LPD 2026 → Import prospects.
-3. Upload the CSV → Preview (expect ~312 new companies, 0 already on event) → Commit.
-4. Spot-check `/companies`: a "Michael" row (e.g. 3D Systems Healthcare) should
-   show owner = Mike Thorn, tier Bronze, AI fields populated, a primary contact.
-   If preview shows many "already on event", STOP — the event already has data.
-
-**Deferred features surfaced during the Excel review (not built — user chose
-"just migrate for now"):**
-- **Category as a structured field + a grouped "By Category" view** (workbook has
-  24 categories and a dedicated category sheet; CRM only has free-text
-  `industry`, which currently receives the Category value).
-- **Payment & fulfillment fields/view** (agreement signed / invoice sent / paid /
-  booth # / rep names — the workbook's Confirmed Sponsors sheet; empty now, but
-  needed before the event).
-- **Subcategory** currently lives in `customFields.subcategory` (lossless but not
-  surfaced as a column/filter).
-
----
-
-## Chunk C — DONE (2026-07-08, commit `fdddf09`)
-
-Natural-language "AI quick update" — in-app twin of the `/sync-outreach` skill.
-
-**Shipped:**
-- `lib/ai/nl-update.ts` — model layer. Zod proposal schema (`matches[]` +
-  `unmatched[]`) with a **flat op shape** (chosen over a discriminated union for
-  robust structured-output across providers; per-kind required fields are
-  re-validated in `applyNlUpdate`). Whitelisted ops: `set_status`,
-  `log_interaction`, `bump_last_contacted`, `set_next_action_at`, `create_task`.
-  `runNlUpdate` mirrors `runEnrichment` in `lib/ai/gateway.ts`; system prompt =
-  static `/sync-outreach` rules, user prompt = prospect list + recap.
-- `lib/actions/nl-update.ts` — `proposeNlUpdate` (read-only) and `applyNlUpdate`.
-  Apply dispatches to the EXISTING actions (`moveEventCompanyStatus`,
-  `logInteraction`, `updateField` for last-contact/next-action, `createTask`) so
-  audit/validation/revalidation are free. `confirmed` is skipped + surfaced as
-  "confirm in the pipeline modal" (amount + tier stay atomic).
-- `components/ai/nl-update-dialog.tsx` (controlled modal) +
-  `components/ai/nl-update-box.tsx` (dashboard box, autoRun).
-- Wired into `command-palette.tsx` (Actions group) via a new `onAiQuickUpdate`
-  prop hosted in `command-provider.tsx`, and into the dashboard (`app/(app)/page.tsx`).
-
-**Verification:** typecheck + lint + build green. A throwaway read-only script
-ran the real prospect list (prod DB) through `runNlUpdate` against the live AI
-Gateway — request was well-formed; gateway returned
-`403 byok_requires_paid_credits`. So the code path is correct end-to-end; **live
-use is blocked only by the account-level AI billing gate** (below). No writes
-were made; the write path (Apply) was intentionally not exercised because
-`.env.local`'s `DATABASE_URL` points at prod.
-
-**Prereq to make it work live (unchanged from before, now confirmed via 403):**
-Enable the Anthropic provider **with paid credits** in Vercel → AI tab. This is
-the same gate that blocks enrichment / email-draft / agents. Also note
-`AI_MODEL_ID` currently resolves to **Opus 4.7** — override the env var to
-Sonnet/Haiku if cheaper NL parsing is wanted (no code change).
-
-## Chunk 14b — DONE
-
-Shipped in commit `bc7a336`:
-- `lib/agents/watch.ts` — watch agent (Valyu search + Claude Haiku signal
-  assessment → creates follow-up tasks). Skips terminal statuses
-  (`confirmed`/`declined`/`past_sponsor`) and anyone contacted in the last 7
-  days. Max 10 companies/run.
-- `app/api/cron/{discovery,watch}/route.ts` — GET handlers, Bearer auth via
-  `CRON_SECRET`, gate on AI config, run for all `status = active` events with
-  that agent enabled. `triggeredBy` passed as `null` (it's a UUID FK to users).
-- `vercel.json` — discovery 6am UTC, watch 8am UTC.
-- `lib/actions/agents.ts` — `runWatchAgent` (mirrors `runDiscoveryAgent`).
-- `components/admin/agents-panel.tsx` — Watch row live (toggle, Run now,
-  signal-task-count badge). `agents` page fetches the watch schedule.
-
-All bugs from the prior session's notes were fixed: removed unused `gt`
-import, `triggeredBy` now `string | null` (cron passes `null`), and
-`events.isActive` → `events.status = "active"` (there is no `isActive`
-column). typecheck + lint + build all green.
-
----
-
-## Notes from 2026-07-02 session
-
-- **Dark-mode toggle was silently broken** — `dark:` variants + semantic CSS
-  vars were media-query based while next-themes toggles a `.dark` class. Fixed
-  in globals.css (`@custom-variant dark` + `.dark` selector blocks). If any
-  page looks wrong in dark mode now, it was always wrong — the toggle just
-  never applied before.
-- **Seeded "Stale (no contact 14+ days)" view was inverted** (`last_n_days`
-  matched recently-contacted). New seed view "Needs follow-up (14+ days)" uses
-  the new `older_than_n_days` op. **Prod DB still has the old broken view** —
-  admin should delete it in the UI and either re-run `pnpm db:seed` or create
-  the corrected view manually (it's name-keyed, so seeding inserts the new
-  ones without touching anything else). Same for "Proposals expiring soon".
-- `scripts/reset-admin-password.ts` is now committed (bcrypt password
-  recovery helper, no secrets in it). The admin password is unrecoverable
-  (bcrypt hash only; `SEED_ADMIN_PASSWORD` is a Vercel sensitive var that
-  pulls back empty) — user was given the reset command to run themselves;
-  unknown whether they've run it yet.
-- `.claude/launch.json` added (preview server config, port 3001).
-- Vercel CLI is now installed and logged in (`mike-9206`); project linked.
-  `CRON_SECRET` + `AI_GATEWAY_API_KEY` **still unset in prod**.
-- Repo is **public** on GitHub (`xynurse/nppacrm`) — user was offered
-  `gh repo edit --visibility private` but hasn't decided yet.
-
-## Decisions made (don't re-debate these)
-
-| Decision | Why |
-|---|---|
-| Rich text = **additive `*_doc` jsonb + plain-text mirror**, NOT `text`→`jsonb` conversion | Five callers write `body`/`description` as plain strings (AI quick-update, watch agent, proposal flow, `/sync-outreach`, batch scripts) and AI prompts + CSV export read them. Converting would force every one of them to emit ProseMirror JSON. The mirror keeps them all untouched, avoids rewriting 65+ prod rows, and reverts by dropping one column. |
-| Plain-text mirror is derived **server-side** on every write | The client can't be trusted to keep them consistent, and it means a caller passing only `body` still works verbatim |
-| `plainTextToDoc` maps single newlines → **hard breaks**, blank lines → paragraphs | Makes it the exact inverse of `docToPlainText`. The obvious one-line-per-paragraph mapping double-spaced the mirror of every legacy body the first time someone edited it — caught by a round-trip check |
-| Read-only rendering = hand-written recursive renderer, not TipTap in `editable:false` | Activity feeds render many docs at once; the renderer costs zero client JS while a TipTap instance would load ProseMirror on every read |
-| Editor loaded via `next/dynamic`, never imported directly | `/companies` was already 44 kB over budget; this kept the ~90 kB runtime off first load (204 → 212 kB) |
-| Company notes → the **existing** `companies.notes_doc`, no new column | It has been in the schema unused since migration 0001; notes on the company (not the event prospect) also persist across events |
-| Guard reads AND writes on `42703` | Vercel auto-deploys from `main` but migrations are manual, so code always lands before schema. A write guard means a task logged in that gap keeps its content and loses only formatting |
-| Chunk 15 split into 15a (editor) / 15b (`@` mentions, `/` commands) | Mentions need a suggestion plugin, user-search endpoint, node attrs, and renderer support — its own session, and the real prerequisite for chunk 20 |
-| Retheme = **indigo on cool zinc** (Linear/Vercel), not blue or warm-neutral | User picked it; indigo+zinc is the furthest from the clinical medical look and reads as modern startup SaaS |
-| Retheme via brand-`*` palette + semantic tokens, not per-component rewrites | Everything routes through `--color-brand-*` and `--accent`/`--surface`/`--ink`, so one palette swap cascades app-wide at low risk |
-| Kept all functional status colors (stage pills, Bounced red, Deferred violet) | Those encode meaning, not brand; recoloring them would break scannability. Only the brand hue + neutrals changed |
-| Swapped only **dark surface bgs** slate→zinc app-wide, left text/border slate | slate vs zinc for text/borders is visually near-identical; the dark card-on-page seam was the only visible mismatch worth a 64-file sweep |
-| New logo = abstract ascending-bars mark, not a lucide icon | A custom geometric mark reads "designed/startup"; the old `Activity` heartbeat was the strongest medical cue |
-| Elevation via 3 shadow tokens + `surface-card` utility, not per-component classes | One place to tune depth; components opt in |
-| CSS-first motion (transitions + easing token), no Framer Motion | It was dropped in chunk 12 for bundle size; CSS covers current needs |
-| Replace (not rename) the broken Stale seed view | Seed is name-keyed/idempotent; renaming lets re-seed deliver the fix without migrations |
-| Watch signals → tasks (not enrichment suggestions, not company suggestions) | `companySuggestions` has no `eventCompanyId`; `enrichmentSuggestions` field enum only allows 4 outreach fields. Tasks are immediately actionable and show in normal workflow. |
-| Haiku model for Watch agent | Cost control — signal assessment is lightweight; no need for Sonnet |
-| Max 10 companies per watch run | Cost cap; runs daily so stale ones cycle through |
-| Skip companies contacted in last 7 days | Avoids noisy duplicate signals for active conversations |
-| Signal task due date = today + 3 days | Urgency without being immediate noise |
-| `CRON_SECRET` optional in dev, required in prod | Allows easy local testing without bearer header |
-| Discovery cron: 6am UTC; Watch cron: 8am UTC | Staggered to avoid simultaneous cost spikes |
-| Extend the in-app importer rather than write a one-shot migration script | Reusable for future uploads; user runs it via UI so the no-DB-from-Claude rule is respected |
-| Master List `Category` → `companies.industry`; `Subcategory` → `customFields.subcategory` | No schema change needed for "just migrate" scope; a real category field/view is deferred |
-| Unmatched import owner → null (unassigned), not the importing user | A blank owner in the source means genuinely unassigned; avoids 235 rows silently landing on the admin |
-| Import CSV with PII stays on Desktop, uncommitted | Contains contact emails/names; only the generator script is committed |
-| Companies/Contacts search = server-side `q` param; Pipeline search = client-side | Companies/Contacts already re-query per URL param and need cross-field/contact matching in SQL; pipeline loads all rows client-side and drag is optimistic, so instant client filtering is simpler and avoids refetch |
-| `CompanyDrawer` reused on /pipeline via a `closeHref` prop, not a second drawer | One drawer component, one set of editors; only the close/backdrop target differs per host page |
-| Dashboard drill-downs build the `f` filter param via `encodeToParam` + `sanitizeFilter` | Lands on a real filtered companies table (verified counts match dashboard); the old ad-hoc `?v=`/`?filter=` params were silently ignored |
-| Fixed `is_one_of` → `IN (...)` instead of switching to drizzle `inArray` | `compileCondition` works on a `sql` column fragment, not a column object; `IN` with `sql.join` is the minimal correct fix and repairs the existing filter UI |
-| **(15b)** Suggestion popup positioned via `view.coordsAtPos`, **no `tippy.js`** | The reference TipTap mention example pulls in tippy; the CRM avoids extra runtime deps and the editor is already lazy-loaded. A hand-rolled caret-positioned React root is ~130 lines and adds nothing to first load |
-| **(15b)** One shared popup + renderer for both `/` and `@` | Identical UI/keyboard model; a single `createSuggestionRenderer(toDisplay)` maps raw items → rows and closes `command(raw)` over each. Avoids two near-duplicate popups |
-| **(15b)** `@` mention node stores `{ id, label }`, `id` = user id | Chunk 20 resolves notifications from the id, so it must survive a display-name change. `label` is only for display + the plain-text mirror |
-| **(15b)** Mention users fetched once via a server action, filtered client-side — **not** prop-threaded, **not** per-keystroke | `LazyRichEditor` is used in 3 places with no user list; threading a prop through the lazy wrapper + all consumers is churn. The team is tiny, so one cached fetch beats a per-keystroke round trip. Zero consumer changes |
-| **(15b)** `/` inserts existing StarterKit blocks only; **no renderer changes** | Every block the slash menu inserts (headings, lists, quote, code, rule) already has a `rich-text.tsx` case. Only the new `mention` inline node needed a renderer + mirror case |
-| **(15b)** Slash menu guarded to start-of-paragraph (`parentOffset <= 1`) | Prevents a stray `/` in a URL or "and/or" from popping the menu; matches how Notion/Linear gate their slash menus |
+## Decisions made (don't re-debate)
+- Theme: **Mayo Clinic blue** (`#0057b8`) + Notion/Linear chrome — **no purple**; Deferred = stone.
+- Light-only Attio/Twenty shell; Claude Code primary; commit + push `main` after green; **never** `db:migrate` / `db:seed` against prod from agents.
+- Rich text = additive `*_doc` + plain-text mirror.
+- BOUNCED / DEFERRED = tags, not pipeline statuses.
+- Home Today is interactive client (`components/dashboard/today-tasks.tsx`); activity collapse pattern reused.
+- Enrich `userContext` is **ephemeral** (not written to CRM fields).
+- Email ingest = future product; Quick update documents paste-to-parse until then.
+- PR #19 may show GitHub `CLOSED` after rebase; commit `9efd104` is on `main`.
 
 ---
 
 ## Next sessions queue
 
-Work through these in order. One chunk per session. Exact fixes are under "Known bugs" at the top.
+Work one chunk per session. Prefer browser verify on a machine with login before starting net-new UI.
 
-### 0. (User, manual — not Claude) Prod housekeeping
-rotate Neon `neondb_owner` password → Vercel `DATABASE_URL`/`DATABASE_URL_UNPOOLED` + `.env.local` · set `CRON_SECRET` · delete the three merged remote branches.
+### 0. (User, manual — not Claude)
+1. `pnpm db:migrate` on prod for **0017** (event profile) — NPB-13.  
+2. Recreate / migrate agents tables (**0009** / `agent_schedules`) — NPB-12.  
+3. Set `CRON_SECRET`; extend AI Gateway / MODEL / VALYU / spend cap to Production; rotate Neon owner password.  
+4. Spot-check prod: Today tasks, Event prospectus, AI research notes, Quick update help. Mark **NPB-3 Done** in tracker after verify.
 
-### 1. ~~Chunk 2 — status-change parity + days-in-stage~~ ✅ SHIPPED `8cbddeb`
+### 1. NPB-6 — Inbound email agent ingest
+Blocked until Michael picks mailbox/domain + provider (Gmail / Outlook / forward-only). Needs Resend (or similar) dep approval for send/IMAP. Until then, paste threads into Quick update → Parse → review.
 
-### 2. ~~Chunk 3 — mobile nav + dead code (Pass 1)~~ ✅ SHIPPED `39830a3`
-"More" sheet in `BottomNav` (Event, Calendar, Playbooks, Reports, admin, event switch, sign out); then Pass 1 dead-code removal + `listActiveEvents` `cache()`.
+### 2. Sponsor self-service link (narrow)
+Post-commit surface: docs + invoice/booth status for confirmed sponsors. Steal Bonsai ideas only; keep Attio/Twenty for outreach.
 
-### 3. Chunk 4 — integrity ✅ ON MAIN `0046823` (2026-11-02)
-Steps 1–4, 6, and 7 are `1e5c70b`. Step 5 (task soft-delete, snapshot, restore) is `0046823`. Both are on `main`. Soft-delete stays a hard delete until migration 0015 is applied.
+### 3. Vitest unit tests
+`compile.ts` / TipTap serializer / reports helpers. Needs dep approval; no runner in repo today.
 
-Original plan (kept so the follow-up does not re-derive it):
+### 4. Bundle / housekeeping (when idle)
+`/companies` First Load toward 160 kB · Pass 3 drop unused `tags` / `company_tags` via migration · trim historical SESSION-STATE further if it grows again · Dependabot for security bumps.
 
-**Key constraint:** `neon-http` has no interactive transactions, but `db.batch([...])` runs statements as ONE atomic transaction. Later statements can't use earlier `RETURNING` ids → pre-generate ids with `crypto.randomUUID()` and put dependent inserts in the same batch.
-
-1. **Atomic writes** — new helper in `lib/audit.ts` that builds audit insert *values/queries* (incl. ip/user-agent from `headers()`) so audit rows can go inside a batch. Apply to: `quickAddEventCompany` (`lib/actions/cells.ts` — company + event_company + audit; today can orphan a company), `uploadProspectus` (`lib/actions/ai.ts` — soft-delete old + insert new + audit; today can leave none), `markProposalSent` (`lib/actions/pipeline.ts` — proposal fields + follow-up task + audit, then `changeStatus`), `changeStatuses` (`lib/pipeline/change-status.ts` — update + move_status rows), `updateField` / `updateCustomField` (write + audit).
-2. **CSV import batched + atomic** (`lib/actions/csv.ts` ~L347–420): today up to 4 serial inserts/row (~1,000 round trips for 312 rows), partial on timeout. Pre-generate ids, chunked multi-row inserts for companies / contacts / event_companies (keep `onConflictDoNothing` on (event_id, company_id)), whole import + audit in one `db.batch`. Keep preview + dedupe rules unchanged.
-3. **Custom-field writes atomic** (`lib/actions/custom-fields.ts` ~L165): replace read-modify-write of the whole jsonb with `custom_fields = coalesce(custom_fields,'{}'::jsonb) || jsonb_build_object(key, value)` (or `- key` to clear).
-4. **Real date validation:** custom date fields (`validateValueForField` in `custom-fields.ts`) and `dateRegex` in `lib/cells/registry.ts` ~L222 accept `2026-13-45` → add a real calendar check. In `lib/views/compile.ts` date operands (`between/before/after/on`, ~L312–337) validate via an `asDate()` helper; invalid → condition dropped (return null) instead of a Postgres cast error.
-5. **Task soft-delete** — **migration 0015**: `tasks.deleted_at timestamptz` + index. `deleteTask` (`lib/actions/tasks.ts` ~L233) sets `deletedAt` and stores the full task snapshot in the audit `changes`; filter `isNull(tasks.deletedAt)` in `lib/db/queries/{tasks,dashboard,search}.ts`; add `restoreTask` following `lib/actions/restore.ts` + Restore button on `task.delete` rows in `/admin/audit`. **Deploy order:** push 1 = everything else + the migration file (additive, harmless) → user runs `pnpm db:migrate` → push 2 = task soft-delete code (it reads the new column).
-6. **CSV formula escaping:** one shared `lib/csv.ts` `escapeCsv` replacing the copies in `lib/actions/csv.ts` ~L38 and `lib/actions/reports.ts` ~L20; prefix `'` to string cells starting with `= + - @ \t \r`, but leave real numbers (e.g. `-500`) alone.
-7. **Dates/timezones:** `lib/dates.ts` `todayInTimeZone(tz)` (Intl `en-CA`) using `events.timezone` (default America/Chicago). Use for calendar overdue (`app/(app)/calendar/page.tsx` ~L82, currently UTC) and the proposal +7-day follow-up due date. Date-only cell writes (`updateField` date branch) store **12:00 UTC** instead of midnight so they don't display as the previous day in US zones; don't rewrite existing values.
-
-**Verify:** `pnpm audit --prod --audit-level=high && pnpm typecheck && pnpm lint && pnpm build:offline`; PGlite scratch tests (install `@electric-sql/pglite` in the session scratchpad, NOT the repo) for: CSV batch import incl. a forced mid-batch failure leaving zero rows, concurrent custom-field key merges, date validators. ~14 files, 1 migration, no new deps.
-
-### 4. Chunk 5 — performance (Pass 2) ✅ on `cursor/chunk-5-performance-eed9` (2026-11-03)
-Shipped on the feature branch — merge to main. Remaining: `/companies` First Load still ~228 kB vs 160 target.
-
-### Feature backlog (ranked, from the audit)
-~~Renewal rollover~~ (PR #9) · ~~mobile shell~~ (PR #10) · **tier inventory + weighted forecast/pace** · fulfillment board · duplicate detection/merge · playbooks from the drawer · email "open in mail / mark sent" · export pack · sponsor self-service link · vitest for `compile.ts`/serializer/reports.
-
-### Considerations — Bonsai (hellobonsai.com), not scheduled
-Agency all-in-one CRM. Relevant for **after Confirmed**, not for spreadsheet outreach. Candidates: sponsor portal · proposal view tracking · fulfillment handoff · intake forms · fixed automations · meeting→CRM. Skip: time tracking, Gantt, payments product, e-sign suite. Stay on current build plan until ops (0015 migrate, CRON_SECRET, Neon rotate) + browser verify; then pick from the ranked backlog above.
+### Considerations (not scheduled — Bonsai)
+Sponsor portal · proposal view tracking · fulfillment handoff · intake forms · fixed automations · meeting→CRM. Skip: time tracking, Gantt, Stripe product, e-sign suite.
 
 ---
 
-## Known technical debt (not blocking)
+## Schema / migration state (prod)
 
-| Issue | Where | Notes |
-|---|---|---|
-| `/companies` bundle is 204 kB | `app/(app)/companies/` | Target is 160 kB. Fix: `next/dynamic` import per cell type. |
-| `experimental.typedRoutes` is off | `next.config.ts` | Can re-enable now that all routes exist. |
-| `next lint` deprecation warning | CI | Migrate to `eslint .` flat config before Next 16. |
-
----
-
-## Environment variables (production Vercel)
-
-All set except:
-- `CRON_SECRET` — **not yet set**. Generate with `openssl rand -base64 32` and add to Vercel project settings.
-- `AI_GATEWAY_API_KEY` — connect Anthropic provider in Vercel AI Gateway tab to enable AI features in prod.
+| Through | Status |
+|---|---|
+| 0000–0016 | ✅ applied (0015 tasks.deleted_at, 0016 tier inventory) |
+| 0009 agents tables | ⚠️ journal says applied historically but `agent_schedules` missing in prod — recreate |
+| 0017 `event_profile_details` | ❌ not applied — needs manual migrate |
 
 ---
 
 ## Useful commands
 
 ```bash
-export PATH="/Users/michaelthorn/.npm-global/bin:$PATH"
-pnpm dev          # http://localhost:3001
-pnpm typecheck    # tsc --noEmit
-pnpm lint         # next lint
-pnpm build        # next build
-pnpm db:generate  # generate Drizzle migration after schema changes
-pnpm db:migrate   # apply migrations (dev only — never run against prod from here)
-pnpm db:seed      # first-run admin + event + tiers + saved views
-git log --oneline -8
+pnpm typecheck && pnpm lint && pnpm build:offline   # cloud green build
+pnpm dev                                            # local (needs .env.local)
+# User only, never from Claude/cloud against prod:
+# pnpm db:migrate · pnpm db:seed
 ```
 
----
-
-## Schema / migration state
-
-| Migration | Applied in prod? | Notes |
-|---|---|---|
-| 0000 | ✅ | users, events, audit_log |
-| 0001 | ✅ | companies, event_companies |
-| 0002 | ✅ | contacts, interactions, tasks, reviews |
-| 0003 | ✅ | saved_views |
-| 0004 | ✅ | custom_fields, attachments |
-| 0005 | ✅ | trigram indexes (manual append) |
-| 0006 | ✅ | prospectuses, enrichment_jobs, enrichment_suggestions |
-| 0007 | ✅ | company_benefits |
-| 0008 | ✅ | proposal fields on event_companies |
-| 0009 | ✅ | agent_schedules, agent_runs, company_suggestions (⚠️ its snapshot was never committed; `0010_snapshot.json` re-baselines the full schema) |
-| 0010 | ✅ (verified 2026-08-09) | `contact_email_history` (contact email archive). Table present in prod + logged in drizzle. |
-| 0011 | ✅ (verified 2026-08-09) | `interactions.body_doc` + `tasks.description_doc` jsonb (TipTap). Both columns present in prod + logged. |
-| 0012 | ✅ (applied by user 2026-09-27) | `notifications`, `companies.category/subcategory`, fulfillment cols on `event_companies`. |
-| 0013 | ✅ (applied by user 2026-10-20) | `0013_fix_stale_view.sql` — rewrites the inverted "Stale" saved view (PR #2). |
-| 0014 | ✅ (applied by user 2026-10-20) | `login_attempts` table (login throttle, chunk 1) — throttling now active. |
-
-**Next migration:** 0017. 0000–0016 are applied in prod (verified 2026-11-04).
-mention nodes live inside the existing `*_doc` jsonb. Chunk 20 (notifications)
-will be the next one that does.
+Older session narratives (chunks 1–5, TipTap, outreach batches) live in `CHANGELOG.md` and git history — do not re-litigate fixed audit items from 2026-10.

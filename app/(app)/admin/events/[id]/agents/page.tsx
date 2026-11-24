@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { getEventById } from "@/lib/db/queries/events";
 import {
+  agentsSchemaMissing,
   getAgentSchedule,
   listAgentRuns,
   listPendingSuggestions,
@@ -17,14 +18,21 @@ export default async function AgentsPage({
   await requireAdmin();
   const { id } = await params;
 
-  const [event, discoverySchedule, watchSchedule, suggestions, runs] =
-    await Promise.all([
-      getEventById(id),
-      getAgentSchedule(id, "discovery"),
-      getAgentSchedule(id, "watch"),
-      listPendingSuggestions(id),
-      listAgentRuns(id),
-    ]);
+  const [
+    event,
+    discoverySchedule,
+    watchSchedule,
+    suggestions,
+    runs,
+    schemaMissing,
+  ] = await Promise.all([
+    getEventById(id),
+    getAgentSchedule(id, "discovery"),
+    getAgentSchedule(id, "watch"),
+    listPendingSuggestions(id),
+    listAgentRuns(id),
+    agentsSchemaMissing(),
+  ]);
 
   if (!event) notFound();
 
@@ -46,6 +54,17 @@ export default async function AgentsPage({
           daily runs.
         </p>
       </div>
+
+      {schemaMissing ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Agents tables are not in this database yet (
+          <code className="font-mono text-xs">agent_schedules</code>). Run{" "}
+          <code className="font-mono text-xs">pnpm db:migrate</code> against
+          production (migration <code className="font-mono text-xs">0009</code>
+          ) and refresh. Until then the page stays up but schedules / runs are
+          empty.
+        </div>
+      ) : null}
 
       <AgentsPanel
         eventId={id}

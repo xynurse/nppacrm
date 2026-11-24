@@ -3,6 +3,7 @@ import {
   BarChart3,
   CalendarDays,
   Clock,
+  FileText,
   Gift,
   Target,
   Users as UsersIcon,
@@ -11,6 +12,7 @@ import { requireSession } from "@/lib/auth";
 import { listActiveEvents, listReviewersForEvent } from "@/lib/db/queries/events";
 import { listTiersForEvent } from "@/lib/db/queries/companies";
 import { getDashboardMetrics } from "@/lib/db/queries/dashboard";
+import { getActiveProspectus } from "@/lib/db/queries/ai";
 import {
   getAverageDaysInStage,
   getCadenceBreakdown,
@@ -22,6 +24,13 @@ import {
   PROSPECT_STATUS_LABELS,
   StatusBadge,
 } from "@/components/companies/status-badge";
+import {
+  EventAboutSection,
+  EventCourseDirectorsSection,
+  EventGoalsSection,
+  EventMetricsTargetsSection,
+} from "@/components/event/event-profile-sections";
+import { EventSwitcher } from "@/components/app/event-switcher";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { encodeToParam } from "@/lib/views/schema";
@@ -74,6 +83,7 @@ export default async function EventProfilePage() {
     daysInStage,
     reviewers,
     tiers,
+    prospectus,
   ] = await Promise.all([
     getRevenueRollup(activeEvent.id),
     getDashboardMetrics(activeEvent.id),
@@ -83,6 +93,7 @@ export default async function EventProfilePage() {
     getAverageDaysInStage(activeEvent.id),
     listReviewersForEvent(activeEvent.id),
     listTiersForEvent(activeEvent.id),
+    getActiveProspectus(activeEvent.id),
   ]);
 
   const currency = revenue.currency;
@@ -108,6 +119,12 @@ export default async function EventProfilePage() {
               {activeEvent.startDate ? formatDate(activeEvent.startDate) : "TBD"}
               {activeEvent.endDate ? ` – ${formatDate(activeEvent.endDate)}` : ""}
             </span>
+            {activeEvent.location ? (
+              <>
+                <span className="text-slate-300 dark:text-slate-600">·</span>
+                <span>{activeEvent.location}</span>
+              </>
+            ) : null}
             <span className="text-slate-300 dark:text-slate-600">·</span>
             <span>{activeEvent.timezone}</span>
             <span className="text-slate-300 dark:text-slate-600">·</span>
@@ -132,13 +149,59 @@ export default async function EventProfilePage() {
             ) : null}
           </p>
         </div>
-        {isAdmin ? (
-          <Link href={`/admin/events/${activeEvent.id}`}>
-            <Button variant="outline" size="sm">
-              Manage event
-            </Button>
-          </Link>
-        ) : null}
+        <div className="flex flex-col items-stretch gap-2 sm:items-end">
+          {events.length > 1 ? (
+            <div className="w-full min-w-[12rem] sm:w-56">
+              <EventSwitcher
+                events={events}
+                activeEventId={activeEvent.id}
+              />
+            </div>
+          ) : null}
+          {isAdmin ? (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Link href={`/admin/events/${activeEvent.id}/prospectus`}>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <FileText className="h-3.5 w-3.5" />
+                  {prospectus ? "Revise prospectus" : "Upload prospectus"}
+                </Button>
+              </Link>
+              <Link href={`/admin/events/${activeEvent.id}`}>
+                <Button variant="outline" size="sm">
+                  Manage event
+                </Button>
+              </Link>
+            </div>
+          ) : null}
+          {isAdmin && prospectus ? (
+            <p className="max-w-xs text-right text-[11px] text-slate-500 dark:text-slate-400">
+              Current PDF:{" "}
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {prospectus.fileName}
+              </span>
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <EventAboutSection event={activeEvent} isAdmin={isAdmin} />
+        <EventCourseDirectorsSection
+          directors={activeEvent.courseDirectors}
+          eventId={activeEvent.id}
+          isAdmin={isAdmin}
+        />
+        <EventGoalsSection
+          goals={activeEvent.goals}
+          eventId={activeEvent.id}
+          isAdmin={isAdmin}
+        />
+        <EventMetricsTargetsSection
+          event={activeEvent}
+          confirmedCount={metrics.confirmedCount}
+          confirmedAmount={metrics.confirmedAmount}
+          isAdmin={isAdmin}
+        />
       </div>
 
       {/* Fundraising / revenue */}

@@ -13,11 +13,10 @@ committed and deployed, plus AI enrichment/agents (chunks 13–14b), a
 natural-language "AI quick update", and a 2026-07-09 UX + data-quality pass
 (inline search, event profile page, pipeline edit-in-place, dashboard
 drill-downs, contact email history, and bounced-email tracking). A 2026-07-20
-UI retheme re-skinned the app to an **indigo-on-zinc "modern SaaS"** identity
-(away from the original medical-teal look). The real Master List (312
-prospects) is loaded. See [TODO.md](TODO.md) for the backlog and
-[docs/SESSION-STATE.md](docs/SESSION-STATE.md) for the authoritative current
-state.
+UI uses a **Mayo blue on zinc** Notion/Linear look (Attio/Twenty light shell).
+The real Master List (312 prospects) is loaded. See [TODO.md](TODO.md) for the
+backlog and [docs/SESSION-STATE.md](docs/SESSION-STATE.md) for the authoritative
+current state.
 
 > **Pending prod migration:** `0010` (contact email history) is committed but
 > not yet applied — run `pnpm db:migrate` against prod. The code degrades
@@ -65,11 +64,11 @@ with credits.
 red badge, a Tags filter, a dashboard funnel bar, and a follow-up task.
 
 Product principles:
-- **Design language.** Indigo brand on a cool zinc neutral (Linear/Vercel
-  lineage) — restrained, product-neutral, not clinical. Brand hue and neutrals
+- **Design language.** Mayo Clinic blue (`#0057b8`) on a cool zinc neutral
+  (Notion/Linear/Attio) — restrained, spreadsheet-first. Brand hue and neutrals
   route through CSS tokens (`--color-brand-*`, `--surface`, `--ink`) so a
   re-skin is a token swap; functional status colors (stage pills, red Bounced,
-  violet Deferred) are deliberately kept.
+  stone Deferred) stay semantic.
 - **Spreadsheet-first.** The table is the primary surface, not a form view.
 - **Inline editable.** Click any cell and type; save-on-blur with optimistic
   UI.
