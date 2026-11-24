@@ -4,7 +4,7 @@
 > `SESSION-STATE.md` / `TODO.md` / `CHANGELOG.md` / the build prompt unless
 > this file is missing the fact you need. Prefer targeted greps over full-file reads.
 
-**Last updated:** 2026-11-14  
+**Last updated:** 2026-11-24 (prod migrations 0009 + 0017 applied)
 **Branch:** `main` — Claude Code handoff after UX PRs **#18–#25** (parent `7e21c6e` + this docs commit).  
 **Prod:** `nppacrm.vercel.app` · Repo: `xynurse/nppacrm`
 
@@ -31,11 +31,10 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 
 **Also:** Email helpers + export pack (#14) · AI Gateway honor `ANTHROPIC_API_KEY` · Agents page soft-fail without `agent_schedules` · forecast/fulfillment/dupes (#11) · mobile (#10) · rollover (#9) · light Attio (#8).
 
-**Prod DB:** through **0016** applied; **0017** not applied; agents tables (`0009` / `agent_schedules`) still missing. Neon `nppacrm` = `young-cell-40419191`.
+**Prod DB:** **0000–0017 all applied** (2026-11-24 via Neon MCP: 0009 agents tables + 0017 event profile, recorded in `drizzle.__drizzle_migrations`, 18 rows). Next migration: 0018. Neon `nppacrm` = `young-cell-40419191`.
 
 ## Deferred / not built
 - **Inbound email agent ingest (NPB-6)** — needs mailbox/domain + provider (Gmail/Outlook/forward). IMAP/Resend still needs dep approval.
-- Prod migrates: **0017** event profile · recreate agents (**0009**).
 - Sponsor self-service portal · vitest · gallery · Pusher presence · sequences as DB objects.
 - `/companies` First Load ~229 kB vs 160 target.
 - Cloud Agent has **no `SEED_ADMIN_*`** — cannot signed-in browser smoke against prod.
