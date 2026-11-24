@@ -3,7 +3,7 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest on main: **UX PRs #18–#25** (2026-11-13/14) + earlier #8–#14. Prod DB through **0016**; all migrations 0000–0017 applied (2026-11-24).
+Latest on main: **PR #13** zip export pack + prod DB caught up (2026-11-24), on top of UX PRs #18–#25. **Prod DB: all migrations 0000–0017 applied.** Next migration: 0018.
 
 **Considerations (Bonsai — not scheduled):** sponsor portal · proposal view tracking · fulfillment board handoff · intake forms · fixed automations · meeting→CRM. See AGENT-MEMORY.
 
@@ -11,11 +11,19 @@ Latest on main: **UX PRs #18–#25** (2026-11-13/14) + earlier #8–#14. Prod DB
 
 - [x] Prod migration **0017** (event profile) — applied 2026-11-24
 - [x] Prod agents tables (**0009**) — applied 2026-11-24
-- [ ] **(user, manual)** `CRON_SECRET` + extend AI Gateway/MODEL/VALYU to Production; rotate Neon owner password
+- [ ] **(user, manual)** Vercel: add `CRON_SECRET`; tick Production on `AI_GATEWAY_API_KEY` / `AI_MODEL_ID` / `VALYU_API_KEY` / `AI_DAILY_SPEND_CAP_USD`; redeploy
+- [ ] **(user, manual)** Rotate Neon owner password → update Vercel `DATABASE_URL*`
+- [ ] **(user)** Browser spot-check: Run playbook, Reports zip export, Agents, Event profile
 - [ ] Inbound email agent ingest (NPB-6) — blocked on mailbox/domain + provider
 - [ ] Sponsor self-service link
 - [ ] Vitest for compile / TipTap serializer / reports
 - [ ] `/companies` First Load toward 160 kB
+
+## Shipped 2026-11-24
+
+- [x] Prod migrations **0009** (agents) + **0017** (event profile) applied via Neon MCP; recorded in drizzle journal
+- [x] Reports → **Download export pack** (single zip of all event data, PR #13, `fflate`)
+- [x] Playbooks from the company drawer (PR #12, 2026-11-04)
 
 ## Shipped 2026-11-13/14 — NPB-3 UX + follow-ons (PRs #18–#25)
 

@@ -7,31 +7,30 @@
 ---
 
 ## Last updated
-2026-11-14 (America/Chicago) — **Claude Code handoff after UX PRs #18–#25.**  
-UI for NPB-3 (plus Today/research/prospectus/email-parse) is on `main`. No code in progress. Docs-only close-out this session.
+2026-11-24 (America/Chicago) — **Claude Code session close-out:** prod DB caught up (0009 + 0017), zip export pack (PR #13) merged, docs refreshed. No code in progress.
 
 ---
 
 ## Current git HEAD
-This docs handoff commit on `main` (parent `7e21c6e` `docs: record UX pack PR #25 merged to main`).  
-UX code: `a4f867b` merge PR #25 · `d5f6a0e` Today/research/prospectus/email-parse · `4f8a5d8` event #24 · `f548a0f` tasks #23 · `0bfed3f` company filters #22 · `0a52d15` activity #21 · `f37a3ab` calendar #20 · `9efd104` contacts #19 · `f98dbd8` Mayo blue #18.
+Docs close-out commit on `main` (parent `375f9dd` Merge PR #13 — export pack zip + prod DB caught up).  
+This session's code: `b6a8f6c` playbooks from drawer (PR #12) · `5a724e6` export pack zip (PR #13).
 
-Repo: `xynurse/nppacrm` · Prod: `nppacrm.vercel.app` · Neon: `young-cell-40419191`.
+Repo: `xynurse/nppacrm` · Prod: `nppacrm.vercel.app` (auto-deploys `main`) · Neon: `young-cell-40419191`.
 
 ---
 
 ## In progress
-Nothing uncommitted for product code. This handoff updates AGENT-MEMORY / SESSION-STATE / TODO / CHANGELOG only.
+Nothing. All work merged to `main`.
 
 ---
 
 ## Known bugs / gaps
-- **Prod migration 0017 not applied** — event profile columns (course directors / goals / metrics) from PR #24. User runs `pnpm db:migrate` manually. Tracker: **NPB-13**.
-- **Agents tables missing in prod** — `agent_schedules` / related from **0009**; Agents page soft-fails (`b186d42`). Tracker: **NPB-12**. Do **not** migrate from a cloud agent.
-- **Inbound email ingest not built (NPB-6)** — blocked on mailbox/domain + provider choice. Paste → Quick update Parse is the interim path.
-- **Cloud Agent cannot signed-in smoke** — no `SEED_ADMIN_*` / no `.env.local` login. TipTap `/` `@`, Phase 5 columns, and new Today/Event UX were not browser-verified here.
-- **`/companies` First Load** still ~229 kB vs 160 kB target (needs splitting the table itself).
-- **Vercel Production env gaps:** `CRON_SECRET` unset; `AI_GATEWAY_*` / `AI_MODEL_ID` / `VALYU_API_KEY` / spend cap still Development-only (`ANTHROPIC_API_KEY` is on Production). Rotate Neon `neondb_owner` password still owed.
+- **Not browser-verified:** zip export pack (Reports → Download export pack), playbooks from drawer, agents page and event profile after the 0009/0017 apply. Spot-check on prod.
+- **Two export packs exist by design:** Companies → Export menu (3 CSVs for current view, PR #14) and Reports → zip of the whole event (PR #13).
+- **Inbound email ingest not built (NPB-6)** — blocked on mailbox/domain + provider choice.
+- **Cloud Agent cannot signed-in smoke** — no `SEED_ADMIN_*` / `.env.local` login.
+- **`/companies` First Load** ~229 kB vs 160 kB target.
+- **Vercel Production env gaps (user):** `CRON_SECRET` unset; `AI_GATEWAY_API_KEY` / `AI_MODEL_ID` / `VALYU_API_KEY` / `AI_DAILY_SPEND_CAP_USD` still Development-only (`ANTHROPIC_API_KEY` is on Production). Rotate Neon `neondb_owner` password still owed.
 
 ---
 
@@ -44,6 +43,8 @@ Nothing uncommitted for product code. This handoff updates AGENT-MEMORY / SESSIO
 - Enrich `userContext` is **ephemeral** (not written to CRM fields).
 - Email ingest = future product; Quick update documents paste-to-parse until then.
 - PR #19 may show GitHub `CLOSED` after rebase; commit `9efd104` is on `main`.
+- Prod migrations may be applied by Claude **through the Neon MCP only when the user explicitly asks**, after reading the SQL and checking state; record each in `drizzle.__drizzle_migrations` (sha256 of the file + journal `when`). 0009 + 0017 applied this way 2026-11-24.
+- Keep both export packs (user chose "merge 13").
 
 ---
 
@@ -52,10 +53,9 @@ Nothing uncommitted for product code. This handoff updates AGENT-MEMORY / SESSIO
 Work one chunk per session. Prefer browser verify on a machine with login before starting net-new UI.
 
 ### 0. (User, manual — not Claude)
-1. `pnpm db:migrate` on prod for **0017** (event profile) — NPB-13.  
-2. Recreate / migrate agents tables (**0009** / `agent_schedules`) — NPB-12.  
-3. Set `CRON_SECRET`; extend AI Gateway / MODEL / VALYU / spend cap to Production; rotate Neon owner password.  
-4. Spot-check prod: Today tasks, Event prospectus, AI research notes, Quick update help. Mark **NPB-3 Done** in tracker after verify.
+1. Vercel → Environment Variables: add `CRON_SECRET`; tick Production on `AI_GATEWAY_API_KEY`, `AI_MODEL_ID`, `VALYU_API_KEY`, `AI_DAILY_SPEND_CAP_USD`; redeploy.
+2. Rotate Neon owner password → update `DATABASE_URL` / `DATABASE_URL_UNPOOLED` in Vercel + `.env.local`.
+3. Spot-check prod: Run playbook (drawer), Reports → Download export pack, Agents page, Event profile, Today tasks.
 
 ### 1. NPB-6 — Inbound email agent ingest
 Blocked until Michael picks mailbox/domain + provider (Gmail / Outlook / forward-only). Needs Resend (or similar) dep approval for send/IMAP. Until then, paste threads into Quick update → Parse → review.
