@@ -13,6 +13,7 @@ import {
 } from "@/lib/db/queries/reports";
 import { Button } from "@/components/ui/button";
 import { CsvDownloadButton } from "@/components/reports/csv-download-button";
+import { ExportPackButton } from "@/components/reports/export-pack-button";
 import { PROSPECT_STATUS_LABELS } from "@/components/companies/status-badge";
 import { formatCurrency } from "@/lib/format";
 
@@ -62,19 +63,22 @@ export default async function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-xl font-semibold tracking-tight">Reports</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             {activeEvent.name} · live snapshot
           </p>
         </div>
-        <CsvDownloadButton
-          eventId={activeEvent.id}
-          kind="summary"
-          label="Export full summary"
-          variant="default"
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <ExportPackButton eventId={activeEvent.id} />
+          <CsvDownloadButton
+            eventId={activeEvent.id}
+            kind="summary"
+            label="Export full summary"
+            variant="default"
+          />
+        </div>
       </div>
 
       {/* Revenue rollup */}

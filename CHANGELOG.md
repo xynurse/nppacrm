@@ -2,6 +2,9 @@
 
 ## Active build (committed to main)
 
+### Prod database caught up _(2026-11-24)_
+Applied migrations **0009** (agents: `agent_schedules`, `agent_runs`, `company_suggestions`) and **0017** (event profile columns) to production in one transaction via the Neon MCP at the user's request; both recorded in `drizzle.__drizzle_migrations`. Prod schema matches `main` (0000–0017).
+
 ### Today tasks, research inject, prospectus/event, email-parse help _(2026-11-13, PR #25)_
 Home **Today** is interactive: collapse (persisted), multi-select with bulk complete / set due date, per-row complete + date edit. Company AI Enrich accepts optional **research notes** (`userContext`) for that run only. Event page surfaces an event switcher (when multiple events) and admin Upload/Revise prospectus with current filename. Quick update adds expandable **How email parsing works** (paste → Parse → review; IMAP still deferred). No migration.
 

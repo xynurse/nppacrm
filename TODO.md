@@ -3,14 +3,14 @@
 Living roadmap. See `docs/SESSION-STATE.md` for the authoritative current
 state including in-progress work and known bugs.
 
-Latest on main: **UX PRs #18–#25** (2026-11-13/14) + earlier #8–#14. Prod DB through **0016**; still need manual migrate **0017** + agents tables (**0009**).
+Latest on main: **UX PRs #18–#25** (2026-11-13/14) + earlier #8–#14. Prod DB through **0016**; all migrations 0000–0017 applied (2026-11-24).
 
 **Considerations (Bonsai — not scheduled):** sponsor portal · proposal view tracking · fulfillment board handoff · intake forms · fixed automations · meeting→CRM. See AGENT-MEMORY.
 
 ## Open (ordered)
 
-- [ ] **(user, manual)** `pnpm db:migrate` for **0017** (event profile details) — NPB-13
-- [ ] **(user, manual)** Recreate agents tables / `agent_schedules` (**0009**) — NPB-12
+- [x] Prod migration **0017** (event profile) — applied 2026-11-24
+- [x] Prod agents tables (**0009**) — applied 2026-11-24
 - [ ] **(user, manual)** `CRON_SECRET` + extend AI Gateway/MODEL/VALYU to Production; rotate Neon owner password
 - [ ] Inbound email agent ingest (NPB-6) — blocked on mailbox/domain + provider
 - [ ] Sponsor self-service link
