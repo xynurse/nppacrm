@@ -2,6 +2,9 @@
 
 ## Active build (committed to main)
 
+### Export pack zip on Reports _(2026-11-24, merged PR #13)_
+Reports → **Download export pack** builds one `.zip` for the active event: `sponsors.csv`, `contacts.csv`, `pipeline-history.csv` (from `eventCompany.move_status` audit rows), `interactions.csv`, `tasks.csv`, `fulfillment.csv`, every report CSV under `reports/`, and a `README.txt` with row counts. UTF-8 BOM for Excel, formula-guarded via `escapeCsv`, audited as `event.export_pack`. Adds `fflate`. Complements the 3-CSV current-view pack in the Companies Export menu (PR #14). No migration.
+
 ### Prod database caught up _(2026-11-24)_
 Applied migrations **0009** (agents: `agent_schedules`, `agent_runs`, `company_suggestions`) and **0017** (event profile columns) to production in one transaction via the Neon MCP at the user's request; both recorded in `drizzle.__drizzle_migrations`. Prod schema matches `main` (0000–0017).
 

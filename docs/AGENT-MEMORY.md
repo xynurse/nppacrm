@@ -26,6 +26,8 @@ Stack: Next 15 · Neon · Drizzle · Auth.js · Tailwind/shadcn · TanStack Tabl
 - **Never** `db:migrate` / `db:seed` against prod from an agent (`.env.local` → prod Neon).
 
 ## Shipped recently
+**2026-11-24:** PR #13 zip export pack on Reports (`lib/actions/export-pack.ts`, `fflate`) merged · prod migrations 0009 + 0017 applied via Neon MCP. Both export packs kept (Companies menu = current-view CSVs; Reports = full-event zip).
+
 **NPB-3 UX + follow-ons (2026-11-13/14, PRs #18–#25 on `main`):**
 - #18 Mayo blue theme · #19 contacts row actions · #20 Todoist calendar + priorities · #21 dashboard activity filters/collapse · #22 company size/sector filters · #23 tasks assign/kanban/timeline · #24 event profile (directors/goals/metrics, mig **0017**) · #25 Today collapse/multiselect/due date · research-notes inject on Enrich · Event switcher + prospectus upload/revise · Quick update email-parse help.
 
